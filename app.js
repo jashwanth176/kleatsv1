@@ -1035,7 +1035,7 @@ app.get('/', (req, res) => {
 });
 
 // At the end of your file, replace or add this:
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 80;
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
