@@ -1,0 +1,53 @@
+<!-- views/contact_us.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Contact Us - KL Eats</title>
+    <link rel="stylesheet" href="/stylesheets/style.css">
+</head>
+
+<body>
+    <header class="site-header">
+        <!-- Include your existing header content here -->
+        <!-- You can reuse the header from index.ejs if needed -->
+    </header>
+
+    <main class="contact-us">
+        <div class="container">
+            <h1>Contact Us</h1>
+            
+            <% if (typeof message !== 'undefined' && message) { %>
+                <div class="alert success">
+                    <p><%= message %></p>
+                </div>
+            <% } %>
+            
+
+            <!-- Added Contact Information Section -->
+            <div class="contact-info" style="margin-top: 40px;">
+                <h2>Contact Information</h2>
+                <p><strong>Last updated on:</strong> 02-10-2024 12:36:22</p>
+                <p>You may contact us using the information below:</p>
+                <ul>
+                    <li><strong>Merchant Legal Entity Name:</strong> VAMSI KRISHNA PASUPUREDDY</li>
+                    <li><strong>Registered Address:</strong> KLEF Deemed to be University, Green Fields, Vaddeswaram, Guntur, Andhra Pradesh, PIN: 522302</li>
+                    <li><strong>Operational Address:</strong> KLEF Deemed to be University, Green Fields, Vaddeswaram, Guntur, Andhra Pradesh, PIN: 522302</li>
+                    <li><strong>Telephone No:</strong> 7205655157</li>
+                    <li><strong>E-Mail ID:</strong> 2300031005@kluniversity.in</li>
+                </ul>
+            </div>
+            <!-- End of Contact Information Section -->
+
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <!-- Your existing footer content -->
+    </footer>
+
+    <!-- Include your existing scripts -->
+</body>
+
+</html>

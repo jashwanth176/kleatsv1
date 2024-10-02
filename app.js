@@ -10,6 +10,18 @@ const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
 const session = require('express-session');
+const https = require('https');
+const fs = require('fs');
+const http = require('http');
+
+// Read SSL certificate files
+const privateKey = fs.readFileSync('/etc/letsencrypt/live/kleats.in/privkey.pem', 'utf8');
+const certificate = fs.readFileSync('/etc/letsencrypt/live/kleats.in/fullchain.pem', 'utf8');
+
+const credentials = {
+  key: privateKey,
+  cert: certificate
+};
 
 // Add this near the top of your file, after imports
 process.on('unhandledRejection', (reason, promise) => {
@@ -1028,16 +1040,85 @@ function logout(req, res) {
   return res.redirect("/signin");
 }
 
+/*****************************  Additional Pages ***************************/
+
+// Render Contact Us Page
+function renderContactUsPage(req, res) {
+    res.render("contact_us");
+}
+
+// Render Terms and Conditions Page
+function renderTermsConditionsPage(req, res) {
+    res.render("terms_conditions");
+}
+
+// Render Refund Policy Page
+function renderRefundPolicyPage(req, res) {
+    res.render("refund_policy");
+}
+
+// Handle Contact Form Submission
+function handleContactForm(req, res) {
+    const { name, email, message } = req.body;
+    // Here, you can add logic to store the message in your database or send an email
+
+    console.log(`Contact Form Submission:
+    Name: ${name}
+    Email: ${email}
+    Message: ${message}`);
+
+    // Optionally, send a confirmation email to the user
+    const mailOptions = {
+        from: 'noreply@kleats.in',
+        to: email,
+        subject: 'Contact Form Submission Received',
+        text: `Hello ${name},\n\nThank you for contacting us. We have received your message and will get back to you shortly.\n\nBest regards,\nKL Eats Team`
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+            console.error('Error sending confirmation email:', error);
+            // Even if email fails, you might still want to acknowledge the form submission
+        } else {
+            console.log('Confirmation email sent:', info.response);
+        }
+    });
+
+    res.render("contact_us", { message: "Your message has been received. We'll get back to you shortly." });
+}
+
+// Register the routes
+app.get("/contact-us", renderContactUsPage);
+app.get("/terms-and-conditions", renderTermsConditionsPage);
+app.get("/refund-policy", renderRefundPolicyPage);
+app.post("/contact", handleContactForm);
+
 // Add this near your other route handlers:
 app.get('/', (req, res) => {
   console.log('Root route accessed');
   res.sendFile(__dirname + '/public/index.html');
 });
 
-// At the end of your file, replace or add this:
-const port = process.env.PORT || 80;
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+// Add this near your other route definitions
+app.get('/.well-known/acme-challenge/mABqFtgnZNkITm3zkzwYuhUcpjLvvbc18BW-HKIsc38', (req, res) => {
+  res.type('text/plain');
+  res.send('mABqFtgnZNkITm3zkzwYuhUcpjLvvbc18BW-HKIsc38.vrolay1CN-muJmcR1eJReUWev880xt9vyM-Cnad9dE0');
+});
+
+// Create an HTTP server that redirects to HTTPS
+const httpApp = express();
+httpApp.use((req, res) => {
+  res.redirect(`https://${req.headers.host}${req.url}`);
+});
+
+// Start the HTTP server
+http.createServer(httpApp).listen(80, () => {
+  console.log('HTTP Server running on port 80');
+});
+
+// Start the HTTPS server
+https.createServer(credentials, app).listen(443, () => {
+  console.log('HTTPS Server running on port 443');
 });
 
 module.exports = app;

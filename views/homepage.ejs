@@ -24,6 +24,52 @@
             display: flex;
             flex-direction: column;
         }
+
+        /* Add this new style for the header */
+        .site-header {
+            background-color: rgba(255, 255, 255, 0.9); /* White with 90% opacity */
+            backdrop-filter: blur(5px); /* Optional: adds a slight blur effect */
+        }
+        
+        /* Dropdown Container */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        /* Dropdown Button */
+        .header-username {
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        /* Dropdown Content (Hidden by Default) */
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            /* Adjust as needed */
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            right: 0; /* Align to the right */
+        }
+
+        /* Dropdown Links */
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        /* Hover Effect */
+        .dropdown-content a:hover {background-color: #f1f1f1}
+
+        /* Show the Dropdown */
+        .show {display: block;}
     </style>
 </head>
 
@@ -38,9 +84,6 @@
                         <nav class="header-menu">
                             <ul class="menu food-nav-menu">
                                 <li><a href="/homepage">Home</a></li>
-                                <li><a href="#about">About</a></li>
-                                <li><a href="#team">Our Team</a></li>
-                                <li><a href="#testimonials">Testimonials</a></li>
                                 <li><a href="#contact">Contact</a></li>
                             </ul>
                         </nav>
@@ -56,13 +99,10 @@
                                 <span class="cart-number" id="cart-number-count">0</span>
                             </a>
                             <div class="dropdown">
-                                <label><button onclick="myFunction()" class="header-username"
-                                        style="color: #ff8243; padding: 4px 8px;"><b><i>
-                                                <%= username.split(' ')[0] %>
-                                            </i></b></button></label>
+                                <button id="dropdownButton" class="header-username" style="color: #ff8243; padding: 4px 8px;">
+                                    <b><i><%= username.split(' ')[0] %></i></b>
+                                </button>
                                 <div id="myDropdown" class="dropdown-content">
-                                    <a href="/myorders">My Orders</a>
-                                    <a href="/settings">Settings</a>
                                     <a href="/logout">Sign Out</a>
                                 </div>
                             </div>
@@ -203,9 +243,8 @@
                                 <p>Bringing campus dining to your fingertips.</p>
                                 <div class="social-icon">
                                     <ul>
-                                        <li><a href="#"><i class="uil uil-facebook-f"></i></a></li>
-                                        <li><a href="#"><i class="uil uil-instagram"></i></a></li>
-                                        <li><a href="#"><i class="uil uil-youtube"></i></a></li>
+                                        <li><a href="https://www.instagram.com/kl_eats.official?utm_source=qr&igsh=MTZna3N0Y3U1bmRudA=="><i class="uil uil-instagram"></i></a></li>
+                                        <li><a href="www.youtube.com/@Kleats2024"><i class="uil uil-youtube"></i></a></li>
                                     </ul>
                                 </div>
                             </div>
@@ -216,9 +255,6 @@
                                     <h3 class="h3-title">Links</h3>
                                     <ul class="column-2">
                                         <li> <a href="/homepage" class="footer-active-menu">Home</a></li>
-                                        <li><a href="#about">About</a></li>
-                                        <li><a href="#team">Our Team</a></li>
-                                        <li><a href="#testimonials">Testimonials</a></li>
                                         <li><a href="#contact">Contact</a></li>
 
                                     </ul>
@@ -226,9 +262,9 @@
                                 <div class="footer-menu">
                                     <h3 class="h3-title">Company</h3>
                                     <ul>
-                                        <li><a href="#">Terms & Conditions</a></li>
-                                        <li><a href="#">Privacy Policy</a></li>
-                                        <li><a href="#">Cookie Policy</a></li>
+                                        <li><a href="/terms-and-conditions">Terms & Conditions</a></li>
+                                        <li><a href="/refund-policy">Refund Policy</a></li>
+                                        <li><a href="/contact-us">Contact Us</a></li>
                                     </ul>
                                 </div>
                             </div>
@@ -301,6 +337,36 @@
             // You can add AJAX call or redirect to a specific canteen's menu page
         }
     </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropdownButton = document.getElementById('dropdownButton');
+            const dropdownContent = document.getElementById('myDropdown');
+
+            dropdownButton.addEventListener('click', function(event) {
+                event.stopPropagation();
+                dropdownContent.classList.toggle('show');
+            });
+
+            document.addEventListener('click', function(event) {
+                if (!dropdownButton.contains(event.target) && !dropdownContent.contains(event.target)) {
+                    dropdownContent.classList.remove('show');
+                }
+            });
+        });
+    </script>
+
+    <!-- jQuery (if not already included, though Bootstrap 5 doesn't require it) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Popper.js (required for Bootstrap 4) -->
+    <!-- If you're using Bootstrap 5, Popper is included with Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="/javascripts/bootstrap.min.js"></script>
+
+    <!-- Ensure that your custom scripts are loaded after Bootstrap JS -->
+    <script src="/javascripts/main.js"></script>
 </body>
 
 </html>
