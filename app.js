@@ -154,8 +154,6 @@ app.post('/api/buyNow',async (req,res)=>{
       method:'POST',
       headers: {
         'Content-Type': 'application/json',
-        // 'x-client-Id':'TEST1032258918bd8e0cf6bf28d230d998522301',
-        // 'x-client-secret':'cfsk_ma_test_c5499618caa1890c4762231627425c2b_ea939fff',
         'x-client-Id':process.env.CASHFREE_APP_ID,
         'x-client-secret':process.env.CASHFREE_SECRET,
         'x-api-version':process.env.CASHFREE_API_VERSION 
@@ -206,8 +204,6 @@ app.get('/api/order',async (req,res)=>{
       method:"GET",
       headers:{
         'Content-Type': 'application/json',
-        // 'x-client-Id':'TEST1032258918bd8e0cf6bf28d230d998522301',
-        // 'x-client-secret':'cfsk_ma_test_c5499618caa1890c4762231627425c2b_ea939fff',
         'x-client-Id':process.env.CASHFREE_APP_ID,
         'x-client-secret':process.env.CASHFREE_SECRET,
         'x-api-version':process.env.CASHFREE_API_VERSION 
