@@ -79,6 +79,221 @@ transporter.verify(function(error, success) {
   }
 });
 
+
+
+//BuyNow GateWay
+app.post('/api/buyNow',async (req,res)=>{
+  try{
+
+    let totalPrice=0.00;
+    let orderId='';
+
+    for(const item of req.body.items){
+      console.log(item);
+      if(item.quantity>0){
+
+        const {data:it,er:userError}=await supabase
+        .from('menu')
+        .select('item_price,canteenId')
+        .eq('item_id',item.item_id)
+        .single();
+
+        if(userError || !it){
+          console.log("Error while fetching menu price");
+          return res.json({code:-1,message:'Error while fetching menu price'});
+        }
+
+        const itemPrice=Number(it.item_price);
+        totalPrice=totalPrice+(itemPrice*item.quantity);
+        //console.log(totalPrice);
+        orderId=uuidv4();
+
+        const {error} =await supabase
+        .from('orders')
+        .insert({
+          order_id:orderId,
+          user_id:Number(req.body.phone),
+          item_id:item.item_id,
+          quantity:item.quantity,
+          payment_status:'Pending',
+          name:req.body.name,
+          datetime:getTime(),
+          price:itemPrice*item.quantity,
+          canteenId:it.canteenId
+        });
+  
+        if(error){
+          console.log('Error inserting order:',error);
+          return res.json({code:-1,message:'Error while placeing order.'});
+        }
+      }
+    }
+
+    //console.log(totalPrice);
+
+    obj={
+      order_amount:totalPrice,
+      order_currency:"INR",
+      order_id:orderId,
+      customer_details:{
+        customer_id:req.body.name+"_"+req.body.phone,
+        customer_phone:req.body.phone,
+        customer_name:req.body.name
+      },
+      order_meta:{
+        //return_url:"https://www.cashfree.com/devstudio/preview/pg/web/checkout?order_id={order_id}"
+        //return_url:"http://127.0.0.1:8090/api/order?order_id={order_id}"
+        return_url:"https://kleats.in/api/order?order_id={order_id}"
+      }
+    }
+
+    console.log(JSON.stringify(obj));
+
+      await fetch("https://api.cashfree.com/pg/orders",{
+      //await fetch("https://sandbox.cashfree.com/pg/orders",{
+      method:'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // 'x-client-Id':'TEST1032258918bd8e0cf6bf28d230d998522301',
+        // 'x-client-secret':'cfsk_ma_test_c5499618caa1890c4762231627425c2b_ea939fff',
+        'x-client-Id':'773709062e507d4b9f28fea5d5907377',
+        'x-client-secret':'cfsk_ma_prod_0b99fea8c874ed1453b3a924e03ed505_df1c2f11',
+        'x-api-version':'2023-08-01'
+      },
+      body: JSON.stringify(obj)
+    }).then(response=>response.json())
+    .then(data=>{
+      console.log(data);
+      if(data.type){
+        return res.json({code:-1,message:data.message});
+      }
+      return res.json({code:1,message:'Success',data:data});
+    })
+    .catch(error => {
+      console.error('There has been a problem with your fetch operation:', error);
+      return res.json({code:0,message:'failed'});
+  });
+  }catch(err){
+    console.log(err);
+    return res.json({code:-1,message:'Internal Server'});
+  }
+});
+
+
+
+function getTime(){
+  const currentDateTime = new Date();
+
+  const year = currentDateTime.getFullYear();
+  const month = (currentDateTime.getMonth() + 1).toString().padStart(2, '0'); // Month is 0-indexed
+  const day = currentDateTime.getDate().toString().padStart(2, '0');
+  const hours = currentDateTime.getHours().toString().padStart(2, '0');
+  const minutes = currentDateTime.getMinutes().toString().padStart(2, '0');
+  const seconds = currentDateTime.getSeconds().toString().padStart(2, '0');
+
+  const formattedDateTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+
+  return formattedDateTime;
+}
+
+
+app.get('/api/order',async (req,res)=>{
+  try{
+    const orderId=req.query.order_id;
+
+    //fetch('https://sandbox.cashfree.com/pg/orders/'+orderId,{
+    fetch('https://api.cashfree.com/pg/orders/'+orderId,{
+      method:"GET",
+      headers:{
+        'Content-Type': 'application/json',
+        // 'x-client-Id':'TEST1032258918bd8e0cf6bf28d230d998522301',
+        // 'x-client-secret':'cfsk_ma_test_c5499618caa1890c4762231627425c2b_ea939fff',
+        'x-client-Id':'773709062e507d4b9f28fea5d5907377',
+        'x-client-secret':'cfsk_ma_prod_0b99fea8c874ed1453b3a924e03ed505_df1c2f11',
+        'x-api-version':'2023-08-01'
+      }
+    }).then(result=>result.json())
+    .then(async data=>{
+      console.log(data);
+
+      if(data.type){
+        return res.json({code:-1,message:data.message});
+      }
+
+      const {error} =await supabase
+      .from('orders')
+      .update({payment_status:data.order_status})
+      .eq('order_id',orderId);
+
+      if (error) {
+        console.error("Error updating order:", error);
+        return res.render('');
+      }
+
+      if(data.order_status=='PAID'){
+        return res.render('confirmation2',{
+          order:{
+            userName:data.customer_details.customer_name,
+            phoneNumber:data.customer_details.customer_phone,
+            totalPrice:data.order_amount,
+            paymentStatus:data.order_status,
+            tokenNumber:data.order_id
+          }
+        });
+      }else{
+        return res.render('');
+      }
+    }).catch(err=>{
+
+    });
+  }catch(err){
+    console.log(err);
+  }
+});
+
+
+app.get('/api/canteen',async (req,res)=>{
+  try{
+    const canteenId=req.query.canteenId;
+
+    const {data:menuItem,error:munuError}=await supabase
+    .from('menu')
+    .select('*')
+    .eq('canteenId',canteenId);
+
+    if(munuError){
+      console.log(munuError);
+      return res.json({code:-1,message:'Failed to fetch menu Items'});
+    }
+
+    const {data:canteenData,error:canteenError}=await supabase
+    .from('admin')
+    .select('admin_name')
+    .eq('canteenId',canteenId)
+    .single();
+
+    if(canteenError){
+      console.log(canteenError);
+      return res.json({code:-1,message:'Failed to fetch menu Items. Please try again.'});
+    }
+
+
+    res.render("homepage",{
+      items:menuItem || [],
+      canteenId:canteenId,
+      canteenName:canteenData.admin_name
+    })
+
+
+  }catch(err){
+    console.log(err);
+    return res.json({code:-1,message:"Internal server."});
+  }
+
+});
+
+
+
 // Store OTPs (in memory for this example, use a database in production)
 const otps = new Map();
 
