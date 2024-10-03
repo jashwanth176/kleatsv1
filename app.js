@@ -248,9 +248,11 @@ app.get('/api/order',async (req,res)=>{
 });
 
 
-app.get('/api/canteen',async (req,res)=>{
+app.get('/api/canteen/:canteenId',async (req,res)=>{
   try{
-    const canteenId=req.query.canteenId;
+    const canteenId=req.params.canteenId;
+    console.log(canteenId);
+    //return res.json({code:1});
 
     const {data:menuItem,error:munuError}=await supabase
     .from('menu')
@@ -262,23 +264,23 @@ app.get('/api/canteen',async (req,res)=>{
       return res.json({code:-1,message:'Failed to fetch menu Items'});
     }
 
-    const {data:canteenData,error:canteenError}=await supabase
-    .from('admin')
-    .select('admin_name')
-    .eq('canteenId',canteenId)
-    .single();
+    // const {data:canteenData,error:canteenError}=await supabase
+    // .from('admin')
+    // .select('admin_name')
+    // .eq('canteenId',canteenId)
+    // .single();
 
-    if(canteenError){
-      console.log(canteenError);
-      return res.json({code:-1,message:'Failed to fetch menu Items. Please try again.'});
-    }
+    // if(canteenError){
+    //   console.log(canteenError);
+    //   return res.json({code:-1,message:'Failed to fetch menu Items. Please try again.'});
+    // }
 
 
     res.render("homepage",{
       items:menuItem || [],
       canteenId:canteenId,
-      canteenName:canteenData.admin_name
-    })
+      canteenName:canteenId
+    });
 
 
   }catch(err){
@@ -491,6 +493,7 @@ app.get('/cart', async (req, res) => {
   res.render('cart', { 
     items: itemDetails, 
     item_count: item_count,
+    canteen_name:req.query.canteen_name || '',
     username: req.cookies.cookuname,
     userid: req.cookies.cookuid
   });
