@@ -82,6 +82,111 @@ transporter.verify(function(error, success) {
 // Store OTPs (in memory for this example, use a database in production)
 const otps = new Map();
 
+//For Admin to remove products.
+app.get("/admin_remove_products", async (req, res) => {
+  const userId = req.cookies.cookuid;
+  const userName = req.cookies.cookuname;
+
+  try {
+      // Verify admin
+      const { data: admin, error: adminError } = await supabase
+          .from('admin')
+          .select('admin_id, admin_name')
+          .eq('admin_id', userId)
+          .eq('admin_name', userName)
+          .single();
+
+      if (adminError || !admin) {
+          return res.render("admin_signin");
+      }
+
+      // Fetch all menu items
+      const { data: menuItems, error: menuError } = await supabase
+          .from('menu')
+          .select('*');
+
+      if (menuError) {
+          throw menuError;
+      }
+
+      res.render("admin_remove_products", {
+          username: userName,
+          items: menuItems,
+          userid: userId
+      });
+
+  } catch (error) {
+      console.error('Error in /admin_remove_products GET:', error);
+      res.status(500).send("An error occurred while loading the remove products page");
+  }
+});
+
+app.post("/admin_remove_products", async (req, res) => {
+  const userId = req.cookies.cookuid;
+  const userName = req.cookies.cookuname;
+  const itemIdToRemove = req.body.item_id;
+
+  if (!itemIdToRemove) {
+      return res.status(400).send("No item ID provided for removal");
+  }
+
+  try {
+      // Verify admin
+      const { data: admin, error: adminError } = await supabase
+          .from('admin')
+          .select('admin_id, admin_name')
+          .eq('admin_id', userId)
+          .eq('admin_name', userName)
+          .single();
+
+      if (adminError || !admin) {
+          return res.render("admin_signin");
+      }
+
+      // Fetch the item to get image name (to delete image file)
+      const { data: item, error: itemError } = await supabase
+          .from('menu')
+          .select('item_img')
+          .eq('item_id', itemIdToRemove)
+          .single();
+
+      if (itemError) {
+          console.error('Error fetching item for removal:', itemError);
+          return res.status(500).send("Error fetching item details");
+      }
+
+      // Delete the item from the database
+      const { error: deleteError } = await supabase
+          .from('menu')
+          .delete()
+          .eq('item_id', itemIdToRemove);
+
+      if (deleteError) {
+          console.error('Error deleting item:', deleteError);
+          return res.status(500).send("Error deleting the item");
+      }
+
+      // Delete the image file from the server
+      const imagePath = path.join(__dirname, 'public', 'images', 'dish', item.item_img);
+      fs.unlink(imagePath, (err) => {
+          if (err) {
+              console.error('Error deleting image file:', err);
+              // Not sending error to user as the item is already deleted from DB
+          } else {
+              console.log(`Image file ${item.item_img} deleted successfully`);
+          }
+      });
+
+      console.log(`Item with ID ${itemIdToRemove} removed successfully by admin ${userName}`);
+      res.redirect("/admin_remove_products");
+
+  } catch (error) {
+      console.error('Error in /admin_remove_products POST:', error);
+      res.status(500).send("An error occurred while removing the product");
+  }
+});
+
+
 // Route to handle OTP requests
 app.post('/request-otp', (req, res) => {
   const { email } = req.body;
@@ -825,9 +930,35 @@ async function addFood(req, res) {
 
   if (fimage.mimetype == "image/jpeg" || fimage.mimetype == "image/png") {
     try {
+      // Retrieve admin_id and admin_name from cookies
+      const adminId = req.cookies.cookuid;
+      const adminName = req.cookies.cookuname;
+      console.log("Retrieved admin_id from cookie:", adminId);
+      console.log("Retrieved admin_name from cookie:", adminName);
+
+      if (!adminId || !adminName) {
+        console.error("Admin not authenticated.");
+        return res.status(401).send("Unauthorized: Admin not authenticated.");
+      }
+
+      // Optional: Verify admin details
+      const { data: admin, error: adminError } = await supabase
+        .from('admin')
+        .select('admin_id, admin_name')
+        .eq('admin_id', adminId)
+        .eq('admin_name', adminName)
+        .single();
+
+      if (adminError || !admin) {
+        console.error("Invalid admin credentials.");
+        return res.status(401).send("Unauthorized: Invalid admin credentials.");
+      }
+
+      // Move the uploaded image to the desired directory
       await fimage.mv("public/images/dish/" + fimage_name);
       console.log("File moved successfully");
 
+      // Insert new food item into the 'menu' table with admin_id and canteenId
       const { data, error } = await supabase
         .from('menu')
         .insert([
@@ -840,6 +971,8 @@ async function addFood(req, res) {
             item_price: FoodPrice,
             item_rating: FoodRating,
             item_img: fimage_name,
+            admin_id: adminId,
+            canteenId: adminName, // Changed from canteenid to canteenId
           }
         ]);
 
@@ -848,7 +981,7 @@ async function addFood(req, res) {
         throw error;
       }
 
-      console.log("Food item added successfully");
+      console.log("Food item added successfully by admin ID:", adminId, "and admin name:", adminName);
       res.redirect("/admin_addFood");
     } catch (error) {
       console.error('Error in addFood:', error);
@@ -888,10 +1021,16 @@ async function renderViewDispatchOrdersPage(req, res) {
       throw ordersError;
     }
 
+    // Convert user_id to string to preserve its value
+    const formattedOrders = orders.map(order => ({
+      ...order,
+      user_id: order.user_id.toString()
+    }));
+
     res.render("admin_view_dispatch_orders", {
       username: userName,
       userid: userId,
-      orders: orders
+      orders: formattedOrders
     });
 
   } catch (error) {
@@ -935,7 +1074,7 @@ async function dispatchOrders(req, res) {
           .from('order_dispatch')
           .insert({
             order_id: order.order_id,
-            user_id: order.user_id,
+            user_id: order.user_id.toString(), // Ensure user_id is stored as a string
             item_id: order.item_id,
             quantity: order.quantity,
             price: order.price,
