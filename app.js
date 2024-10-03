@@ -1,3 +1,5 @@
+require('dotenv').config(); // Load environment variables
+
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
@@ -32,10 +34,10 @@ process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
 });
 
-// Initialize Supabase client
+// Initialize Supabase client using environment variables
 const supabase = createClient(
-  'https://hsctotymjbxryqdhmkcv.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzY3RvdHltamJ4cnlxZGhta2N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjc1Mjg0MzMsImV4cCI6MjA0MzEwNDQzM30.P6OUTPsQqCmzWorUhOHPQEaM5xJ6zJhagduuNc0j5Ww'
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
 );
 
 // Initialize Express App
@@ -60,11 +62,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Set up Nodemailer transporter for Mailtrap
 const transporter = nodemailer.createTransport({
-  host: "sandbox.smtp.mailtrap.io",
-  port: 2525,
+  host: "smtp.office365.com",
+  port: 587, // 587 is the recommended port for STARTTLS
+  secure: false, // true for port 465, false for other ports
   auth: {
-    user: "4a52330b125298",
-    pass: "d9495a86708e7d"
+    user: process.env.OUTLOOK_USER, // Use environment variable
+    pass: process.env.OUTLOOK_PASS // Use environment variable
   }
 });
 
@@ -89,7 +92,7 @@ app.post('/request-otp', (req, res) => {
   console.log(`Generated OTP for ${email}: ${otp}`);
 
   const mailOptions = {
-    from: 'noreply@kleats.in',
+    from: process.env.OUTLOOK_USER, // Use environment variable
     to: email,
     subject: 'Your OTP for Sign In',
     text: `Your OTP is: ${otp}`
