@@ -141,6 +141,7 @@
                                                 <th style="width: 40%;">Order ID</th>
                                                 <th style="width: 8%;">User ID</th>
                                                 <th style="width: 8%;">Item ID</th>
+                                                <th style="width: 8%;">Item Name</th>
                                                 <th style="width: 8%;">Quantity</th>
                                                 <th style="width: 8%;">Price</th>
                                                 <th style="width: 15%;">Date/Time</th>
@@ -162,6 +163,7 @@
                                                         <td><%= orders[i].order_id %></td>
                                                         <td><%= orders[i].user_id %></td>
                                                         <td><%= orders[i].item_id %></td>
+                                                        <td><%= orders[i].item_name %></td>
                                                         <td><%= orders[i].quantity %></td>
                                                         <td><%= orders[i].price %></td>
                                                         <td><%= new Date(orders[i].datetime).toLocaleString() %></td>

@@ -86,7 +86,7 @@ app.post('/api/buyNow',async (req,res)=>{
   try{
 
     let totalPrice=0.00;
-    let orderId='';
+    let orderId=uuidv4();
 
     for(const item of req.body.items){
       console.log(item);
@@ -106,7 +106,7 @@ app.post('/api/buyNow',async (req,res)=>{
         const itemPrice=Number(it.item_price);
         totalPrice=totalPrice+(itemPrice*item.quantity);
         //console.log(totalPrice);
-        orderId=uuidv4();
+        //orderId=uuidv4();
 
         const {error} =await supabase
         .from('orders')
@@ -136,7 +136,7 @@ app.post('/api/buyNow',async (req,res)=>{
       order_currency:"INR",
       order_id:orderId,
       customer_details:{
-        customer_id:req.body.name+"_"+req.body.phone,
+        customer_id:req.body.name.split(' ')[0]+"_"+req.body.phone,
         customer_phone:req.body.phone,
         customer_name:req.body.name
       },
@@ -316,7 +316,8 @@ app.get("/admin_remove_products", async (req, res) => {
       // Fetch all menu items
       const { data: menuItems, error: menuError } = await supabase
           .from('menu')
-          .select('*');
+          .select('*')
+          .eq('canteenId',admin.admin_name);
 
       if (menuError) {
           throw menuError;
@@ -1229,6 +1230,8 @@ async function renderViewDispatchOrdersPage(req, res) {
     const { data: orders, error: ordersError } = await supabase
       .from('orders')
       .select('*')
+      .eq('canteenId',admin.admin_name)
+      .eq('payment_status','PAID')
       .order('datetime', { ascending: true });
 
     if (ordersError) {
@@ -1241,6 +1244,19 @@ async function renderViewDispatchOrdersPage(req, res) {
       user_id: order.user_id.toString()
     }));
 
+    	
+    for(let i=0;i<formattedOrders.length;i++){
+      const {data:menu,error:menuError} = await supabase
+      .from('menu')
+      .select('item_name')
+      .eq('item_id',formattedOrders[i].item_id)
+      .single();
+      if (!menuError) {
+        formattedOrders[i].item_name=menu.item_name;
+      }
+      console.log(formattedOrders);
+    }
+    
     res.render("admin_view_dispatch_orders", {
       username: userName,
       userid: userId,
@@ -1341,7 +1357,8 @@ async function renderChangePricePage(req, res) {
 
     const { data: menuItems, error: menuError } = await supabase
       .from('menu')
-      .select('*');
+      .select('*')
+      .eq('canteenId',admin.admin_name);
 
     if (menuError) throw menuError;
 
