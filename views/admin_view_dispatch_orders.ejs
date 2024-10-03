@@ -53,6 +53,27 @@
             min-width: 100px;
             /* Adjust this value as needed */
         }
+
+        .fixed-dispatch-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            color: white;
+            background-color: #ff8243;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: background-color 0.3s ease;
+        }
+
+        .fixed-dispatch-button:hover {
+            background-color: #e67300;
+        }
     </style>
 </head>
 
@@ -155,12 +176,6 @@
                                         </tbody>
                                     </table>
                                 </div>
-                                <div style="margin-top: 20px;">
-                                    <button class="sec-btn" onclick="dispatching()"
-                                        style="margin-left: 35%; width:30%; color: white; background: orange;">
-                                        Click To Dispatch
-                                    </button>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -238,6 +253,10 @@
         </div>
     </div>
 
+    <button id="fixedDispatchButton" class="fixed-dispatch-button" onclick="dispatching()">
+        Click To Dispatch
+    </button>
+
     <!-- My Script-->
     <script>
         let order_id = [];
@@ -302,6 +321,25 @@
                 });
             }
         }
+
+        // Add this new script at the end of your existing scripts
+        document.addEventListener('DOMContentLoaded', function() {
+            const fixedButton = document.getElementById('fixedDispatchButton');
+            
+            function updateButtonVisibility() {
+                if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+                    fixedButton.style.bottom = '70px'; // Adjust if needed to avoid overlap with footer
+                } else {
+                    fixedButton.style.bottom = '20px';
+                }
+            }
+
+            window.addEventListener('scroll', updateButtonVisibility);
+            window.addEventListener('resize', updateButtonVisibility);
+            
+            // Initial call to set button position
+            updateButtonVisibility();
+        });
     </script>
     <!-- jquery  -->
     <script src="/javascripts/jquery-3.5.1.min.js"></script>
