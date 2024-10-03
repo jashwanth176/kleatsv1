@@ -6,6 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome - KL Eats</title>
+    <link rel="icon" href="/images/file.png" type="image/x-icon">
     <!-- for icons  -->
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
     <!-- bootstrap  -->
@@ -27,10 +28,12 @@
 
         /* Add this new style for the header */
         .site-header {
-            background-color: rgba(255, 255, 255, 0.9); /* White with 90% opacity */
-            backdrop-filter: blur(5px); /* Optional: adds a slight blur effect */
+            background-color: rgba(255, 255, 255, 0.9);
+            /* White with 90% opacity */
+            backdrop-filter: blur(5px);
+            /* Optional: adds a slight blur effect */
         }
-        
+
         /* Dropdown Container */
         .dropdown {
             position: relative;
@@ -52,9 +55,10 @@
             background-color: #f9f9f9;
             min-width: 160px;
             /* Adjust as needed */
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
             z-index: 1;
-            right: 0; /* Align to the right */
+            right: 0;
+            /* Align to the right */
         }
 
         /* Dropdown Links */
@@ -66,10 +70,14 @@
         }
 
         /* Hover Effect */
-        .dropdown-content a:hover {background-color: #f1f1f1}
+        .dropdown-content a:hover {
+            background-color: #f1f1f1
+        }
 
         /* Show the Dropdown */
-        .show {display: block;}
+        .show {
+            display: block;
+        }
     </style>
 </head>
 
@@ -99,8 +107,10 @@
                                 <span class="cart-number" id="cart-number-count">0</span>
                             </a>
                             <div class="dropdown">
-                                <button id="dropdownButton" class="header-username" style="color: #ff8243; padding: 4px 8px;">
-                                    <b><i><%= username.split(' ')[0] %></i></b>
+                                <button id="dropdownButton" class="header-username"
+                                    style="color: #ff8243; padding: 4px 8px;">
+                                    <b><i>
+                                            <%= username.split(' ')[0] %></i></b>
                                 </button>
                                 <div id="myDropdown" class="dropdown-content">
                                     <a href="/logout">Sign Out</a>
@@ -212,161 +222,164 @@
                                             </li>
                                             <li>
                                                 <button class="dish-add-btn" id="btn<%= items[i].item_id %>"
-                                                    onClick="addToCart('<%= items[i].item_id %>')">
-                                                    <i class="uil uil-plus"></i>
-                                                </button>
-                                            </li>
+                                                    onClick="addToCart('<%= items[i].item_id %>', '<%= items[i].item_name %>', <%= items[i].item_price %>)">
+                                                <i class="uil uil-plus"></i>
+                                </button>
+                                </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+        </div>
+        </section>
+
+        <!-- footer starts  -->
+        <footer class="site-footer" id="contact">
+            <div class="top-footer section">
+                <div class="sec-wp">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <div class="footer-info">
+                                    <div class="footer-logo">
+                                        <a href="/homepage">
+                                            <img src="/images/file.png" alt="KL Eats Logo" height="100" width="100">
+                                        </a>
+                                    </div>
+                                    <p>Bringing campus dining to your fingertips.</p>
+                                    <div class="social-icon">
+                                        <ul>
+                                            <li><a
+                                                    href="https://www.instagram.com/kl_eats.official?utm_source=qr&igsh=MTZna3N0Y3U1bmRudA=="><i
+                                                        class="uil uil-instagram"></i></a></li>
+                                            <li><a href="www.youtube.com/@Kleats2024"><i
+                                                        class="uil uil-youtube"></i></a></li>
                                         </ul>
                                     </div>
                                 </div>
                             </div>
-                            <% } %>
+                            <div class="col-lg-8">
+                                <div class="footer-flex-box">
+                                    <div class="footer-menu food-nav-menu">
+                                        <h3 class="h3-title">Links</h3>
+                                        <ul class="column-2">
+                                            <li> <a href="/homepage" class="footer-active-menu">Home</a></li>
+                                            <li><a href="#contact">Contact</a></li>
+
+                                        </ul>
+                                    </div>
+                                    <div class="footer-menu">
+                                        <h3 class="h3-title">Company</h3>
+                                        <ul>
+                                            <li><a href="/terms-and-conditions">Terms & Conditions</a></li>
+                                            <li><a href="/refund-policy">Refund Policy</a></li>
+                                            <li><a href="/contact-us">Contact Us</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
-
-    <!-- footer starts  -->
-    <footer class="site-footer" id="contact">
-        <div class="top-footer section">
-            <div class="sec-wp">
+            <div class="bottom-footer">
                 <div class="container">
                     <div class="row">
-                        <div class="col-lg-4">
-                            <div class="footer-info">
-                                <div class="footer-logo">
-                                    <a href="/homepage">
-                                        <img src="/images/file.png" alt="KL Eats Logo" height="100" width="100">
-                                    </a>
-                                </div>
-                                <p>Bringing campus dining to your fingertips.</p>
-                                <div class="social-icon">
-                                    <ul>
-                                        <li><a href="https://www.instagram.com/kl_eats.official?utm_source=qr&igsh=MTZna3N0Y3U1bmRudA=="><i class="uil uil-instagram"></i></a></li>
-                                        <li><a href="www.youtube.com/@Kleats2024"><i class="uil uil-youtube"></i></a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-8">
-                            <div class="footer-flex-box">
-                                <div class="footer-menu food-nav-menu">
-                                    <h3 class="h3-title">Links</h3>
-                                    <ul class="column-2">
-                                        <li> <a href="/homepage" class="footer-active-menu">Home</a></li>
-                                        <li><a href="#contact">Contact</a></li>
-
-                                    </ul>
-                                </div>
-                                <div class="footer-menu">
-                                    <h3 class="h3-title">Company</h3>
-                                    <ul>
-                                        <li><a href="/terms-and-conditions">Terms & Conditions</a></li>
-                                        <li><a href="/refund-policy">Refund Policy</a></li>
-                                        <li><a href="/contact-us">Contact Us</a></li>
-                                    </ul>
-                                </div>
+                        <div class="col-lg-12 text-center">
+                            <div class="copyright-text">
+                                <p>Copyright &copy; 2024 <span class="name">KL Eats</span> All Rights Reserved.</p>
                             </div>
                         </div>
                     </div>
+                    <button class="scrolltop"><i class="uil uil-angle-up"></i></button>
                 </div>
             </div>
+        </footer>
         </div>
-        <div class="bottom-footer">
-            <div class="container">
-                <div class="row">
-                    <div class="col-lg-12 text-center">
-                        <div class="copyright-text">
-                            <p>Copyright &copy; 2024 <span class="name">KL Eats</span> All Rights Reserved.</p>
-                        </div>
-                    </div>
-                </div>
-                <button class="scrolltop"><i class="uil uil-angle-up"></i></button>
-            </div>
         </div>
-    </footer>
-    </div>
-    </div>
 
 
-    <!-- jquery  -->
-    <script src="/javascripts/jquery-3.5.1.min.js"></script>
-    <!-- bootstrap -->
-    <script src="/javascripts/bootstrap.min.js"></script>
-    <script src="/javascripts/popper.min.js"></script>
+        <!-- jquery  -->
+        <script src="/javascripts/jquery-3.5.1.min.js"></script>
+        <!-- bootstrap -->
+        <script src="/javascripts/bootstrap.min.js"></script>
+        <script src="/javascripts/popper.min.js"></script>
 
-    <!-- fontawesome  -->
-    <script src="/javascripts/font-awesome.min.js"></script>
+        <!-- fontawesome  -->
+        <script src="/javascripts/font-awesome.min.js"></script>
 
-    <!-- swiper slider  -->
-    <script src="/javascripts/swiper-bundle.min.js"></script>
+        <!-- swiper slider  -->
+        <script src="/javascripts/swiper-bundle.min.js"></script>
 
-    <!-- mixitup -- filter  -->
-    <script src="/javascripts/jquery.mixitup.min.js"></script>
+        <!-- mixitup -- filter  -->
+        <script src="/javascripts/jquery.mixitup.min.js"></script>
 
-    <!-- fancy box  -->
-    <script src="/javascripts/query.fancybox.min.js"></script>
+        <!-- fancy box  -->
+        <script src="/javascripts/query.fancybox.min.js"></script>
 
-    <!-- parallax  -->
-    <script src="/javascripts/parallax.min.js"></script>
+        <!-- parallax  -->
+        <script src="/javascripts/parallax.min.js"></script>
 
-    <!-- gsap  -->
-    <script src="/javascripts/gsap.min.js"></script>
+        <!-- gsap  -->
+        <script src="/javascripts/gsap.min.js"></script>
 
-    <!-- scroll trigger  -->
-    <script src="/javascripts/ScrollTrigger.min.js"></script>
-    <!-- scroll to plugin  -->
-    <script src="/javascripts/ScrollToPlugin.min.js"></script>
-    <!-- rellax  -->
-    <!-- <script src="assets/js/rellax.min.js"></script> -->
-    <!-- <script src="assets/js/rellax-custom.js"></script> -->
-    <!-- smooth scroll  -->
-    <script src="/javascripts/smooth-scroll.js"></script>
-    <!-- custom js  -->
-    <script src="/javascripts/main.js"></script>
-    <script src="/javascripts/cart.js"></script>
+        <!-- scroll trigger  -->
+        <script src="/javascripts/ScrollTrigger.min.js"></script>
+        <!-- scroll to plugin  -->
+        <script src="/javascripts/ScrollToPlugin.min.js"></script>
+        <!-- rellax  -->
+        <!-- <script src="assets/js/rellax.min.js"></script> -->
+        <!-- <script src="assets/js/rellax-custom.js"></script> -->
+        <!-- smooth scroll  -->
+        <script src="/javascripts/smooth-scroll.js"></script>
+        <!-- custom js  -->
+        <script src="/javascripts/main.js"></script>
+        <script src="/javascripts/cart.js"></script>
 
-    </div>
-    </div>
+        </div>
+        </div>
 
-    <script>
-        function orderFromCanteen(canteenName) {
-            // Implement the order functionality for each canteen
-            console.log(`Ordering from ${canteenName}`);
-            // You can add AJAX call or redirect to a specific canteen's menu page
-        }
-    </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const dropdownButton = document.getElementById('dropdownButton');
-            const dropdownContent = document.getElementById('myDropdown');
+        <script>
+            function orderFromCanteen(canteenName) {
+                // Implement the order functionality for each canteen
+                console.log(`Ordering from ${canteenName}`);
+                // You can add AJAX call or redirect to a specific canteen's menu page
+            }
+        </script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const dropdownButton = document.getElementById('dropdownButton');
+                const dropdownContent = document.getElementById('myDropdown');
 
-            dropdownButton.addEventListener('click', function(event) {
-                event.stopPropagation();
-                dropdownContent.classList.toggle('show');
+                dropdownButton.addEventListener('click', function (event) {
+                    event.stopPropagation();
+                    dropdownContent.classList.toggle('show');
+                });
+
+                document.addEventListener('click', function (event) {
+                    if (!dropdownButton.contains(event.target) && !dropdownContent.contains(event.target)) {
+                        dropdownContent.classList.remove('show');
+                    }
+                });
             });
+        </script>
 
-            document.addEventListener('click', function(event) {
-                if (!dropdownButton.contains(event.target) && !dropdownContent.contains(event.target)) {
-                    dropdownContent.classList.remove('show');
-                }
-            });
-        });
-    </script>
+        <!-- jQuery (if not already included, though Bootstrap 5 doesn't require it) -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-    <!-- jQuery (if not already included, though Bootstrap 5 doesn't require it) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <!-- Popper.js (required for Bootstrap 4) -->
+        <!-- If you're using Bootstrap 5, Popper is included with Bootstrap JS -->
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
 
-    <!-- Popper.js (required for Bootstrap 4) -->
-    <!-- If you're using Bootstrap 5, Popper is included with Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+        <!-- Bootstrap JS -->
+        <script src="/javascripts/bootstrap.min.js"></script>
 
-    <!-- Bootstrap JS -->
-    <script src="/javascripts/bootstrap.min.js"></script>
-
-    <!-- Ensure that your custom scripts are loaded after Bootstrap JS -->
-    <script src="/javascripts/main.js"></script>
+        <!-- Ensure that your custom scripts are loaded after Bootstrap JS -->
+        <script src="/javascripts/main.js"></script>
 </body>
 
 </html>

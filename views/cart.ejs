@@ -6,6 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Cart - KL Eats</title>
+    <link rel="icon" href="/images/file.png" type="image/x-icon">
     <!-- for icons  -->
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
     <!-- bootstrap  -->
@@ -19,8 +20,10 @@
     <link rel="stylesheet" href="/stylesheets/style.css">
     <style>
         .content-padding {
-            padding-top: 120px; /* Adjust this value as needed */
+            padding-top: 120px;
+            /* Adjust this value as needed */
         }
+
         table,
         th,
         tr,
@@ -38,19 +41,21 @@
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
-    
+
         /* Optional: to ensure the table takes full width */
         .table-responsive table {
             width: 100%;
         }
 
         #mycart {
-            min-width: 600px; /* Adjust this value as needed */
+            min-width: 600px;
+            /* Adjust this value as needed */
         }
-    
+
         #mycart th,
         #mycart td {
-            min-width: 100px; /* Adjust this value as needed */
+            min-width: 100px;
+            /* Adjust this value as needed */
         }
     </style>
 </head>
@@ -135,35 +140,52 @@
                                                             </tr>
                                                         </thead>
                                                         <tbody>
-                                                            <% if (items && items.length > 0) { %>
-                                                                <% items.forEach((item, index) => { %>
+                                                            <% if (items && items.length> 0) { %>
+                                                                <% items.forEach((item, index)=> { %>
                                                                     <tr>
-                                                                        <td><%= index + 1 %></td>
-                                                                        <td><img src="<%= item.item_img %>" alt="<%= item.item_name %>" style="width: 50px; height: 50px;"></td>
-                                                                        <td><%= item.item_name %></td>
-                                                                        <td>₹ <span class="item-price"><%= item.item_price %></span></td>
-                                                                        <td><input type="number" class="quantity" name="quantity" value="<%= item.quantity %>" min="1" onchange="updateSubtotal(this, <%= item.item_price %>);"></td>
-                                                                        <td>₹ <span class="subtotal"><%= item.item_price * item.quantity %></span></td>
+                                                                        <td>
+                                                                            <%= index + 1 %>
+                                                                        </td>
+                                                                        <td><img src="<%= item.item_img %>"
+                                                                                alt="<%= item.item_name %>"
+                                                                                style="width: 50px; height: 50px;"></td>
+                                                                        <td>
+                                                                            <%= item.item_name %>
+                                                                        </td>
+                                                                        <td>₹ <span class="item-price">
+                                                                                <%= item.item_price %>
+                                                                            </span></td>
+                                                                        <td><input type="number" class="quantity"
+                                                                                name="quantity"
+                                                                                value="<%= item.quantity %>" min="1"
+                                                                                onchange="updateSubtotal(this, <%= item.item_price %>);">
+                                                                        </td>
+                                                                        <td>₹ <span class="subtotal">
+                                                                                <%= item.item_price * item.quantity %>
+                                                                            </span></td>
                                                                     </tr>
-                                                                <% }); %>
-                                                            <% } else { %>
-                                                                <tr>
-                                                                    <td colspan="6">Your cart is empty</td>
-                                                                </tr>
-                                                            <% } %>
+                                                                    <% }); %>
+                                                                        <% } else { %>
+                                                                            <tr>
+                                                                                <td colspan="6">Your cart is empty</td>
+                                                                            </tr>
+                                                                            <% } %>
                                                         </tbody>
                                                         <tfoot>
                                                             <tr>
                                                                 <td colspan="4"><strong>Total</strong></td>
-                                                                <td id="total_quantity"><%= item_count %></td>
+                                                                <td id="total_quantity">
+                                                                    <%= item_count %>
+                                                                </td>
                                                                 <td id="total_price">₹ 0</td>
                                                             </tr>
                                                         </tfoot>
                                                     </table>
                                                 </div>
-                            </div><br><br>
-                            <input type="hidden" id="cartData" name="cartData" value="">
-                            <button type="submit" class="sec-btn" style="color: white; background: orange;">Buy Now</button>
+                                </div><br><br>
+                                <input type="hidden" id="cartData" name="cartData" value="">
+                                <button type="submit" class="sec-btn" style="color: white; background: orange;">Buy
+                                    Now</button>
                         </form>
                     </div>
                 </div>
@@ -187,8 +209,11 @@
                                         <p>You’ll wonder how you ever lived without us.</p>
                                         <div class="social-icon">
                                             <ul>
-                                                <li><a href="https://www.instagram.com/kl_eats.official?utm_source=qr&igsh=MTZna3N0Y3U1bmRudA=="><i class="uil uil-instagram"></i></a></li>
-                                                <li><a href="www.youtube.com/@Kleats2024"><i class="uil uil-youtube"></i></a></li>
+                                                <li><a
+                                                        href="https://www.instagram.com/kl_eats.official?utm_source=qr&igsh=MTZna3N0Y3U1bmRudA=="><i
+                                                            class="uil uil-instagram"></i></a></li>
+                                                <li><a href="www.youtube.com/@Kleats2024"><i
+                                                            class="uil uil-youtube"></i></a></li>
                                             </ul>
                                         </div>
                                     </div>
@@ -199,7 +224,7 @@
                                         <div class="footer-menu food-nav-menu">
                                             <h3 class="h3-title">Links</h3>
                                             <ul class="column-2">
-                                                <li> <a href="index.html" class="footer-active-menu">Home</a></li>
+                                                <li> <a href="homepage" class="footer-active-menu">Home</a></li>
                                                 <li><a href="#contact">Contact</a></li>
 
                                             </ul>
@@ -241,12 +266,12 @@
 
         function updateSubtotal(quantityInput, price) {
             const quantity = parseInt(quantityInput.value);
-            
+
             // Verification system
             if (quantity > 6) {
                 alert("Warning: Quantity exceeds 6. Please contact us for bulk orders.");
             }
-            
+
             const subtotal = quantity * price;
             const subtotalElement = quantityInput.parentElement.nextElementSibling.querySelector('.subtotal');
             subtotalElement.textContent = subtotal;

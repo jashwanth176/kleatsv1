@@ -6,6 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign In - KL Eats</title>
+    <link rel="icon" href="/images/file.png" type="image/x-icon">
     <!-- for icons  -->
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
     <!-- bootstrap  -->
@@ -19,10 +20,9 @@
     <link rel="stylesheet" href="/stylesheets/style.css">
     <style>
         .content-padding {
-            padding-top: 120px; /* Adjust this value as needed */
+            padding-top: 120px;
+            /* Adjust this value as needed */
         }
-
-        
     </style>
 </head>
 
@@ -119,21 +119,17 @@
                                         <p>You'll wonder how you ever lived without us.</p>
                                         <div class="social-icon">
                                             <ul>
-                                                <li><a href="https://www.instagram.com/kl_eats.official?utm_source=qr&igsh=MTZna3N0Y3U1bmRudA=="><i class="uil uil-instagram"></i></a></li>
-                                                <li><a href="www.youtube.com/@Kleats2024"><i class="uil uil-youtube"></i></a></li>
+                                                <li><a
+                                                        href="https://www.instagram.com/kl_eats.official?utm_source=qr&igsh=MTZna3N0Y3U1bmRudA=="><i
+                                                            class="uil uil-instagram"></i></a></li>
+                                                <li><a href="www.youtube.com/@Kleats2024"><i
+                                                            class="uil uil-youtube"></i></a></li>
                                             </ul>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-lg-8">
                                     <div class="footer-flex-box">
-                                        <div class="footer-table-info">
-                                            <h3 class="h3-title">open hours</h3>
-                                            <ul>
-                                                <li><i class="uil uil-clock"></i> Mon-Thurs : 9am - 22pm</li>
-                                                <li><i class="uil uil-clock"></i> Fri-Sun : 11am - 22pm</li>
-                                            </ul>
-                                        </div>
                                         <div class="footer-menu food-nav-menu">
                                             <h3 class="h3-title">Links</h3>
                                             <ul class="column-2">
@@ -162,7 +158,7 @@
                         <div class="row">
                             <div class="col-lg-12 text-center">
                                 <div class="copyright-text">
-                                    <p>Copyright &copy; 2022 <span class="name">Hungry To Eat </span>All Rights
+                                    <p>Copyright &copy; 2024 <span class="name">KL Eats </span>All Rights
                                         Reserved.
                                     </p>
                                 </div>
@@ -225,23 +221,23 @@
                 },
                 body: JSON.stringify(data),
             })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => { throw err; });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    window.location.href = '/homepage';
-                } else {
-                    document.getElementById('errorMessage').textContent = data.error || 'Invalid credentials';
-                }
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-                document.getElementById('errorMessage').textContent = error.error || 'An error occurred during sign in: ' + JSON.stringify(error);
-            });
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw err; });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = '/homepage';
+                    } else {
+                        document.getElementById('errorMessage').textContent = data.error || 'Invalid credentials';
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                    document.getElementById('errorMessage').textContent = error.error || 'An error occurred during sign in: ' + JSON.stringify(error);
+                });
         }
     </script>
 
