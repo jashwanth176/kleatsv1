@@ -90,7 +90,7 @@
                                     <img src="/images/title-shape.svg" alt="">
                                 </div>
                                 <div>
-                                    <h3>Your order has been placed successfully.</h3>
+                                    <h3>Your order has been placed successfully. <span style="color: #e11212;">Please take a screenshot of this page for your records.</span></h3>
                                     <h4>Your token number is: <span style="color: #ff8243;"><%= order.tokenNumber %></span></h4>
                                 </div>
                                 <p>Your order is being prepared, be ready with your payment.</p>
@@ -116,10 +116,15 @@
                                         </tbody>
                                     </table>
                                 </div>
-                                
-                                <p class="mt-4">In the meantime, you may explore our menu</p>
+                                <div id="qrcode" style="margin: 20px auto;"></div>
+                                <div class="text-center">
+                                    <p>Order ID: <%= order.tokenNumber %></p>
+                                    <div id="qrcode" style="margin: 20px auto;"></div>
+                                    <p class="mt-4">In the meantime, you may explore our menu</p>
+                                </div>
                                 <button class="sec-btn" style="color: white; background: orange;"><a href="/homepage"
                                         style="color: white;">Menu</a></button><br><br>
+                                <!-- Add QR code here -->
                                 <img src="/images/4438624.png" alt="Food Preparation"
                                     style="width: 700px; height:400px; align-items:center ">
                             </div>
@@ -234,7 +239,17 @@
     <script src="/javascripts/smooth-scroll.js"></script>
     <!-- custom js  -->
     <script src="/javascripts/main.js"></script>
-
+        <!-- Add QR code library before the closing </body> tag -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+        <script>
+            // Generate QR code
+            var qrcode = new QRCode(document.getElementById("qrcode"), {
+                text: "<%= order.tokenNumber %>",
+                width: 128,
+                height: 128
+            });
+        </script>
+    
     </div>
     </div>
 </body>

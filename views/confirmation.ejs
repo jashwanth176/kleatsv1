@@ -92,12 +92,17 @@
                                     <img src="/images/title-shape.svg" alt="">
                                 </div>
                                 <div>
-                                    <h3>You order had been placed successfully.</h3>
+                                    <h3>Your order has been placed successfully.</h3>
                                 </div>
                                 <p>Your order is being prepared, be ready with your payment.</p>
-                                <p>In mean time you may explore our menu</p>
+                                <p>In the meantime, you may explore our menu</p>
                                 <button class="sec-btn" style="color: white; background: orange;"><a href="/homepage"
                                         style="color: white;">Menu</a></button><br><br>
+                                
+                                <!-- Add QR code here -->
+                                <div id="qrcode" style="margin: 20px auto;"></div>
+                                <p>Order ID: <%= orderId %></p>
+                                
                                 <img src="/images/4438624.png" alt="Food Preparation"
                                     style="width: 700px; height:400px; align-items:center ">
                             </div>
@@ -212,6 +217,17 @@
     <script src="/javascripts/smooth-scroll.js"></script>
     <!-- custom js  -->
     <script src="/javascripts/main.js"></script>
+
+    <!-- Add QR code library before the closing </body> tag -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        // Generate QR code
+        var qrcode = new QRCode(document.getElementById("qrcode"), {
+            text: "<%= orderId %>",
+            width: 128,
+            height: 128
+        });
+    </script>
 
     </div>
     </div>

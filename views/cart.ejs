@@ -174,14 +174,14 @@
 
                             <div >
 
-                                <input  id="nameText" type="text" placeholder="Enter your name" style="width: 40%;height: 40px;">
-                                <input id="phoneText" type="number" placeholder="Enter your number" style="width: 40%;height: 40px;">
+                                <input  id="nameText" type="text" placeholder="Name" style="width: 40%;height: 40px;">
+                                <input id="phoneText" type="number" placeholder="Phone Number" style="width: 40%;height: 40px;">
 
 
                             </div>
 
                             <input type="hidden" id="cartData" name="cartData" value="">
-                            <button type="submit" class="sec-btn" style="color: white; background: orange;margin-top: 20px;"  onclick="buyNowBtn()">Buy Now</button>
+                            <button type="submit" class="sec-btn" id="buyNowButton" style="color: white; background: orange; margin-top: 20px;" onclick="buyNowBtn()">Buy Now</button>
                         </div>
                     </div>
                 </div>
@@ -267,70 +267,59 @@
             mode:"production" //or production
         });
 
-        function buyNowBtn(){
+        // Update the buyNowBtn function
+        function buyNowBtn() {
+            let name = document.getElementById("nameText").value;
+            let phone = document.getElementById("phoneText").value;
+            const buyNowButton = document.getElementById("buyNowButton");
 
-            let name=document.getElementById("nameText").value;
-            let phone=document.getElementById("phoneText").value;
-
-            if(!name || !phone){
+            if (!name || !phone) {
                 alert("Please enter name and phone.");
-            }else{
+            } else {
+                // Disable the button and change its text
+                buyNowButton.disabled = true;
+                buyNowButton.textContent = "Processing...";
+
                 const items = document.querySelectorAll('#mycart tbody tr');
                 const obj = [];
 
-                
-
-                items.forEach(item=>{
+                items.forEach(item => {
                     obj.push({
-                        item_id:parseInt(item.querySelector('.ItemIdSto').innerHTML),
-                        quantity:parseInt(item.querySelector('.quantity').value)
-                    })
+                        item_id: parseInt(item.querySelector('.ItemIdSto').innerHTML),
+                        quantity: parseInt(item.querySelector('.quantity').value)
+                    });
                 });
 
-                fetch('/api/buyNow',{
-                    method:'POST',
-                    headers:{
+                fetch('/api/buyNow', {
+                    method: 'POST',
+                    headers: {
                         'Content-Type': 'application/json'
                     },
-                    body:JSON.stringify({name:name,phone:phone,items:obj})
-                    }).then(response=>response.json())
-                    .then(data=>{
-                        console.log(data);
-                        if(data.code==1){
-                             document.querySelector(".qwqwqw").style.display='none';
-                            // document.querySelector(".body2").style.display='block';
-
-                            let checkoutOptions = {
-                                paymentSessionId: data.data.payment_session_id,
-                                //returnUrl:"https://www.cashfree.com/devstudio/preview/pg/web/checkout?order_id={order_id}",
-                                //returnUrl:"http://127.0.0.1:8090/api/order?order_id={order_id}",
-                                returnUrl:"https://kleats.in/api/order?order_id={order_id}",
-                                redirectTarget:"_self"
-                            }
-                            cashfree.checkout(checkoutOptions);
-                        }else{
-                            alert(data.message);
+                    body: JSON.stringify({ name: name, phone: phone, items: obj })
+                }).then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    if (data.code == 1) {
+                        document.querySelector(".qwqwqw").style.display = 'none';
+                        let checkoutOptions = {
+                            paymentSessionId: data.data.payment_session_id,
+                            returnUrl: "https://kleats.in/api/order?order_id={order_id}",
+                            redirectTarget: "_self"
                         }
-                    }).catch(error => {
-                        console.error('There has been a problem with your fetch operation:', error);
+                        cashfree.checkout(checkoutOptions);
+                    } else {
+                        alert(data.message);
+                        // Re-enable the button if there's an error
+                        buyNowButton.disabled = false;
+                        buyNowButton.textContent = "Buy Now";
+                    }
+                }).catch(error => {
+                    console.error('There has been a problem with your fetch operation:', error);
+                    // Re-enable the button if there's an error
+                    buyNowButton.disabled = false;
+                    buyNowButton.textContent = "Buy Now";
                 });
             }
-
-            // obj=[
-            //     {
-            //         "item_id":1,
-            //         "quantity":10
-            //     },
-            //     {
-            //         "item_id":2,
-            //         "quantity":100
-            //     }
-            // ];
-
-            // obj.push({
-            //         "item_id":3,
-            //         "quantity":10
-            //     })
         }
 
         function updateSubtotal(quantityInput) {
