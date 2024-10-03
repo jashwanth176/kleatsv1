@@ -91,7 +91,7 @@
                         <button class="menu-toggle"><span></span><span></span></button>
                         <nav class="header-menu">
                             <ul class="menu food-nav-menu">
-                                <li><a href="/homepage">Home</a></li>
+                                <li><a href="/">Home</a></li>
                                 <li><a href="#contact">Contact</a></li>
                             </ul>
                         </nav>
@@ -110,11 +110,11 @@
                                 <button id="dropdownButton" class="header-username"
                                     style="color: #ff8243; padding: 4px 8px;">
                                     <b><i>
-                                            <%= username.split(' ')[0] %></i></b>
+                                            <%= canteenName.split(' ')[0] %></i></b>
                                 </button>
-                                <div id="myDropdown" class="dropdown-content">
+                                <!-- <div id="myDropdown" class="dropdown-content">
                                     <a href="/logout">Sign Out</a>
-                                </div>
+                                </div> -->
                             </div>
                         </div>
                     </div>
@@ -132,7 +132,7 @@
                     <div class="col-lg-12">
                         <div class="sec-title text-center mb-5">
                             <p class="sec-sub-title mb-3">our menu</p>
-                            <h2 class="h2-title">wake up early, <span>eat fresh & healthy</span></h2>
+                            <h2 class="h2-title"><%= canteenName %></h2>
                             <div class="sec-title-shape mb-4">
                                 <img src="/images/title-shape.svg" alt="">
                             </div>
