@@ -157,7 +157,7 @@
                         </div>
                         <div class="row team-slider">
                             <div class="swiper-wrapper">
-                                
+
                                 <div class="col-lg-4 swiper-slide">
                                     <div class="team-box text-center">
                                         <div style="background-image: url(/images/chef/c2.jpg);"
@@ -172,7 +172,8 @@
                                         <div style="background-image: url(/images/chef/lap.png);"
                                             class="team-img back-img"></div>
                                         <h3 class="h3-title">La Pino's Pizza</h3>
-                                        <a href="/api/canteen2/Lapinos_Pizza" class="sec-btn" style="color: #f40808;">Order
+                                        <a href="/api/canteen2/Lapinos_Pizza" class="sec-btn"
+                                            style="color: #f40808;">Order
                                             Now</a>
                                     </div>
                                 </div>
@@ -220,7 +221,8 @@
             <!-- appending the canteens -->
 
 
-            <section class="our-team section" id="canteens" style="background-image: url(/images/menu-bg.png); display: block;">
+            <section class="our-team section" id="canteens"
+                style="background-image: url(/images/menu-bg.png); display: block;">
                 <div class="sec-wp">
                     <div class="container">
                         <div class="row">
@@ -249,16 +251,18 @@
                                         <div style="background-image: url(/images/chef/c2.jpg);"
                                             class="team-img back-img"></div>
                                         <h3 class="h3-title">Testing</h3>
-                                        <a href="/api/canteen2/jashwanth" class="sec-btn" style="color: #f40808;">View Menu</a>
+                                        <a href="/api/canteen2/jashwanth" class="sec-btn" style="color: #f40808;">View
+                                            Menu</a>
                                     </div>
                                 </div>
-                                
+
                                 <div class="col-lg-4 swiper-slide">
                                     <div class="team-box text-center">
                                         <div style="background-image: url(/images/chef/c4th.jpg);"
                                             class="team-img back-img"></div>
                                         <h3 class="h3-title">Canteen on 4th Floor C Block</h3>
-                                        <a href="/api/canteen2/Canteen_on_4th_Floor_C_Block" class="sec-btn" style="color: #f40808;">View Menu</a>
+                                        <a href="/api/canteen2/Canteen_on_4th_Floor_C_Block" class="sec-btn"
+                                            style="color: #f40808;">View Menu</a>
                                     </div>
                                 </div>
                                 <!-- <div class="col-lg-4 swiper-slide">
@@ -523,6 +527,19 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="col-lg-4 col-md-6 hidden-team-member" style="display: none;">
+                                <div class="testimonials-box">
+                                    <div class="testimonial-box-top">
+                                        <div class="testimonials-box-img back-img"
+                                            style="background-image: url(/images/testimonials/default.jpg);">
+                                        </div>
+                                    </div>
+                                    <div class="testimonials-box-text">
+                                        <h3 class="h3-title">Tammineni Monika</h3>
+                                        <p>Logo Designer</p>
+                                    </div>
+                                </div>
+                            </div>
                             <!-- Continue adding up to Testimonial 16 -->
                             <!-- ... -->
                         </div>
@@ -593,10 +610,8 @@
                         <div class="row">
                             <div class="col-lg-12 text-center">
                                 <div class="copyright-text">
-                                    <p>Copyright &copy; 2024 <span class="name" style="color: #f40808;">KL Eats
-                                        </span>All Rights
-                                        Reserved.
-                                    </p>
+                                    <p>Copyright &copy; 2024 <span class="name" style="color: #f40808;">KL Eats</span> All Rights Reserved.</p>
+                                    <p style="color: #f40808;">You are visitor number: <span id="viewCount"><%= viewCount %></span></p>
                                 </div>
                             </div>
                         </div>
@@ -645,49 +660,49 @@
     <script src="/javascripts/main.js"></script>
 
     <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const viewMoreBtn = document.getElementById('viewMoreBtn');
-        const hiddenMembers = document.querySelectorAll('.hidden-team-member');
-        const aboutSection = document.getElementById('about');
-        let isExpanded = false;
+        document.addEventListener('DOMContentLoaded', function () {
+            const viewMoreBtn = document.getElementById('viewMoreBtn');
+            const hiddenMembers = document.querySelectorAll('.hidden-team-member');
+            const aboutSection = document.getElementById('about');
+            let isExpanded = false;
 
-        function expandSection() {
-            hiddenMembers.forEach(member => member.style.display = 'block');
-            viewMoreBtn.textContent = 'View Less';
-            isExpanded = true;
-            
-            // Scroll to the first newly revealed member
-            hiddenMembers[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+            function expandSection() {
+                hiddenMembers.forEach(member => member.style.display = 'block');
+                viewMoreBtn.textContent = 'View Less';
+                isExpanded = true;
 
-        function collapseSection() {
-            hiddenMembers.forEach(member => member.style.display = 'none');
-            viewMoreBtn.textContent = 'View More';
-            isExpanded = false;
-            
-            // Scroll back to the View More button
-            viewMoreBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-
-        viewMoreBtn.addEventListener('click', function () {
-            if (!isExpanded) {
-                expandSection();
-            } else {
-                collapseSection();
+                // Scroll to the first newly revealed member
+                hiddenMembers[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
-        });
 
-        // Add scroll event listener to restrict scrolling above the About section
-        window.addEventListener('scroll', function() {
-            if (isExpanded) {
-                const aboutTop = aboutSection.offsetTop;
-                const offset = 90; // Adjust this value to set how much higher the limit should be
-                if (window.scrollY < aboutTop - offset) {
-                    window.scrollTo({ top: aboutTop - offset, behavior: 'smooth' });
+            function collapseSection() {
+                hiddenMembers.forEach(member => member.style.display = 'none');
+                viewMoreBtn.textContent = 'View More';
+                isExpanded = false;
+
+                // Scroll back to the View More button
+                viewMoreBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            viewMoreBtn.addEventListener('click', function () {
+                if (!isExpanded) {
+                    expandSection();
+                } else {
+                    collapseSection();
                 }
-            }
+            });
+
+            // Add scroll event listener to restrict scrolling above the About section
+            window.addEventListener('scroll', function () {
+                if (isExpanded) {
+                    const aboutTop = aboutSection.offsetTop;
+                    const offset = 90; // Adjust this value to set how much higher the limit should be
+                    if (window.scrollY < aboutTop - offset) {
+                        window.scrollTo({ top: aboutTop - offset, behavior: 'smooth' });
+                    }
+                }
+            });
         });
-    });
     </script>
 
     </div>

@@ -10,6 +10,11 @@ function addToCart(itemId, itemName, itemPrice) {
     
     updateCartDisplay();
     updateButtonState(itemId);
+    saveCartToLocalStorage();
+
+    // New code for incrementing cart count and flashing button
+    incrementCartCount();
+    flashButton(itemId);
 }
 
 function updateCartDisplay() {
@@ -18,6 +23,7 @@ function updateCartDisplay() {
 }
 
 function updateButtonState(itemId) {
+    flashButton(itemId);
     const button = document.getElementById(`btn${itemId}`);
     button.innerHTML = "Added";
     button.disabled = true;
@@ -44,4 +50,21 @@ document.addEventListener('DOMContentLoaded', () => {
 // Save cart to localStorage whenever it changes
 function saveCartToLocalStorage() {
     localStorage.setItem('cart', JSON.stringify(cart));
+}
+
+// New function to increment cart count
+function incrementCartCount() {
+    const cartCountElement = document.getElementById('cart-number-count');
+    let currentCount = parseInt(cartCountElement.textContent, 10);
+    cartCountElement.textContent = currentCount + 1;
+}
+
+// New function to flash button red
+function flashButton(itemId) {
+    const button = document.getElementById(`btn${itemId}`);
+    button.style.transition = 'background-color 0.2s';
+    button.style.backgroundColor = 'red';
+    setTimeout(() => {
+        button.style.backgroundColor = '';
+    }, 1000);
 }
