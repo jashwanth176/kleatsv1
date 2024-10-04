@@ -103,7 +103,9 @@ app.post('/api/buyNow',async (req,res)=>{
           return res.json({code:-1,message:'Error while fetching menu price'});
         }
 
-        const itemPrice=Number(it.item_price);
+        let itemPrice=Number(it.item_price);
+        itemPrice=itemPrice+(itemPrice*0.0195);
+
         totalPrice=totalPrice+(itemPrice*item.quantity);
         //console.log(totalPrice);
         //orderId=uuidv4();
@@ -119,7 +121,8 @@ app.post('/api/buyNow',async (req,res)=>{
           name:req.body.name,
           datetime:getTime(),
           price:itemPrice*item.quantity,
-          canteenId:it.canteenId
+          canteenId:it.canteenId,
+          orderTime:req.body.order_time
         });
   
         if(error){
@@ -132,7 +135,7 @@ app.post('/api/buyNow',async (req,res)=>{
     //console.log(totalPrice);
 
     obj={
-      order_amount:totalPrice,
+      order_amount:Math.ceil(totalPrice),
       order_currency:"INR",
       order_id:orderId,
       customer_details:{

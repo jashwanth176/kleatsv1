@@ -137,10 +137,11 @@
                                     <table id="order">
                                         <thead>
                                             <tr>
-                                                <th style="width: 8%;">S.No.:</th>
-                                                <th style="width: 40%;">Order ID</th>
+                                                <th style="width: 5%;">S.No.:</th>
+                                                <th style="width: 35%;">Order ID</th>
                                                 <th style="width: 8%;">User ID</th>
                                                 <th style="width: 8%;">Token Number</th>
+                                                <th style="width: 8%;">Order Time</th>
                                                 <th style="width: 8%;">Item Name</th>
                                                 <th style="width: 8%;">Quantity</th>
                                                 <th style="width: 8%;">Price</th>
@@ -163,6 +164,7 @@
                                                         <td><%= orders[i].order_id %></td>
                                                         <td><%= orders[i].user_id %></td>
                                                         <td><%= orders[i].order_id.split('-')[1] %></td>
+                                                        <td><%= orders[i].orderTime %></td>
                                                         <td><%= orders[i].item_name %></td>
                                                         <td><%= orders[i].quantity %></td>
                                                         <td><%= orders[i].price %></td>
