@@ -108,20 +108,17 @@
                                     <i class="uil uil-search"></i>
                                 </button>
                             </form>
-                            <a onClick="openMyCart()" class="header-btn header-cart">
-                                <i class="uil uil-shopping-bag"></i>
-                                <span class="cart-number" id="cart-number-count">0</span>
-                            </a>
-                            <div class="dropdown">
-                                <!-- <button id="dropdownButton" class="header-username"
-                                    style="color: #ff8243; padding: 4px 8px;">
-                                    <b><i>
-                                            <%= canteenName.split(' ')[0] %></i></b>
-                                </button> -->
-                                <!-- <div id="myDropdown" class="dropdown-content">
-                                    <a href="/logout">Sign Out</a>
-                                </div> -->
+                            
+                            <div style="display: flex; align-items: center;" >
+                                <span style="color: red; font-weight: bold; margin-right: 10px; padding-left: 10px;">
+                                    Your Cart →
+                                </span>
+                                <a onClick="openMyCart()" class="header-btn header-cart" style="background-color: red; color: white;">
+                                    <i class="uil uil-shopping-bag" style="color: white;"></i>
+                                    <span class="cart-number" id="cart-number-count">0</span>
+                                </a>
                             </div>
+
                         </div>
                     </div>
                 </div>

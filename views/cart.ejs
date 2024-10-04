@@ -88,17 +88,6 @@
                                     <%= item_count %>
                                 </span>
                             </a>
-                            <div class="dropdown">
-                                <label><button onclick="myFunction()" class="header-username"
-                                        style="color: #ff8243; padding: 4px 8px;"><b><i>
-                                                <%= canteen_name %>
-                                            </i></b></button></label>
-                                <!-- <div id="myDropdown" class="dropdown-content">
-                                    <a href="/myorders">My Orders</a>
-                                    <a href="/settings">Settings</a>
-                                    <a href="/logout">Sign Out</a>
-                                </div> -->
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -169,15 +158,31 @@
                                                 </div>
                             </div><br><br>
 
-                            <div >
-                                <label for="nameText">Enter Name</label>
-                                <input  id="nameText" type="text" placeholder="Name" style="width: 40%;height: 40px;"><br>
-                                <label for="phoneText">Enter Phone Number</label>
-                                <input id="phoneText" type="number" placeholder="Phone Number" style="width: 40%;height: 40px;"><br>
-                                <label for="timeText">Enter Delivery Time</label>
-                                <input id="timeText" type="time" placeholder="Enter Delivery Time" style="width: 40%;height: 40px;">
-
-
+                            <div class="container mt-4">
+                                <div class="row">
+                                    <div class="col-md-8 offset-md-2">
+                                        <form>
+                                            <div class="mb-3 row">
+                                                <label for="nameText" class="col-sm-4 col-form-label">Enter Name</label>
+                                                <div class="col-sm-8">
+                                                    <input id="nameText" type="text" class="form-control" placeholder="Name">
+                                                </div>
+                                            </div>
+                                            <div class="mb-3 row">
+                                                <label for="phoneText" class="col-sm-4 col-form-label">Enter Phone Number</label>
+                                                <div class="col-sm-8">
+                                                    <input id="phoneText" type="tel" class="form-control" placeholder="Phone Number">
+                                                </div>
+                                            </div>
+                                            <div class="mb-3 row">
+                                                <label for="timeText" class="col-sm-4 col-form-label">Enter Pick up Time</label>
+                                                <div class="col-sm-8">
+                                                    <input id="timeText" type="time" class="form-control" placeholder="Enter Pick up Time">
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
                             </div>
 
                             <input type="hidden" id="cartData" name="cartData" value="">

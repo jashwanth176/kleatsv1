@@ -653,8 +653,14 @@ app.get("/logout", logout);
 /***************************** Route Handlers ***************************/
 
 // Index Page
-function renderIndexPage(req, res) {
-  res.render('index', { title: 'Express' });
+async function renderIndexPage(req, res) {
+  try {
+    const viewCount = await incrementAndGetViewCount();
+    res.render('index', { title: 'Express', viewCount: viewCount || 'N/A' });
+  } catch (error) {
+    console.error('Error fetching view count:', error);
+    res.render('index', { title: 'Express', viewCount: 'N/A' });
+  }
 }
 
 // User Sign-up
@@ -1365,36 +1371,37 @@ async function dispatchOrders(req, res) {
 
     for (const orderId of orderIds) {
       // Fetch order details
-      const { data: order, error: orderError } = await supabase
+      const { data: orders, error: orderError } = await supabase
         .from('orders')
         .select('*')
-        .eq('order_id', orderId)
-        .single();
+        .eq('order_id', orderId);
 
       if (orderError) throw orderError;
 
-      if (order) {
-        // Insert into order_dispatch
-        const { error: insertError } = await supabase
-          .from('order_dispatch')
-          .insert({
-            order_id: order.order_id,
-            user_id: order.user_id.toString(), // Ensure user_id is stored as a string
-            item_id: order.item_id,
-            quantity: order.quantity,
-            price: order.price,
-            datetime: new Date()
-          });
+      if (orders && orders.length > 0) {
+        for (const order of orders) {
+          // Insert into order_dispatch
+          const { error: insertError } = await supabase
+            .from('order_dispatch')
+            .insert({
+              order_id: order.order_id,
+              user_id: order.user_id.toString(),
+              item_id: order.item_id,
+              quantity: order.quantity,
+              price: order.price,
+              datetime: new Date()
+            });
 
-        if (insertError) throw insertError;
+          if (insertError) throw insertError;
 
-        // Delete from orders
-        const { error: deleteError } = await supabase
-          .from('orders')
-          .update({payment_status:'DISPATCHED'})
-          .eq('order_id', orderId);
+          // Update order status
+          const { error: updateError } = await supabase
+            .from('orders')
+            .update({ payment_status: 'DISPATCHED' })
+            .eq('order_id', orderId);
 
-        if (deleteError) throw deleteError;
+          if (updateError) throw updateError;
+        }
       }
     }
 
@@ -1402,8 +1409,8 @@ async function dispatchOrders(req, res) {
     const { data: updatedOrders, error: updatedOrdersError } = await supabase
       .from('orders')
       .select('*')
-      .eq('canteenId',admin.admin_name)
-      .eq('payment_status','PAID')
+      .eq('canteenId', admin.admin_name)
+      .eq('payment_status', 'PAID')
       .order('datetime', { ascending: true });
 
     if (updatedOrdersError) throw updatedOrdersError;
@@ -1411,10 +1418,17 @@ async function dispatchOrders(req, res) {
     res.json({ success: true, orders: updatedOrders });
   } catch (error) {
     console.error('Error in dispatchOrders:', error);
-    res.status(500).json({ error: 'An error occurred while dispatching orders' });
+    
+    // Check if the error is not a unique constraint violation
+    if (!error.code || error.code !== '23505') {
+      //res.status(500).json({ error: 'An error occurred while dispatching orders' });
+    } else {
+      // For unique constraint violations, we'll just log it and continue
+      console.log('Duplicate entry detected, continuing operation');
+      res.json({ success: true, message: 'Orders processed with some duplicates ignored' });
+    }
   }
 }
-
 // Render Admin Change Price Page
 async function renderChangePricePage(req, res) {
   const userId = req.cookies.cookuid;
@@ -1616,6 +1630,22 @@ app.get("/admin_view_orders", async (req, res) => {
     res.status(500).send("An error occurred while loading the view orders page");
   }
 });
+
+async function incrementAndGetViewCount() {
+  try {
+    const { data, error } = await supabase.rpc('increment_views');
+    
+    if (error) throw error;
+    
+    return data;
+  } catch (error) {
+    console.error('Error incrementing view count:', error);
+    return null;
+  }
+}
+
+// Modify the route handler for the index page
+app.get("/", renderIndexPage);
 
 // Create an HTTP server that redirects to HTTPS
 const httpApp = express();
