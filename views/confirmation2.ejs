@@ -91,7 +91,7 @@
                                 </div>
                                 <div>
                                     <h3>Your order has been placed successfully. <span style="color: #e11212;">Please take a screenshot of this page for your records.</span></h3>
-                                    <h4>Your token number is: <span style="color: #ff8243;"><%= order.tokenNumber %></span></h4>
+                                    <h4>Your token number is: <span style="color: #ff8243;"><%= order.tokenNumber.split('-')[1] %></span></h4>
                                 </div>
                                 <p>Your order is being prepared, be ready with your payment.</p>
                                 
@@ -113,6 +113,24 @@
                                                 <td>₹ <%= order.totalPrice.toFixed(2) %></td>
                                                 <td><%= order.paymentStatus %></td>
                                             </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="table-responsive mt-4">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Menu Name</th>
+                                                <th>Quantity</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% menu.forEach((item, index) => { %>
+                                            <tr>
+                                                <td><%= item.item_name %></td>
+                                                <td><%= item.quantity %></td>
+                                            </tr>
+                                            <% }); %>
                                         </tbody>
                                     </table>
                                 </div>

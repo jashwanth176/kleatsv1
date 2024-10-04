@@ -226,7 +226,36 @@ app.get('/api/order',async (req,res)=>{
         return res.render('');
       }
 
+    
+
+
+
       if(data.order_status=='PAID'){
+        let me=[];
+        const{data:order,error:orderError}=await supabase
+        .from('orders')
+        .select('item_id,quantity')
+        .eq('order_id',orderId);
+
+        if (orderError) {
+          console.error("Error fetching order items:", orderError);
+          return res.render('error', { message: 'Error fetching order details' });
+        }
+
+        for(let i=0;i<order.length;i++){
+          const{data:menu,error:menuError}=await supabase
+          .from('menu')
+          .select('item_name')
+          .eq('item_id',order[i].item_id)
+          .single();
+
+      if (!menuError && menu) {
+        me.push({ item_name: menu.item_name, quantity: order[i].quantity });
+      }
+    }
+
+    console.log('Prepared menu items:', me);
+
         return res.render('confirmation2',{
           order:{
             userName:data.customer_details.customer_name,
@@ -234,7 +263,8 @@ app.get('/api/order',async (req,res)=>{
             totalPrice:data.order_amount,
             paymentStatus:data.order_status,
             tokenNumber:data.order_id
-          }
+          },
+          menu:me
         });
       }else{
         return res.render('');
