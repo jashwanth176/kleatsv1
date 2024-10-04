@@ -558,17 +558,17 @@ app.get("/admin_signin", renderAdminSignInPage);
 app.post("/admin_signin", express.json(), adminSignIn);
 
 async function adminSignIn(req, res) {
-  const { email, password, otp } = req.body;
+  const { email, password } = req.body;
   console.log('Received sign-in request:', { email, otp }); // Don't log passwords
 
   // Check if the OTP is correct
-  if (otps.get(email) !== otp) {
-    console.log('Invalid OTP for:', email);
-    return res.status(400).json({ success: false, error: 'Invalid OTP' });
-  }
+  // if (otps.get(email) !== otp) {
+  //   console.log('Invalid OTP for:', email);
+  //   return res.status(400).json({ success: false, error: 'Invalid OTP' });
+  // }
 
   // Clear the OTP after use
-  otps.delete(email);
+  //otps.delete(email);
 
   try {
     const { data, error } = await supabase
