@@ -223,7 +223,7 @@ app.get('/api/order',async (req,res)=>{
 
       if (error) {
         console.error("Error updating order:", error);
-        return res.render('');
+        return res.render('failed');
       }
 
     
@@ -267,7 +267,7 @@ app.get('/api/order',async (req,res)=>{
           menu:me
         });
       }else{
-        return res.render('');
+        return res.render('failed');
       }
     }).catch(err=>{
 
@@ -320,6 +320,48 @@ app.get('/api/canteen/:canteenId',async (req,res)=>{
 
 });
 
+
+app.get('/api/canteen2/:canteenId',async (req,res)=>{
+  try{
+    const canteenId=req.params.canteenId;
+    console.log(canteenId);
+    //return res.json({code:1});
+
+    const {data:menuItem,error:munuError}=await supabase
+    .from('menu')
+    .select('*')
+    .eq('canteenId',canteenId);
+
+    if(munuError){
+      console.log(munuError);
+      return res.json({code:-1,message:'Failed to fetch menu Items'});
+    }
+
+    // const {data:canteenData,error:canteenError}=await supabase
+    // .from('admin')
+    // .select('admin_name')
+    // .eq('canteenId',canteenId)
+    // .single();
+
+    // if(canteenError){
+    //   console.log(canteenError);
+    //   return res.json({code:-1,message:'Failed to fetch menu Items. Please try again.'});
+    // }
+
+
+    res.render("homepage2",{
+      items:menuItem || [],
+      canteenId:canteenId,
+      canteenName:canteenId
+    });
+
+
+  }catch(err){
+    console.log(err);
+    return res.json({code:-1,message:"Internal server."});
+  }
+
+});
 
 
 // Store OTPs (in memory for this example, use a database in production)
@@ -559,7 +601,7 @@ app.post("/admin_signin", express.json(), adminSignIn);
 
 async function adminSignIn(req, res) {
   const { email, password } = req.body;
-  console.log('Received sign-in request:', { email, otp }); // Don't log passwords
+  //console.log('Received sign-in request:', { email, otp }); // Don't log passwords
 
   // Check if the OTP is correct
   // if (otps.get(email) !== otp) {
@@ -1346,7 +1388,7 @@ async function dispatchOrders(req, res) {
         // Delete from orders
         const { error: deleteError } = await supabase
           .from('orders')
-          .delete()
+          .update({payment_status:'DISPATCHED'})
           .eq('order_id', orderId);
 
         if (deleteError) throw deleteError;
@@ -1357,6 +1399,8 @@ async function dispatchOrders(req, res) {
     const { data: updatedOrders, error: updatedOrdersError } = await supabase
       .from('orders')
       .select('*')
+      .eq('canteenId',admin.admin_name)
+      .eq('payment_status','PAID')
       .order('datetime', { ascending: true });
 
     if (updatedOrdersError) throw updatedOrdersError;
@@ -1506,6 +1550,68 @@ app.get('/', (req, res) => {
 app.get('/.well-known/acme-challenge/mABqFtgnZNkITm3zkzwYuhUcpjLvvbc18BW-HKIsc38', (req, res) => {
   res.type('text/plain');
   res.send('mABqFtgnZNkITm3zkzwYuhUcpjLvvbc18BW-HKIsc38.vrolay1CN-muJmcR1eJReUWev880xt9vyM-Cnad9dE0');
+});
+
+// Add this new route
+app.get("/admin_view_orders", async (req, res) => {
+  const userId = req.cookies.cookuid;
+  const userName = req.cookies.cookuname;
+
+  try {
+    // Verify admin
+    const { data: admin, error: adminError } = await supabase
+      .from('admin')
+      .select('admin_id, admin_name')
+      .eq('admin_id', userId)
+      .eq('admin_name', userName)
+      .single();
+
+    if (adminError || !admin) {
+      return res.render("admin_signin");
+    }
+
+    // Fetch dispatched orders
+    const { data: orders, error: ordersError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('canteenId', admin.admin_name)
+      .eq('payment_status', 'DISPATCHED')
+      .order('datetime', { ascending: false });
+
+    if (ordersError) {
+      throw ordersError;
+    }
+
+    // Calculate total money
+    let totalMoney = 0;
+    for (let order of orders) {
+      totalMoney += parseFloat(order.price);
+    }
+
+    // Fetch item names
+    for (let i = 0; i < orders.length; i++) {
+      const { data: menu, error: menuError } = await supabase
+        .from('menu')
+        .select('item_name')
+        .eq('item_id', orders[i].item_id)
+        .single();
+      
+      if (!menuError && menu) {
+        orders[i].item_name = menu.item_name;
+      }
+    }
+
+    res.render("admin_view_orders", {
+      username: userName,
+      userid: userId,
+      orders: orders,
+      totalMoney: totalMoney
+    });
+
+  } catch (error) {
+    console.error('Error in admin_view_orders:', error);
+    res.status(500).send("An error occurred while loading the view orders page");
+  }
 });
 
 // Create an HTTP server that redirects to HTTPS
