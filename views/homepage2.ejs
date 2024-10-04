@@ -108,10 +108,10 @@
                                     <i class="uil uil-search"></i>
                                 </button>
                             </form>
-                            <a onClick="openMyCart()" class="header-btn header-cart">
+                            <!-- <a onClick="openMyCart()" class="header-btn header-cart">
                                 <i class="uil uil-shopping-bag"></i>
                                 <span class="cart-number" id="cart-number-count">0</span>
-                            </a>
+                            </a> -->
                             <div class="dropdown">
                                 <!-- <button id="dropdownButton" class="header-username"
                                     style="color: #ff8243; padding: 4px 8px;">
@@ -138,7 +138,7 @@
                     <div class="col-lg-12">
                         <div class="sec-title text-center mb-5">
                             <p class="sec-sub-title mb-3">our menu</p>
-                            <h2 class="h2-title"><%= canteenName.replaceAll('_', ' ')  %></h2>
+                            <h2 class="h2-title"><%= canteenName.replaceAll('_', ' ') %></h2>
                             <div class="sec-title-shape mb-4">
                                 <img src="/images/title-shape.svg" alt="">
                             </div>
@@ -227,13 +227,13 @@
                                             <li>
                                                 <b>₹ <%= items[i].item_price %></b>
                                             </li>
-                                            <li>
+                                            <!-- <li>
                                                 <button class="dish-add-btn" id="btn<%= items[i].item_id %>"
                                                     onClick="addToCart(' <%=items[i].item_id %>', '<%=
                                                     items[i].item_name %>', <%= items[i].item_price %>)">
                                                         <i class="uil uil-plus"></i>
                                 </button>
-                                </li>
+                                </li> -->
                                 </ul>
                             </div>
                         </div>
