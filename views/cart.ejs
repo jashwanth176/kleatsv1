@@ -71,10 +71,7 @@
                         <button class="menu-toggle"><span></span><span></span></button>
                         <nav class="header-menu">
                             <ul class="menu food-nav-menu">
-                                <li><a href="/homepage">Home</a></li>
-                                <li><a href="#about">About</a></li>
-                                <li><a href="#team">Our Team</a></li>
-                                <li><a href="#testimonials">Testimonials</a></li>
+                                <li><a href="/">Home</a></li>
                                 <li><a href="#contact">Contact</a></li>
                             </ul>
                         </nav>
@@ -173,9 +170,12 @@
                             </div><br><br>
 
                             <div >
-
-                                <input  id="nameText" type="text" placeholder="Name" style="width: 40%;height: 40px;">
-                                <input id="phoneText" type="number" placeholder="Phone Number" style="width: 40%;height: 40px;">
+                                <label for="nameText">Enter Name</label>
+                                <input  id="nameText" type="text" placeholder="Name" style="width: 40%;height: 40px;"><br>
+                                <label for="phoneText">Enter Phone Number</label>
+                                <input id="phoneText" type="number" placeholder="Phone Number" style="width: 40%;height: 40px;"><br>
+                                <label for="timeText">Enter Delivery Time</label>
+                                <input id="timeText" type="time" placeholder="Enter Delivery Time" style="width: 40%;height: 40px;">
 
 
                             </div>
@@ -271,11 +271,13 @@
         function buyNowBtn() {
             let name = document.getElementById("nameText").value;
             let phone = document.getElementById("phoneText").value;
+            let time = document.getElementById("timeText").value;
             const buyNowButton = document.getElementById("buyNowButton");
 
-            if (!name || !phone) {
+            if (!name || !phone || !time) {
                 alert("Please enter name and phone.");
             } else {
+                console.log(time);
                 // Disable the button and change its text
                 buyNowButton.disabled = true;
                 buyNowButton.textContent = "Processing...";
@@ -295,7 +297,7 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ name: name, phone: phone, items: obj })
+                    body: JSON.stringify({ name: name, phone: phone, items: obj,order_time:time })
                 }).then(response => response.json())
                 .then(data => {
                     console.log(data);
