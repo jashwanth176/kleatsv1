@@ -1,12 +1,26 @@
 let cart = [];
 
 function addToCart(itemId, itemName, itemPrice) {
+
+
+        // const name="btn"+itemId;
+        // document.getElementById(name).innerHTML = "Added";
+
     const existingItem = cart.find(item => item.item_id === itemId);
+
     if (existingItem) {
         existingItem.quantity++;
     } else {
         cart.push({ item_id: itemId, item_name: itemName, price: itemPrice, quantity: 1 });
     }
+
+    //document.getElementById("btn"+itemId).innerHTML = "Added";
+
+
+    // if(!existingItem){
+    //     cart.push({ item_id: itemId, item_name: itemName, price: itemPrice, quantity: 1 });
+    //     document.getElementById("btn"+itemId).innerHTML = "Added";
+    // }
     
     updateCartDisplay();
     updateButtonState(itemId);
@@ -14,7 +28,7 @@ function addToCart(itemId, itemName, itemPrice) {
 
     // New code for incrementing cart count and flashing button
     incrementCartCount();
-    flashButton(itemId);
+    //flashButton(itemId);
 }
 
 function updateCartDisplay() {
@@ -23,7 +37,7 @@ function updateCartDisplay() {
 }
 
 function updateButtonState(itemId) {
-    flashButton(itemId);
+    //flashButton(itemId);
     const button = document.getElementById(`btn${itemId}`);
     button.innerHTML = "Added";
     button.disabled = true;
