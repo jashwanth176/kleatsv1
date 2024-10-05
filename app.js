@@ -1663,4 +1663,13 @@ https.createServer(credentials, app).listen(443, () => {
   console.log('HTTPS Server running on port 443');
 });
 
+// Add this new route near your other route definitions
+app.get('/member', (req, res) => {
+  res.redirect('https://forms.office.com/r/iCRskqXN1W');
+});
+
+app.get('/members', (req, res) => {
+  res.redirect('https://forms.office.com/r/iCRskqXN1W');
+});
+
 module.exports = app;
