@@ -31,6 +31,15 @@
             }
         }
     </style>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y3TDH790Z7"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-Y3TDH790Z7');
+    </script>
 </head>
 
 <body class="body-fixed">
@@ -95,7 +104,10 @@
                                         <span style="color: #f40808;">KL Eats</span>
                                     </h1>
                                     <p>Welcome to KL eats, your one-stop platform for discovering and enjoying the best
-                                        food on campus at KL University, Vijayawada. To become a member of this project, Please go to <span style="color: #0805cc;" href="https://kleats.in/member">kleats.in/member</span> or find us at KL GLUG (C424).
+                                        food on campus at KL University, Vijayawada. To become a member of this project,
+                                        Please go to <span style="color: #0805cc;"
+                                            href="https://kleats.in/member">kleats.in/member</span> or find us at KL
+                                        GLUG (C424).
                                     </p>
                                     <div class="banner-btn mt-4">
                                         <a href="#canteens" class="sec-btn" style="color: #f40808;">Order Now</a>
@@ -157,7 +169,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="row team-slider">
                             <div class="swiper-wrapper">
 
@@ -338,7 +350,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
+                        <div class="row team-members-container">
                             <!-- Visible Testimonials (First 6) -->
                             <div class="col-lg-4 col-md-6">
                                 <div class="testimonials-box">
@@ -534,7 +546,7 @@
                                     </div>
                                     <div class="testimonials-box-text">
                                         <h3 class="h3-title">P Lakshmi Pradeepthi</h3>
-                                        <p>Core member</p>
+                                        <p>Frontend Developer</p>
                                     </div>
                                 </div>
                             </div>
@@ -634,8 +646,11 @@
                         <div class="row">
                             <div class="col-lg-12 text-center">
                                 <div class="copyright-text">
-                                    <p>Copyright &copy; 2024 <span class="name" style="color: #f40808;">KL Eats</span> All Rights Reserved.</p>
-                                    <p style="color: #f40808;">You are visitor number: <span id="viewCount"><%= viewCount %></span></p>
+                                    <p>Copyright &copy; 2024 <span class="name" style="color: #f40808;">KL Eats</span>
+                                        All Rights Reserved.</p>
+                                    <p style="color: #f40808;">You are visitor number: <span id="viewCount">
+                                            <%= viewCount %>
+                                        </span></p>
                                 </div>
                             </div>
                         </div>
@@ -684,46 +699,72 @@
     <script src="/javascripts/main.js"></script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
+            const teamContainer = document.querySelector('.team-members-container');
+            const teamMembers = Array.from(teamContainer.children);
             const viewMoreBtn = document.getElementById('viewMoreBtn');
-            const hiddenMembers = document.querySelectorAll('.hidden-team-member');
-            const aboutSection = document.getElementById('about');
             let isExpanded = false;
+            
+            // Shuffle all team members
+            for (let i = teamMembers.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [teamMembers[i], teamMembers[j]] = [teamMembers[j], teamMembers[i]];
+            }
+            
+            // Reappend the shuffled members
+            teamMembers.forEach(member => teamContainer.appendChild(member));
 
-            function expandSection() {
-                hiddenMembers.forEach(member => member.style.display = 'block');
-                viewMoreBtn.textContent = 'View Less';
-                isExpanded = true;
-
-                // Scroll to the first newly revealed member
-                hiddenMembers[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+            function updateVisibility() {
+                teamMembers.forEach((member, index) => {
+                    if (index < 6) {
+                        member.classList.remove('hidden-team-member');
+                        member.style.display = '';
+                    } else {
+                        member.classList.add('hidden-team-member');
+                        member.style.display = isExpanded ? '' : 'none';
+                    }
+                });
             }
 
-            function collapseSection() {
-                hiddenMembers.forEach(member => member.style.display = 'none');
-                viewMoreBtn.textContent = 'View More';
-                isExpanded = false;
-
-                // Scroll back to the View More button
-                viewMoreBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
+            // Initial visibility setup
+            updateVisibility();
 
             viewMoreBtn.addEventListener('click', function () {
-                if (!isExpanded) {
-                    expandSection();
+                isExpanded = !isExpanded;
+                updateVisibility();
+                viewMoreBtn.textContent = isExpanded ? 'View Less' : 'View More';
+
+                if (isExpanded) {
+                    teamMembers[6].scrollIntoView({ behavior: 'smooth', block: 'start' });
                 } else {
-                    collapseSection();
+                    viewMoreBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             });
+        });
+    </script>
 
-            // Add scroll event listener to restrict scrolling above the About section
-            window.addEventListener('scroll', function () {
-                if (isExpanded) {
-                    const aboutTop = aboutSection.offsetTop;
-                    const offset = 90; // Adjust this value to set how much higher the limit should be
-                    if (window.scrollY < aboutTop - offset) {
-                        window.scrollTo({ top: aboutTop - offset, behavior: 'smooth' });
-                    }
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const teamContainer = document.querySelector('.team-members-container');
+            const teamMembers = Array.from(teamContainer.children);
+            
+            // Shuffle all team members
+            for (let i = teamMembers.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [teamMembers[i], teamMembers[j]] = [teamMembers[j], teamMembers[i]];
+            }
+            
+            // Reappend the shuffled members
+            teamMembers.forEach(member => teamContainer.appendChild(member));
+
+            // Ensure the first 6 members are visible and the rest are hidden
+            teamMembers.forEach((member, index) => {
+                if (index < 6) {
+                    member.classList.remove('hidden-team-member');
+                    member.style.display = '';
+                } else {
+                    member.classList.add('hidden-team-member');
+                    member.style.display = 'none';
                 }
             });
         });
