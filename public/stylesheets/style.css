@@ -999,6 +999,11 @@ p {
     background: linear-gradient(145deg, #c20606, #e60707);
 }
 
+.dish-add-btn.added {
+    background-color: #4CAF50; /* Green background */
+    color: white;
+}
+
 /* Menu Card Design Ends*/
 
 /* ************ */

@@ -1,4 +1,5 @@
 let cart = [];
+let debounceTimers = {};
 
 function addToCart(itemId, itemName, itemPrice) {
 
@@ -28,7 +29,25 @@ function addToCart(itemId, itemName, itemPrice) {
 
     // New code for incrementing cart count and flashing button
     incrementCartCount();
-    //flashButton(itemId);
+
+    // Clear any existing timer for this button
+    if (debounceTimers[itemId]) {
+        clearTimeout(debounceTimers[itemId]);
+    }
+
+    // Change the button text and style
+    const button = document.getElementById(`btn${itemId}`);
+    button.innerHTML = 'Added';
+    button.classList.add('added');
+    button.disabled = true;
+
+    // Set a new timer
+    debounceTimers[itemId] = setTimeout(() => {
+        button.innerHTML = '<i class="uil uil-plus"></i>';
+        button.classList.remove('added');
+        button.disabled = false;
+        delete debounceTimers[itemId]; // Clean up the timer reference
+    }, 2500);
 }
 
 function updateCartDisplay() {
