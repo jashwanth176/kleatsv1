@@ -184,10 +184,18 @@
                                                         </tbody>
                                                         <tfoot>
                                                             <tr>
-                                                                <td colspan="4"><strong>Total</strong></td>
+                                                                <td colspan="4"><strong>Subtotal</strong></td>
                                                                 <td id="total_quantity">
                                                                     <%= item_count %>
                                                                 </td>
+                                                                <td id="subtotal_price">₹ 0</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td colspan="5"><strong>GST Charges (2%)</strong></td>
+                                                                <td id="gst_charges">₹ 0</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td colspan="5"><strong>Total</strong></td>
                                                                 <td id="total_price">₹ 0</td>
                                                             </tr>
                                                         </tfoot>
@@ -394,17 +402,25 @@
         function updateTotal() {
             const subtotals = document.querySelectorAll('.subtotal');
             const quantities = document.querySelectorAll('.quantity');
-            let totalPrice = 0;
+            let subtotalPrice = 0;
             let totalQuantity = 0;
 
             subtotals.forEach(subtotal => {
-                totalPrice += parseFloat(subtotal.textContent);
+                subtotalPrice += parseFloat(subtotal.textContent);
             });
 
             quantities.forEach(quantity => {
                 totalQuantity += parseInt(quantity.value);
             });
 
+            // Calculate GST (2% of subtotal, rounded up)
+            const gstCharges = Math.ceil(subtotalPrice * 0.02);
+
+            // Calculate total (subtotal + GST)
+            const totalPrice = subtotalPrice + gstCharges;
+
+            document.getElementById('subtotal_price').textContent = '₹ ' + subtotalPrice.toFixed(2);
+            document.getElementById('gst_charges').textContent = '₹ ' + gstCharges.toFixed(2);
             document.getElementById('total_price').textContent = '₹ ' + totalPrice.toFixed(2);
             document.getElementById('total_quantity').textContent = totalQuantity;
             document.getElementById('cart-number-count').textContent = totalQuantity;
@@ -415,7 +431,7 @@
             const cartData = [];
 
             items.forEach(item => {
-                const itemId = item.cells[0].textContent; // Assuming the first cell contains the item ID
+                const itemId = item.querySelector('.ItemIdSto').textContent;
                 const quantity = parseInt(item.querySelector('.quantity').value);
                 const price = parseFloat(item.querySelector('.item-price').textContent);
 
@@ -426,9 +442,18 @@
                 });
             });
 
+            const subtotalPrice = parseFloat(document.getElementById('subtotal_price').textContent.replace('₹ ', ''));
+            const gstCharges = parseFloat(document.getElementById('gst_charges').textContent.replace('₹ ', ''));
+            const totalPrice = parseFloat(document.getElementById('total_price').textContent.replace('₹ ', ''));
 
+            const cartDataWithTotals = {
+                items: cartData,
+                subtotal: subtotalPrice,
+                gst: gstCharges,
+                total: totalPrice
+            };
 
-            document.getElementById('cartData').value = JSON.stringify(cartData);
+            document.getElementById('cartData').value = JSON.stringify(cartDataWithTotals);
         }
 
         // Call updateTotal on page load
