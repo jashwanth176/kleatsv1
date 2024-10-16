@@ -33,75 +33,97 @@ TweenLite.set(scroller.target, {
   force3D: true,
 });
 
+function isMobile() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
 window.addEventListener("load", onLoad);
 
 function onLoad() {
-  updateScroller();
-  window.focus();
-  window.addEventListener("resize", onResize);
-  document.addEventListener("scroll", onScroll);
+    if (!isMobile()) {
+        updateScroller();
+        window.addEventListener("resize", onResize);
+        document.addEventListener("scroll", onScroll);
+    }
+    window.focus();
 }
 
 function updateScroller() {
-  var resized = scroller.resizeRequest > 0;
+    if (isMobile()) return;
 
-  if (resized) {
-    var height = scroller.target.clientHeight;
-    body.style.height = height + "px";
-    scroller.resizeRequest = 0;
-  }
+    var resized = scroller.resizeRequest > 0;
 
-  var scrollY = window.pageYOffset || html.scrollTop || body.scrollTop || 0;
+    if (resized) {
+        var height = scroller.target.clientHeight;
+        body.style.height = height + "px";
+        scroller.resizeRequest = 0;
+    }
 
-  scroller.endY = scrollY;
-  scroller.y += (scrollY - scroller.y) * scroller.ease;
+    var scrollY = window.pageYOffset || html.scrollTop || body.scrollTop || 0;
 
-  if (Math.abs(scrollY - scroller.y) < 0.05 || resized) {
-    scroller.y = scrollY;
-    scroller.scrollRequest = 0;
-  }
+    scroller.endY = scrollY;
+    scroller.y += (scrollY - scroller.y) * scroller.ease;
 
-  TweenLite.set(scroller.target, {
-    y: -scroller.y,
-  });
+    if (Math.abs(scrollY - scroller.y) < 0.05 || resized) {
+        scroller.y = scrollY;
+        scroller.scrollRequest = 0;
+    }
 
-  requestId =
-    scroller.scrollRequest > 0 ? requestAnimationFrame(updateScroller) : null;
+    TweenLite.set(scroller.target, {
+        y: -scroller.y,
+    });
+
+    requestId =
+        scroller.scrollRequest > 0 ? requestAnimationFrame(updateScroller) : null;
 }
 
 function onScroll() {
-  scroller.scrollRequest++;
-  if (!requestId) {
-    requestId = requestAnimationFrame(updateScroller);
-  }
+    if (isMobile()) return;
+
+    scroller.scrollRequest++;
+    if (!requestId) {
+        requestId = requestAnimationFrame(updateScroller);
+    }
 }
 
 function onResize() {
-  scroller.resizeRequest++;
-  if (!requestId) {
-    requestId = requestAnimationFrame(updateScroller);
-  }
+    if (isMobile()) return;
+
+    scroller.resizeRequest++;
+    if (!requestId) {
+        requestId = requestAnimationFrame(updateScroller);
+    }
 }
 
 jQuery(".filters").on("click", function () {
-  setTimeout(function () {
-    onScroll();
-    onResize();
-  }, 1000);
+    if (isMobile()) return;
+
+    setTimeout(function () {
+        onScroll();
+        onResize();
+    }, 1000);
 });
 
-document.querySelector(".filters li").addEventListener("click", onResize);
-document.querySelector(".filters li").addEventListener("click", onScroll);
+document.querySelector(".filters li").addEventListener("click", function() {
+    if (!isMobile()) {
+        onResize();
+        onScroll();
+    }
+});
 
 // Scroll to top
 
 const scrolltotop = document.querySelector(".scrolltop");
 
-scrolltotop.addEventListener("click", () =>
-  gsap.to(window, {
-    scrollTo: 0,
-  })
-);
+scrolltotop.addEventListener("click", () => {
+    if (isMobile()) {
+        window.scrollTo(0, 0);
+    } else {
+        gsap.to(window, {
+            scrollTo: 0,
+        });
+    }
+});
 
 // Scroll to Section
 
@@ -109,16 +131,19 @@ var sections = $("section"),
   nav = $(".foody-nav-menu , .banner-btn"),
   nav_height = nav.outerHeight();
 
-nav.find("a").on("click", function () {
-  var $el = $(this),
-    id = $el.attr("href");
+nav.find("a").on("click", function (e) {
+    e.preventDefault();
+    var $el = $(this),
+        id = $el.attr("href");
 
-  $("html, body").animate(
-    {
-      scrollTop: $(id).offset().top - nav_height,
-    },
-    500
-  );
-
-  return false;
+    if (isMobile()) {
+        $("html, body").scrollTop($(id).offset().top - nav_height);
+    } else {
+        $("html, body").animate(
+            {
+                scrollTop: $(id).offset().top - nav_height,
+            },
+            500
+        );
+    }
 });

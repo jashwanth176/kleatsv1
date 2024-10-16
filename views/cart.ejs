@@ -216,6 +216,12 @@
                                                     </div>
                                                 </div>
                                                 <div class="mb-3 row">
+                                                    <label for="emailText" class="col-sm-4 col-form-label">Enter Email</label>
+                                                    <div class="col-sm-8">
+                                                        <input id="emailText" type="email" class="form-control" placeholder="Email">
+                                                    </div>
+                                                </div>
+                                                <div class="mb-3 row">
                                                     <label for="timeText" class="col-sm-4 col-form-label">Enter Pick up
                                                         Time</label>
                                                     <div class="col-sm-8">
@@ -321,11 +327,12 @@
         function buyNowBtn() {
             let name = document.getElementById("nameText").value;
             let phone = document.getElementById("phoneText").value;
+            let email = document.getElementById("emailText").value; // Add this line
             let time = document.getElementById("timeText").value;
             const buyNowButton = document.getElementById("buyNowButton");
 
-            if (!name || !phone || !time) {
-                alert("Please enter name and phone.");
+            if (!name || !phone || !email || !time) {
+                alert("Please enter name, phone, and email.");
             } else {
                 console.log(time);
                 // Disable the button and change its text
@@ -347,7 +354,7 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ name: name, phone: phone, items: obj, order_time: time })
+                    body: JSON.stringify({ name: name, phone: phone, email: email, items: obj, order_time: time })
                 }).then(response => response.json())
                     .then(data => {
                         console.log(data);

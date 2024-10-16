@@ -231,23 +231,18 @@
                 },
                 body: JSON.stringify(data),
             })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.json().then(err => { throw err; });
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.success) {
-                        window.location.href = '/homepage';
-                    } else {
-                        document.getElementById('errorMessage').textContent = data.error || 'Invalid credentials';
-                    }
-                })
-                .catch((error) => {
-                    console.error('Error:', error);
-                    document.getElementById('errorMessage').textContent = error.error || 'An error occurred during sign in: ' + JSON.stringify(error);
-                });
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = data.redirect;
+                } else {
+                    document.getElementById('errorMessage').textContent = data.error || 'Invalid credentials';
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                document.getElementById('errorMessage').textContent = 'An error occurred during sign in';
+            });
         }
     </script>
 

@@ -15,6 +15,8 @@ const session = require('express-session');
 const https = require('https');
 const fs = require('fs');
 const http = require('http');
+const qr = require('qrcode');
+const axios = require('axios');
 
 // Read SSL certificate files
 const privateKey = fs.readFileSync('/etc/letsencrypt/live/kleats.in/privkey.pem', 'utf8');
@@ -82,107 +84,109 @@ transporter.verify(function(error, success) {
 
 
 //BuyNow GateWay
-app.post('/api/buyNow',async (req,res)=>{
-  try{
+app.post('/api/buyNow', async (req, res) => {
+  try {
+    const { name, phone, email, items, order_time } = req.body; // Add email here
 
-    let totalPrice=0.00;
-    let orderId=uuidv4();
+    let totalPrice = 0.00;
+    let orderId = uuidv4();
 
-    for(const item of req.body.items){
+    for (const item of items) {
       console.log(item);
-      if(item.quantity>0){
+      if (item.quantity > 0) {
 
-        const {data:it,er:userError}=await supabase
-        .from('menu')
-        .select('item_price,canteenId')
-        .eq('item_id',item.item_id)
-        .single();
+        const { data: it, er: userError } = await supabase
+          .from('menu')
+          .select('item_price,canteenId')
+          .eq('item_id', item.item_id)
+          .single();
 
-        if(userError || !it){
+        if (userError || !it) {
           console.log("Error while fetching menu price");
-          return res.json({code:-1,message:'Error while fetching menu price'});
+          return res.json({ code: -1, message: 'Error while fetching menu price' });
         }
 
-        let itemPrice=Number(it.item_price);
-        itemPrice=itemPrice+(itemPrice*0.0195);
+        let itemPrice = Number(it.item_price);
+        itemPrice = itemPrice + (itemPrice * 0.0195);
 
-        totalPrice=totalPrice+(itemPrice*item.quantity);
+        totalPrice = totalPrice + (itemPrice * item.quantity);
         //console.log(totalPrice);
         //orderId=uuidv4();
 
-        const {error} =await supabase
-        .from('orders')
-        .insert({
-          order_id:orderId,
-          user_id:Number(req.body.phone),
-          item_id:item.item_id,
-          quantity:item.quantity,
-          payment_status:'Pending',
-          name:req.body.name,
-          datetime:getTime(),
-          price:itemPrice*item.quantity,
-          canteenId:it.canteenId,
-          orderTime:req.body.order_time
-        });
-  
-        if(error){
-          console.log('Error inserting order:',error);
-          return res.json({code:-1,message:'Error while placeing order.'});
+        const { error } = await supabase
+          .from('orders')
+          .insert({
+            order_id: orderId,
+            user_id: Number(phone),
+            item_id: item.item_id,
+            quantity: item.quantity,
+            payment_status: 'Pending',
+            name: name,
+            datetime: getTime(),
+            price: itemPrice * item.quantity,
+            canteenId: it.canteenId,
+            orderTime: order_time,
+            email: email // Add this line
+          });
+
+        if (error) {
+          console.log('Error inserting order:', error);
+          return res.json({ code: -1, message: 'Error while placeing order.' });
         }
       }
     }
 
     //console.log(totalPrice);
 
-    obj={
-      order_amount:Math.ceil(totalPrice),
-      order_currency:"INR",
-      order_id:orderId,
-      customer_details:{
-        customer_id:req.body.name.split(' ')[0]+"_"+req.body.phone,
-        customer_phone:req.body.phone,
-        customer_name:req.body.name
+    obj = {
+      order_amount: Math.ceil(totalPrice),
+      order_currency: "INR",
+      order_id: orderId,
+      customer_details: {
+        customer_id: name.split(' ')[0] + "_" + phone,
+        customer_phone: phone,
+        customer_name: name
       },
-      order_meta:{
+      order_meta: {
         //return_url:"https://www.cashfree.com/devstudio/preview/pg/web/checkout?order_id={order_id}"
         //return_url:"http://127.0.0.1:8090/api/order?order_id={order_id}"
-        return_url:"https://kleats.in/api/order?order_id={order_id}"
+        return_url: "https://kleats.in/api/order?order_id={order_id}"
       }
     }
 
     console.log(JSON.stringify(obj));
 
-      await fetch("https://api.cashfree.com/pg/orders",{
+    await fetch("https://api.cashfree.com/pg/orders", {
       //await fetch("https://sandbox.cashfree.com/pg/orders",{
-      method:'POST',
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-client-Id':process.env.CASHFREE_APP_ID,
-        'x-client-secret':process.env.CASHFREE_SECRET,
-        'x-api-version':process.env.CASHFREE_API_VERSION 
+        'x-client-Id': process.env.CASHFREE_APP_ID,
+        'x-client-secret': process.env.CASHFREE_SECRET,
+        'x-api-version': process.env.CASHFREE_API_VERSION
       },
       body: JSON.stringify(obj)
-    }).then(response=>response.json())
-    .then(data=>{
-      console.log(data);
-      if(data.type){
-        return res.json({code:-1,message:data.message});
-      }
-      return res.json({code:1,message:'Success',data:data});
-    })
-    .catch(error => {
-      console.error('There has been a problem with your fetch operation:', error);
-      return res.json({code:0,message:'failed'});
-  });
-  }catch(err){
+    }).then(response => response.json())
+      .then(data => {
+        console.log(data);
+        if (data.type) {
+          return res.json({ code: -1, message: data.message });
+        }
+        return res.json({ code: 1, message: 'Success', data: data });
+      })
+      .catch(error => {
+        console.error('There has been a problem with your fetch operation:', error);
+        return res.json({ code: 0, message: 'failed' });
+      });
+  } catch (err) {
     console.log(err);
-    return res.json({code:-1,message:'Internal Server'});
+    return res.json({ code: -1, message: 'Internal Server' });
   }
 });
 
 
 
-function getTime(){
+function getTime() {
   const currentDateTime = new Date();
 
   const year = currentDateTime.getFullYear();
@@ -198,103 +202,132 @@ function getTime(){
 }
 
 
-app.get('/api/order',async (req,res)=>{
-  try{
-    const orderId=req.query.order_id;
+app.get('/api/order', async (req, res) => {
+  try {
+    const orderId = req.query.order_id;
 
-    //fetch('https://sandbox.cashfree.com/pg/orders/'+orderId,{
-    fetch('https://api.cashfree.com/pg/orders/'+orderId,{
-      method:"GET",
-      headers:{
-        'Content-Type': 'application/json',
-        'x-client-Id':process.env.CASHFREE_APP_ID,
-        'x-client-secret':process.env.CASHFREE_SECRET,
-        'x-api-version':process.env.CASHFREE_API_VERSION 
-      }
-    }).then(result=>result.json())
-    .then(async data=>{
-      console.log(data);
-
-      if(data.type){
-        return res.json({code:-1,message:data.message});
-      }
-
-      const {error} =await supabase
+    // Check if the email has already been sent for this order
+    const { data: existingOrder, error: existingOrderError } = await supabase
       .from('orders')
-      .update({payment_status:data.order_status})
-      .eq('order_id',orderId);
+      .select('email_sent, email')
+      .eq('order_id', orderId)
+      .single();
 
-      if (error) {
-        console.error("Error updating order:", error);
-        return res.render('failed');
+    if (existingOrderError) {
+      console.error("Error checking existing order:", existingOrderError);
+      return res.render('error', { message: 'Error processing order' });
+    }
+
+    // Fetch order details from Cashfree API
+    const response = await fetch('https://api.cashfree.com/pg/orders/' + orderId, {
+      method: "GET",
+      headers: {
+        'Content-Type': 'application/json',
+        'x-client-Id': process.env.CASHFREE_APP_ID,
+        'x-client-secret': process.env.CASHFREE_SECRET,
+        'x-api-version': process.env.CASHFREE_API_VERSION
       }
+    });
 
-    
+    const data = await response.json();
 
+    if (data.type) {
+      return res.json({ code: -1, message: data.message });
+    }
 
+    // Update order status in database
+    const { error: updateError } = await supabase
+      .from('orders')
+      .update({ payment_status: data.order_status })
+      .eq('order_id', orderId);
 
-      if(data.order_status=='PAID'){
-        let me=[];
-        const{data:order,error:orderError}=await supabase
+    if (updateError) {
+      console.error("Error updating order:", updateError);
+      return res.render('failed');
+    }
+
+    if (data.order_status == 'PAID') {
+      let me = [];
+      // Fetch order items
+      const { data: orderItems, error: orderItemsError } = await supabase
         .from('orders')
         .select('item_id,quantity')
-        .eq('order_id',orderId);
+        .eq('order_id', orderId);
 
-        if (orderError) {
-          console.error("Error fetching order items:", orderError);
-          return res.render('error', { message: 'Error fetching order details' });
-        }
+      if (orderItemsError) {
+        console.error("Error fetching order items:", orderItemsError);
+        return res.render('error', { message: 'Error fetching order details' });
+      }
 
-        for(let i=0;i<order.length;i++){
-          const{data:menu,error:menuError}=await supabase
+      // Fetch menu items for each order item
+      for (const item of orderItems) {
+        const { data: menuItem, error: menuError } = await supabase
           .from('menu')
           .select('item_name')
-          .eq('item_id',order[i].item_id)
+          .eq('item_id', item.item_id)
           .single();
 
-      if (!menuError && menu) {
-        me.push({ item_name: menu.item_name, quantity: order[i].quantity });
+        if (!menuError && menuItem) {
+          me.push({ item_name: menuItem.item_name, quantity: item.quantity });
+        }
       }
-    }
 
-    console.log('Prepared menu items:', me);
-
-        return res.render('confirmation2',{
-          order:{
-            userName:data.customer_details.customer_name,
-            phoneNumber:data.customer_details.customer_phone,
-            totalPrice:data.order_amount,
-            paymentStatus:data.order_status,
-            tokenNumber:data.order_id
-          },
-          menu:me
+      // Send email if not sent already
+      if (!existingOrder.email_sent) {
+        await sendOrderConfirmationEmail(existingOrder.email, {
+          userName: data.customer_details.customer_name,
+          phoneNumber: data.customer_details.customer_phone,
+          totalPrice: data.order_amount,
+          paymentStatus: data.order_status,
+          tokenNumber: data.order_id,
+          menu: me
         });
-      }else{
-        return res.render('failed');
+
+        // Update email_sent status
+        const { error: emailSentUpdateError } = await supabase
+          .from('orders')
+          .update({ email_sent: true })
+          .eq('order_id', orderId);
+
+        if (emailSentUpdateError) {
+          console.error("Error updating email_sent status:", emailSentUpdateError);
+        }
       }
-    }).catch(err=>{
 
-    });
-  }catch(err){
-    console.log(err);
+      return res.render('confirmation2', {
+        order: {
+          userName: data.customer_details.customer_name,
+          phoneNumber: data.customer_details.customer_phone,
+          totalPrice: data.order_amount,
+          paymentStatus: data.order_status,
+          tokenNumber: data.order_id
+        },
+        menu: me
+      });
+    } else {
+      return res.render('failed');
+    }
+  } catch (err) {
+    console.error("Error processing order:", err);
+    return res.render('error', { message: 'Error processing order' });
   }
 });
 
 
-app.get('/api/canteen/:canteenId',async (req,res)=>{
-  try{
-    const canteenId=req.params.canteenId;
+app.get('/api/canteen/:canteenId', async (req, res) => {
+  try {
+    const canteenId = req.params.canteenId;
     console.log(canteenId);
     //return res.json({code:1});
 
-    const {data:menuItem,error:munuError}=await supabase
-    .from('menu')
-    .select('*')
-    .eq('canteenId',canteenId);
+    const { data: menuItem, error: munuError } = await supabase
+      .from('menu')
+      .select('*')
+      .eq('canteenId', canteenId);
 
-    if(munuError){
+    if (munuError) {
       console.log(munuError);
-      return res.json({code:-1,message:'Failed to fetch menu Items'});
+      return res.json({ code: -1, message: 'Failed to fetch menu Items' });
     }
 
     // const {data:canteenData,error:canteenError}=await supabase
@@ -309,35 +342,35 @@ app.get('/api/canteen/:canteenId',async (req,res)=>{
     // }
 
 
-    res.render("homepage",{
-      items:menuItem || [],
-      canteenId:canteenId,
-      canteenName:canteenId
+    res.render("homepage", {
+      items: menuItem || [],
+      canteenId: canteenId,
+      canteenName: canteenId
     });
 
 
-  }catch(err){
+  } catch (err) {
     console.log(err);
-    return res.json({code:-1,message:"Internal server."});
+    return res.json({ code: -1, message: "Internal server." });
   }
 
 });
 
 
-app.get('/api/canteen2/:canteenId',async (req,res)=>{
-  try{
-    const canteenId=req.params.canteenId;
+app.get('/api/canteen2/:canteenId', async (req, res) => {
+  try {
+    const canteenId = req.params.canteenId;
     console.log(canteenId);
     //return res.json({code:1});
 
-    const {data:menuItem,error:munuError}=await supabase
-    .from('menu')
-    .select('*')
-    .eq('canteenId',canteenId);
+    const { data: menuItem, error: munuError } = await supabase
+      .from('menu')
+      .select('*')
+      .eq('canteenId', canteenId);
 
-    if(munuError){
+    if (munuError) {
       console.log(munuError);
-      return res.json({code:-1,message:'Failed to fetch menu Items'});
+      return res.json({ code: -1, message: 'Failed to fetch menu Items' });
     }
 
     // const {data:canteenData,error:canteenError}=await supabase
@@ -352,16 +385,16 @@ app.get('/api/canteen2/:canteenId',async (req,res)=>{
     // }
 
 
-    res.render("homepage2",{
-      items:menuItem || [],
-      canteenId:canteenId,
-      canteenName:canteenId
+    res.render("homepage2", {
+      items: menuItem || [],
+      canteenId: canteenId,
+      canteenName: canteenId
     });
 
 
-  }catch(err){
+  } catch (err) {
     console.log(err);
-    return res.json({code:-1,message:"Internal server."});
+    return res.json({ code: -1, message: "Internal server." });
   }
 
 });
@@ -376,37 +409,37 @@ app.get("/admin_remove_products", async (req, res) => {
   const userName = req.cookies.cookuname;
 
   try {
-      // Verify admin
-      const { data: admin, error: adminError } = await supabase
-          .from('admin')
-          .select('admin_id, admin_name')
-          .eq('admin_id', userId)
-          .eq('admin_name', userName)
-          .single();
+    // Verify admin
+    const { data: admin, error: adminError } = await supabase
+      .from('admin')
+      .select('admin_id, admin_name')
+      .eq('admin_id', userId)
+      .eq('admin_name', userName)
+      .single();
 
-      if (adminError || !admin) {
-          return res.render("admin_signin");
-      }
+    if (adminError || !admin) {
+      return res.render("admin_signin");
+    }
 
-      // Fetch all menu items
-      const { data: menuItems, error: menuError } = await supabase
-          .from('menu')
-          .select('*')
-          .eq('canteenId',admin.admin_name);
+    // Fetch all menu items
+    const { data: menuItems, error: menuError } = await supabase
+      .from('menu')
+      .select('*')
+      .eq('canteenId', admin.admin_name);
 
-      if (menuError) {
-          throw menuError;
-      }
+    if (menuError) {
+      throw menuError;
+    }
 
-      res.render("admin_remove_products", {
-          username: userName,
-          items: menuItems,
-          userid: userId
-      });
+    res.render("admin_remove_products", {
+      username: userName,
+      items: menuItems,
+      userid: userId
+    });
 
   } catch (error) {
-      console.error('Error in /admin_remove_products GET:', error);
-      res.status(500).send("An error occurred while loading the remove products page");
+    console.error('Error in /admin_remove_products GET:', error);
+    res.status(500).send("An error occurred while loading the remove products page");
   }
 });
 
@@ -416,62 +449,62 @@ app.post("/admin_remove_products", async (req, res) => {
   const itemIdToRemove = req.body.item_id;
 
   if (!itemIdToRemove) {
-      return res.status(400).send("No item ID provided for removal");
+    return res.status(400).send("No item ID provided for removal");
   }
 
   try {
-      // Verify admin
-      const { data: admin, error: adminError } = await supabase
-          .from('admin')
-          .select('admin_id, admin_name')
-          .eq('admin_id', userId)
-          .eq('admin_name', userName)
-          .single();
+    // Verify admin
+    const { data: admin, error: adminError } = await supabase
+      .from('admin')
+      .select('admin_id, admin_name')
+      .eq('admin_id', userId)
+      .eq('admin_name', userName)
+      .single();
 
-      if (adminError || !admin) {
-          return res.render("admin_signin");
+    if (adminError || !admin) {
+      return res.render("admin_signin");
+    }
+
+    // Fetch the item to get image name (to delete image file)
+    const { data: item, error: itemError } = await supabase
+      .from('menu')
+      .select('item_img')
+      .eq('item_id', itemIdToRemove)
+      .single();
+
+    if (itemError) {
+      console.error('Error fetching item for removal:', itemError);
+      return res.status(500).send("Error fetching item details");
+    }
+
+    // Delete the item from the database
+    const { error: deleteError } = await supabase
+      .from('menu')
+      .delete()
+      .eq('item_id', itemIdToRemove);
+
+    if (deleteError) {
+      console.error('Error deleting item:', deleteError);
+      return res.status(500).send("Error deleting the item");
+    }
+
+    // Delete the image file from the server
+    const imagePath = path.join(__dirname, 'public', 'images', 'dish', item.item_img);
+    fs.unlink(imagePath, (err) => {
+      if (err) {
+        console.error('Error deleting image file:', err);
+        // Not sending error to user as the item is already deleted from DB
+      } else {
+        console.log(`Image file ${item.item_img} deleted successfully`);
       }
+    });
 
-      // Fetch the item to get image name (to delete image file)
-      const { data: item, error: itemError } = await supabase
-          .from('menu')
-          .select('item_img')
-          .eq('item_id', itemIdToRemove)
-          .single();
-
-      if (itemError) {
-          console.error('Error fetching item for removal:', itemError);
-          return res.status(500).send("Error fetching item details");
-      }
-
-      // Delete the item from the database
-      const { error: deleteError } = await supabase
-          .from('menu')
-          .delete()
-          .eq('item_id', itemIdToRemove);
-
-      if (deleteError) {
-          console.error('Error deleting item:', deleteError);
-          return res.status(500).send("Error deleting the item");
-      }
-
-      // Delete the image file from the server
-      const imagePath = path.join(__dirname, 'public', 'images', 'dish', item.item_img);
-      fs.unlink(imagePath, (err) => {
-          if (err) {
-              console.error('Error deleting image file:', err);
-              // Not sending error to user as the item is already deleted from DB
-          } else {
-              console.log(`Image file ${item.item_img} deleted successfully`);
-          }
-      });
-
-      console.log(`Item with ID ${itemIdToRemove} removed successfully by admin ${userName}`);
-      res.redirect("/admin_remove_products");
+    console.log(`Item with ID ${itemIdToRemove} removed successfully by admin ${userName}`);
+    res.redirect("/admin_remove_products");
 
   } catch (error) {
-      console.error('Error in /admin_remove_products POST:', error);
-      res.status(500).send("An error occurred while removing the product");
+    console.error('Error in /admin_remove_products POST:', error);
+    res.status(500).send("An error occurred while removing the product");
   }
 });
 
@@ -507,7 +540,45 @@ app.post('/request-otp', (req, res) => {
 
 // Routes for User Sign-up, Sign-in, Home Page, Cart, Checkout, Order Confirmation, My Orders, and Settings
 app.get("/", renderIndexPage);
-app.post("/signin", express.json(), signInUser);
+app.post("/signin", express.json(), async (req, res) => {
+  console.log("Received signin request:", req.body);
+  const { email, password } = req.body;
+
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('user_id, user_name, user_password')
+      .eq('user_email', email)
+      .single();
+
+    if (error) {
+      console.error('Database error:', error);
+      return res.status(500).json({ success: false, error: 'Database error: ' + error.message });
+    }
+
+    if (!data) {
+      console.log('No user found for:', email);
+      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    if (data.user_password !== password) {
+      console.log('Invalid password for:', email);
+      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    // Successful login
+    res.cookie("cookuid", data.user_id);
+    res.cookie("cookuname", data.user_name);
+    console.log('Successful login for:', email);
+
+    // Redirect to the canteen page after successful sign-in
+    return res.json({ success: true, redirect: 'https://kleats.in/api/canteen/jashwanth' });
+  } catch (error) {
+    console.error('Unexpected error:', error);
+    return res.status(500).json({ success: false, error: 'An unexpected error occurred' });
+  }
+});
+
 app.get("/signin", renderSignInPage);
 app.get("/homepage", async (req, res) => {
   const userId = req.cookies.cookuid;
@@ -569,7 +640,7 @@ app.get('/cart', async (req, res) => {
   res.render('cart', { 
     items: itemDetails, 
     item_count: item_count,
-    canteen_name:req.query.canteen_name || '',
+    canteen_name: req.query.canteen_name || '',
     username: req.cookies.cookuname,
     userid: req.cookies.cookuid
   });
@@ -749,32 +820,35 @@ async function signInUser(req, res) {
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('user_id, user_name, user_email, user_password')
-      .eq('user_email', email);
+      .select('user_id, user_name, user_password')
+      .eq('user_email', email)
+      .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Database error:', error);
+      return res.status(500).json({ success: false, error: 'Database error: ' + error.message });
+    }
 
-    if (!data || data.length === 0) {
+    if (!data) {
       console.log('No user found for:', email);
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
-    const user = data[0]; // Get the first user (should be the only one)
-
-    if (user.user_password !== password) {
+    if (data.user_password !== password) {
       console.log('Invalid password for:', email);
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
-    const { user_id, user_name } = user;
-    res.cookie("cookuid", user_id);
-    res.cookie("cookuname", user_name);
+    // Successful login
+    res.cookie("cookuid", data.user_id);
+    res.cookie("cookuname", data.user_name);
     console.log('Successful login for:', email);
-    return res.json({ success: true });
 
+    // Redirect to the canteen page after successful sign-in
+    return res.json({ success: true, redirect: 'https://kleats.in/api/canteen/jashwanth' });
   } catch (error) {
-    console.error('Database error:', error);
-    return res.status(500).json({ success: false, error: 'Database error: ' + error.message });
+    console.error('Unexpected error:', error);
+    return res.status(500).json({ success: false, error: 'An unexpected error occurred' });
   }
 }
 
@@ -1671,5 +1745,150 @@ app.get('/member', (req, res) => {
 app.get('/members', (req, res) => {
   res.redirect('https://forms.office.com/r/iCRskqXN1W');
 });
+
+// Add this route handler
+app.get("/admin_scan_order", renderAdminScanOrderPage);
+
+// Add this function
+async function renderAdminScanOrderPage(req, res) {
+  const userId = req.cookies.cookuid;
+  const userName = req.cookies.cookuname;
+
+  try {
+    // Verify admin
+    const { data: admin, error: adminError } = await supabase
+      .from('admin')
+      .select('admin_id, admin_name')
+      .eq('admin_id', userId)
+      .eq('admin_name', userName)
+      .single();
+
+    if (adminError || !admin) {
+      return res.render("admin_signin");
+    }
+
+    res.render("admin_scan_order", {
+      username: userName,
+      userid: userId
+    });
+  } catch (error) {
+    console.error('Error in renderAdminScanOrderPage:', error);
+    res.status(500).send("An error occurred while loading the scan order page");
+  }
+}
+
+// Add this route handler for processing scanned orders
+app.post("/process_scanned_order", async (req, res) => {
+  const { orderId, newStatus } = req.body;
+  const userId = req.cookies.cookuid;
+  const userName = req.cookies.cookuname;
+
+  try {
+    // Verify admin
+    const { data: admin, error: adminError } = await supabase
+      .from('admin')
+      .select('admin_id, admin_name')
+      .eq('admin_id', userId)
+      .eq('admin_name', userName)
+      .single();
+
+    if (adminError || !admin) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Update order status
+    const { data, error } = await supabase
+      .from('orders')
+      .update({ payment_status: newStatus })
+      .eq('order_id', orderId)
+      .eq('canteenId', admin.admin_name);
+
+    if (error) throw error;
+
+    res.json({ success: true, message: 'Order status updated successfully' });
+  } catch (error) {
+    console.error('Error in process_scanned_order:', error);
+    res.status(500).json({ error: 'An error occurred while updating the order status' });
+  }
+});
+
+// Add this new route
+app.get('/api/order-details/:orderId', async (req, res) => {
+  const orderId = req.params.orderId;
+  const userId = req.cookies.cookuid;
+  const userName = req.cookies.cookuname;
+
+  try {
+    // Verify admin
+    const { data: admin, error: adminError } = await supabase
+      .from('admin')
+      .select('admin_id, admin_name')
+      .eq('admin_id', userId)
+      .eq('admin_name', userName)
+      .single();
+
+    if (adminError || !admin) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Fetch order details
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('order_id', orderId)
+      .eq('canteenId', admin.admin_name)
+      .single();
+
+    if (orderError) throw orderError;
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    res.json({ success: true, order });
+  } catch (error) {
+    console.error('Error in fetchOrderDetails:', error);
+    res.status(500).json({ success: false, message: 'An error occurred while fetching order details' });
+  }
+});
+
+async function sendOrderConfirmationEmail(email, orderDetails) {
+  const { userName, phoneNumber, totalPrice, paymentStatus, tokenNumber, menu } = orderDetails;
+
+  let menuHtml = menu.map(item => `<li>${item.item_name} x ${item.quantity}</li>`).join('');
+
+  // Generate QR code URL
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(tokenNumber)}`;
+
+  const mailOptions = {
+    from: process.env.OUTLOOK_USER,
+    to: email,
+    subject: 'Your Order Confirmation',
+    html: `
+      <h1>Order Confirmation</h1>
+      <p>Thank you for your order, ${userName}!</p>
+      <p>Order Details:</p>
+      <ul>
+        <li>Token Number: ${tokenNumber.split('-')[1]}</li>
+        <li>Total Price: ₹${totalPrice}</li>
+        <li>Payment Status: ${paymentStatus}</li>
+        <li>Phone Number: ${phoneNumber}</li>
+      </ul>
+      <h2>Your Order:</h2>
+      <ul>
+        ${menuHtml}
+      </ul>
+      <p>Please show the QR code below when collecting your order:</p>
+      <img src="${qrCodeUrl}" alt="Order QR Code" />
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Order confirmation email sent successfully');
+  } catch (error) {
+    console.error('Error sending order confirmation email:', error);
+  }
+}
 
 module.exports = app;

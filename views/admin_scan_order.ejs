@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>Scan Order QR - KL Eats</title>
+    <link rel="icon" href="/images/file.png" type="image/x-icon">
+    <!-- for icons  -->
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
+    <!-- bootstrap  -->
+    <link rel="stylesheet" href="/stylesheets/bootstrap.min.css">
+    <!-- for swiper slider  -->
+    <link rel="stylesheet" href="/stylesheets/swiper-bundle.min.css">
+
+    <!-- fancy box  -->
+    <link rel="stylesheet" href="/stylesheets/jquery.fancybox.min.css">
+    <!-- custom css  -->
+    <link rel="stylesheet" href="/stylesheets/style.css">
+    <script src="https://rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
+    <style>
+        .content-padding {
+            padding-top: 120px;
+        }
+        #scanner-container {
+            width: 300px;
+            height: 300px;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+            border: 3px solid #ccc;
+            border-radius: 10px;
+        }
+        #qr-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+        .scanner-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        .border-green {
+            border-color: #4CAF50 !important;
+        }
+        #order-details {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .status-paid {
+            color: green;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body class="body-fixed">
+    <!-- start of header  -->
+    <header class="site-header">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-2">
+
+                </div>
+                <div class="col-lg-10">
+                    <div class="main-navigation">
+                        <button class="menu-toggle"><span></span><span></span></button>
+                        <nav class="header-menu">
+                            <ul class="menu food-nav-menu">
+                                <li><a href="/adminHomePage">Home</a></li>
+                                <li><a href="#contact">Contact</a></li>
+                            </ul>
+                        </nav>
+                        <div class="header-right">
+                            <form action="#" class="header-search-form for-des">
+                                <input type="search" class="form-input" placeholder="Search Here...">
+                                <button type="submit">
+                                    <i class="uil uil-search"></i>
+                                </button>
+                            </form>
+                            </a>
+                            <a href="/logout" class="header-username" style="color: #ff8243;" title="Click To Log-Out">
+                                <b><i>
+                                        <%= username %>
+                                    </i></b>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- header ends  -->
+
+
+    <div id="viewport" class="content-padding">
+        <div id="js-scroll-content">
+
+            <!-- Sign In starts  -->
+
+            <section class="about-sec section" id="about" style="background-image: url(/images/menu-bg.png);">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <div class="sec-title text-center mb-5">
+                                <h2 class="h2-title">Scan Order QR Code</h2>
+                                <div class="sec-title-shape mb-4">
+                                    <img src="/images/title-shape.svg" alt="">
+                                </div>
+                                <div id="scanner-container">
+                                    <video id="qr-video"></video>
+                                    <div class="scanner-overlay" style="display: none;">Click to scan</div>
+                                </div>
+                                <div id="order-details" style="display: none;">
+                                    <h3>Order Details</h3>
+                                    <p id="order-id"></p>
+                                    <p id="order-status"></p>
+                                    <button id="dispatch-btn" class="sec-btn">Dispatch Order</button>
+                                    <button id="refund-btn" class="sec-btn">Refund Order</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- Sign In ends  -->
+
+
+            <!-- footer starts  -->
+            <footer class="site-footer" id="contact">
+                <div class="top-footer section">
+                    <div class="sec-wp">
+                        <div class="container">
+                            <div class="row">
+                                <div class="col-lg-4">
+                                    <div class="footer-info">
+                                        <div class="footer-logo">
+                                            <a href="/logout">
+                                                <img src="/images/file.png" alt="" style="width: 100px; height: 100px;">
+                                            </a>
+                                        </div>
+                                        <p>You’ll wonder how you ever lived without us.</p>
+                                        <div class="social-icon">
+                                            <ul>
+                                                <li><a href="#"><i class="uil uil-facebook-f"></i></a></li>
+                                                <li><a href="#"><i class="uil uil-instagram"></i></a></li>
+                                                <li><a href="#"><i class="uil uil-youtube"></i></a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-8">
+                                    <div class="footer-flex-box">
+
+                                        <div class="footer-menu food-nav-menu">
+                                            <h3 class="h3-title">Links</h3>
+                                            <ul class="column-2">
+                                                <li> <a href="/homepage" class="footer-active-menu">Home</a></li>
+                                                <li><a href="#contact">Contact</a></li>
+
+                                            </ul>
+                                        </div>
+                                        <div class="footer-menu">
+                                            <h3 class="h3-title">Company</h3>
+                                            <ul>
+                                                <li><a href="/terms-and-conditions">Terms & Conditions</a></li>
+                                                <li><a href="/privacy-policy">Privacy Policy</a></li>
+                                                <li><a href="/refund-policy">Refund Policy</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bottom-footer">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-lg-12 text-center">
+                                <div class="copyright-text">
+                                    <p>Copyright &copy; 2024 <span class="name">KL Eats </span>All Rights
+                                        Reserved.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="scrolltop"><i class="uil uil-angle-up"></i></button>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        let scanner = new Instascan.Scanner({ video: document.getElementById('qr-video') });
+        let scannerContainer = document.getElementById('scanner-container');
+        let scannerOverlay = document.querySelector('.scanner-overlay');
+        let cameras = [];
+        let currentCamera = null;
+
+        scanner.addListener('scan', function (content) {
+            fetchOrderDetails(content);
+            stopScanner();
+            scannerContainer.classList.add('border-green');
+        });
+
+        function startScanner() {
+            if (currentCamera) {
+                scanner.start(currentCamera);
+                scannerOverlay.style.display = 'none';
+            }
+        }
+
+        function stopScanner() {
+            scanner.stop();
+            scannerOverlay.style.display = 'flex';
+        }
+
+        Instascan.Camera.getCameras().then(function (availableCameras) {
+            cameras = availableCameras;
+            if (cameras.length > 0) {
+                // Try to find the back camera
+                currentCamera = cameras.find(camera => camera.name.toLowerCase().includes('back')) || cameras[0];
+                startScanner();
+            } else {
+                console.error('No cameras found.');
+                scannerOverlay.textContent = 'No cameras found';
+                scannerOverlay.style.display = 'flex';
+            }
+        }).catch(function (e) {
+            console.error(e);
+            scannerOverlay.textContent = 'Camera error';
+            scannerOverlay.style.display = 'flex';
+        });
+
+        scannerContainer.addEventListener('click', function() {
+            if (scanner.scanning) {
+                stopScanner();
+            } else {
+                scannerContainer.classList.remove('border-green');
+                startScanner();
+            }
+        });
+
+        function fetchOrderDetails(orderId) {
+            document.getElementById('order-id').textContent = `Order ID: ${orderId}`;
+            document.getElementById('order-status').textContent = 'Status: Fetching...';
+            document.getElementById('order-details').style.display = 'block';
+
+            // Fetch order details from the server
+            fetch(`/api/order-details/${orderId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('order-status').textContent = `Status: ${data.order.payment_status}`;
+                        if (data.order.payment_status.toUpperCase() === 'PAID') {
+                            document.getElementById('order-status').classList.add('status-paid');
+                        }
+                        // Add more details as needed
+                    } else {
+                        document.getElementById('order-status').textContent = 'Status: Error fetching order details';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('order-status').textContent = 'Status: Error fetching order details';
+                });
+
+            // Add event listeners to buttons
+            document.getElementById('dispatch-btn').onclick = () => updateOrderStatus(orderId, 'DISPATCHED');
+            document.getElementById('refund-btn').onclick = () => updateOrderStatus(orderId, 'REFUND');
+        }
+
+        function updateOrderStatus(orderId, newStatus) {
+            fetch('/process_scanned_order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ orderId, newStatus }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('order-status').textContent = `Status: ${newStatus}`;
+                    alert('Order status updated successfully');
+                } else {
+                    alert('Failed to update order status');
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('An error occurred while updating the order status');
+            });
+        }
+    </script>
+
+    <!-- jquery  -->
+    <script src="/javascripts/jquery-3.5.1.min.js"></script>
+    <!-- bootstrap -->
+    <script src="/javascripts/bootstrap.min.js"></script>
+    <script src="/javascripts/popper.min.js"></script>
+
+    <!-- fontawesome  -->
+    <script src="/javascripts/font-awesome.min.js"></script>
+
+    <!-- swiper slider  -->
+    <script src="/javascripts/swiper-bundle.min.js"></script>
+
+    <!-- mixitup -- filter  -->
+    <script src="/javascripts/jquery.mixitup.min.js"></script>
+
+    <!-- fancy box  -->
+    <script src="/javascripts/query.fancybox.min.js"></script>
+
+    <!-- parallax  -->
+    <script src="/javascripts/parallax.min.js"></script>
+
+    <!-- gsap  -->
+    <script src="/javascripts/gsap.min.js"></script>
+
+    <!-- scroll trigger  -->
+    <script src="/javascripts/ScrollTrigger.min.js"></script>
+    <!-- scroll to plugin  -->
+    <script src="/javascripts/ScrollToPlugin.min.js"></script>
+    <!-- rellax  -->
+    <!-- <script src="assets/js/rellax.min.js"></script> -->
+    <!-- <script src="assets/js/rellax-custom.js"></script> -->
+    <!-- smooth scroll  -->
+    <script src="/javascripts/smooth-scroll.js"></script>
+    <!-- custom js  -->
+    <script src="/javascripts/main.js"></script>
+
+
+    </div>
+    </div>
+</body>
+
+</html>
