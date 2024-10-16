@@ -30,6 +30,13 @@
                 margin-left: 10px;
             }
         }
+
+        @media (max-width: 767px) {
+            html, body {
+                max-width: 100%;
+                overflow-x: hidden;
+            }
+        }
     </style>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y3TDH790Z7"></script>
@@ -40,6 +47,9 @@
 
         gtag('config', 'G-Y3TDH790Z7');
     </script>
+    <!-- Add these lines just after your existing meta tags -->
+    <link rel="preload" href="/manifest.json" as="fetch"/>
+    <link rel="manifest" crossorigin="use-credentials" href="/manifest.json" />
 </head>
 
 <body class="body-fixed">
@@ -585,10 +595,10 @@
                                 <button id="viewMoreBtn" class="sec-btn">View More</button>
                             </div>
                         </div>
+                        <!-- Add this spacer div -->
+                        <div id="spacer" style="height: 0; transition: height 0.3s ease;"></div>
                     </div>
                 </div>
-                <!-- Add this empty div after the testimonials section -->
-                <div id="spacer" style="height: 0; transition: height 0.3s ease;"></div>
             </section>
 
             <!-- footer starts  -->
@@ -700,17 +710,36 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Remove custom scrollbar styling
+            document.body.style.overflow = 'auto';
+            document.getElementById('viewport').style.overflow = 'visible';
+            document.getElementById('js-scroll-content').style.overflow = 'visible';
+
             const teamContainer = document.querySelector('.team-members-container');
             const teamMembers = Array.from(teamContainer.children);
             const viewMoreBtn = document.getElementById('viewMoreBtn');
             let isExpanded = false;
-            
-            // Shuffle all team members
+
+            // Remove Dr. Sripath Roy Koganti from the array
+            const drSripathElement = teamMembers.find(member => 
+                member.querySelector('.h3-title').textContent.trim() === 'Dr Sripath Roy Koganti'
+            );
+            const drSripathIndex = teamMembers.indexOf(drSripathElement);
+            if (drSripathIndex > -1) {
+                teamMembers.splice(drSripathIndex, 1);
+            }
+
+            // Shuffle the remaining team members
             for (let i = teamMembers.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [teamMembers[i], teamMembers[j]] = [teamMembers[j], teamMembers[i]];
             }
-            
+
+            // Add Dr. Sripath Roy Koganti back to the beginning of the array
+            if (drSripathElement) {
+                teamMembers.unshift(drSripathElement);
+            }
+
             // Reappend the shuffled members
             teamMembers.forEach(member => teamContainer.appendChild(member));
 
@@ -735,43 +764,25 @@
                 viewMoreBtn.textContent = isExpanded ? 'View Less' : 'View More';
 
                 if (isExpanded) {
-                    teamMembers[6].scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    // Scroll to the 7th team member (index 6)
+                    const seventhMember = teamMembers[6];
+                    seventhMember.scrollIntoView({ behavior: 'auto', block: 'start' });
                 } else {
-                    viewMoreBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // Scroll to the "View More" button
+                    viewMoreBtn.scrollIntoView({ behavior: 'auto', block: 'start' });
                 }
             });
         });
     </script>
 
+    <!-- Add this script at the end of the body, just before the closing </body> tag -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const teamContainer = document.querySelector('.team-members-container');
-            const teamMembers = Array.from(teamContainer.children);
-            
-            // Shuffle all team members
-            for (let i = teamMembers.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [teamMembers[i], teamMembers[j]] = [teamMembers[j], teamMembers[i]];
-            }
-            
-            // Reappend the shuffled members
-            teamMembers.forEach(member => teamContainer.appendChild(member));
-
-            // Ensure the first 6 members are visible and the rest are hidden
-            teamMembers.forEach((member, index) => {
-                if (index < 6) {
-                    member.classList.remove('hidden-team-member');
-                    member.style.display = '';
-                } else {
-                    member.classList.add('hidden-team-member');
-                    member.style.display = 'none';
-                }
-            });
-        });
+    window.onload = function() {
+      if('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/service-worker.js');
+      }
+    }
     </script>
-
-    </div>
-    </div>
 </body>
 
 </html>
