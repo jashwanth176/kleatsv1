@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Cart - Hungry To Eat</title>
+    <title>Cart - KL Eats</title>
     <link rel="icon" href="/images/file.png" type="image/x-icon">
     <!-- for icons  -->
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
@@ -191,7 +191,7 @@
                                                                 <td id="subtotal_price">₹ 0</td>
                                                             </tr>
                                                             <tr>
-                                                                <td colspan="5"><strong>GST Charges (2%)</strong></td>
+                                                                <td colspan="5"><strong>GST Charges (5%)</strong></td>
                                                                 <td id="gst_charges">₹ 0</td>
                                                             </tr>
                                                             <tr>
@@ -414,7 +414,7 @@
             });
 
             // Calculate GST (2% of subtotal, rounded up)
-            const gstCharges = Math.ceil(subtotalPrice * 0.02);
+            const gstCharges = Math.ceil(subtotalPrice * 0.05);
 
             // Calculate total (subtotal + GST)
             const totalPrice = subtotalPrice + gstCharges;

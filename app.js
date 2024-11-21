@@ -107,7 +107,7 @@ app.post('/api/buyNow', async (req, res) => {
         }
 
         let itemPrice = Number(it.item_price);
-        itemPrice = itemPrice + (itemPrice * 0.0195);
+        itemPrice = itemPrice + (itemPrice * 0.05);
 
         totalPrice = totalPrice + (itemPrice * item.quantity);
         //console.log(totalPrice);
@@ -1890,5 +1890,190 @@ async function sendOrderConfirmationEmail(email, orderDetails) {
     console.error('Error sending order confirmation email:', error);
   }
 }
+
+// Add this new route for SSE
+app.get('/admin-orders-stream', async (req, res) => {
+  const userName = req.cookies.cookuname;
+
+  // Set headers for SSE
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  // Function to send updates
+  const sendUpdate = async () => {
+    try {
+      // Fetch dispatched orders
+      const { data: orders, error: ordersError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('canteenId', userName)
+        .eq('payment_status', 'DISPATCHED')
+        .order('datetime', { ascending: false });
+
+      if (ordersError) throw ordersError;
+
+      // Calculate total money
+      let totalMoney = 0;
+      for (let order of orders) {
+        totalMoney += parseFloat(order.price);
+      }
+
+      // Fetch item names
+      for (let i = 0; i < orders.length; i++) {
+        const { data: menu, error: menuError } = await supabase
+          .from('menu')
+          .select('item_name')
+          .eq('item_id', orders[i].item_id)
+          .single();
+        
+        if (!menuError && menu) {
+          orders[i].item_name = menu.item_name;
+        }
+      }
+
+      res.write(`data: ${JSON.stringify({ orders, totalMoney })}\n\n`);
+    } catch (error) {
+      console.error('Error in SSE update:', error);
+    }
+  };
+
+  // Initial data send
+  await sendUpdate();
+
+  // Set up Supabase realtime subscription
+  const channel = supabase.channel('custom-all-channel')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'orders'
+      },
+      async (payload) => {
+        console.log('Change received:', payload);
+        await sendUpdate();
+      }
+    )
+    .subscribe((status) => {
+      console.log('Subscription status:', status);
+    });
+
+  // Clean up on client disconnect
+  req.on('close', () => {
+    channel.unsubscribe();
+  });
+});
+
+// Modify this helper function
+function isBreakfastTime() {
+  const now = new Date();
+  const hours = now.getHours();
+  return hours < 11; // Changed from 11 to 12 (available until noon)
+}
+
+// Modify your route handler that renders homepage2
+app.get('/homepage2/:canteenName', async (req, res) => {
+  try {
+    const canteenName = req.params.canteenName;
+    const isBreakfast = isBreakfastTime();
+
+    // Fetch menu items
+    const { data: items, error } = await supabase
+      .from('menu')
+      .select('*')
+      .eq('canteenId', canteenName)
+      .eq('is_paused', false); // Only fetch active items
+
+    if (error) throw error;
+
+    // Filter out breakfast items if after 11 AM
+    const filteredItems = items.filter(item => {
+      if (item.item_category === 'breakfast') {
+        return isBreakfast;
+      }
+      return true;
+    });
+
+    res.render('homepage2', {
+      items: filteredItems,
+      canteenName: canteenName
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// Add this new route to handle toggling item status
+app.post('/api/toggle-item-status', async (req, res) => {
+  try {
+    const { itemId, status } = req.body;
+    const userName = req.cookies.cookuname;
+
+    console.log('Received request:', { itemId, status, userName }); // Debug log
+
+    // First verify that this item belongs to the logged-in admin
+    const { data: item, error: itemError } = await supabase
+      .from('menu')
+      .select('canteenId, is_paused')
+      .eq('item_id', itemId)
+      .single();
+
+    console.log('Database query result:', { item, itemError }); // Debug log
+
+    if (itemError) {
+      console.error('Item query error:', itemError);
+      return res.json({ 
+        success: false, 
+        message: 'Error finding item: ' + itemError.message 
+      });
+    }
+
+    if (!item) {
+      return res.json({ 
+        success: false, 
+        message: 'Item not found' 
+      });
+    }
+
+    if (item.canteenId !== userName) {
+      return res.json({ 
+        success: false, 
+        message: `Unauthorized: ${userName} cannot modify items for ${item.canteenId}` 
+      });
+    }
+
+    // Update the item status
+    const { data: updateData, error: updateError } = await supabase
+      .from('menu')
+      .update({ is_paused: status })
+      .eq('item_id', itemId)
+      .select();
+
+    console.log('Update result:', { updateData, updateError }); // Debug log
+
+    if (updateError) {
+      console.error('Update error:', updateError);
+      return res.json({ 
+        success: false, 
+        message: 'Error updating item: ' + updateError.message 
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Item status updated successfully',
+      newStatus: status,
+      reload: true
+    });
+  } catch (error) {
+    console.error('Error in toggleItemStatus:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'An error occurred: ' + error.message 
+    });
+  }
+});
 
 module.exports = app;

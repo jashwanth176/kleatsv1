@@ -187,7 +187,7 @@
                                     </li>
                                     <li class="filter" data-filter=".desserts">
                                         <img src="/images/menu-6.png" alt="">
-                                        Desserts
+                                        Snacks
                                     </li>
                                 </ul>
                             </div>
@@ -199,7 +199,8 @@
                         style="background-image: url(/images/menu-bg.png);">
                         <% for(let i=0;i<items.length;i++) { %>
                             <div class="col-lg-4 col-sm-6 dish-box-wp <%= items[i].item_category %>"
-                                data-cat="breakfast">
+                                data-cat="<%= items[i].item_category %>"
+                                data-item-id="<%= items[i].item_id %>">
                                 <div class="dish-box text-center">
                                     <div class="dist-img" style="height: 250px; overflow: hidden;">
                                         <img src="/images/dish/<%= items[i].item_img %>"
@@ -400,6 +401,71 @@
 
         <!-- Ensure that your custom scripts are loaded after Bootstrap JS -->
         <script src="/javascripts/main.js"></script>
+
+        <!-- Add this script just before the closing body tag -->
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            function hideBreakfastItems() {
+                const now = new Date();
+                const hours = now.getHours();
+                
+                if (hours >= 11) {
+                    // Hide breakfast filter button
+                    const breakfastFilter = document.querySelector('.filter[data-filter=".breakfast"]');
+                    if (breakfastFilter) {
+                        breakfastFilter.style.display = 'none';
+                    }
+                    
+                    // Hide breakfast items if they're somehow still visible
+                    const breakfastItems = document.querySelectorAll('.breakfast');
+                    breakfastItems.forEach(item => {
+                        item.style.display = 'none';
+                    });
+                    
+                    // If "All" filter is active, trigger a re-filter
+                    const activeFilter = document.querySelector('.filter.active');
+                    if (activeFilter && activeFilter.getAttribute('data-filter').includes('.breakfast')) {
+                        document.querySelector('.filter[data-filter=".all"]').click();
+                    }
+                }
+            }
+
+            // Run immediately
+            hideBreakfastItems();
+
+            // Check every minute (optional, for if someone keeps the page open across 12 PM)
+            setInterval(hideBreakfastItems, 60000);
+        });
+        </script>
+
+        <!-- Add this script just before the closing body tag -->
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Function to hide/show menu items
+            function toggleItemVisibility(itemId, isPaused) {
+                const itemElement = document.querySelector(`[data-item-id="${itemId}"]`);
+                if (itemElement) {
+                    if (isPaused) {
+                        itemElement.style.display = 'none';
+                    } else {
+                        itemElement.style.display = 'block';
+                    }
+                }
+            }
+
+            // Add event listener for pause/unpause buttons
+            document.querySelectorAll('.dish-box-wp').forEach(item => {
+                const toggleBtn = item.querySelector('.toggle-item-btn');
+                if (toggleBtn) {
+                    toggleBtn.addEventListener('click', function() {
+                        const itemId = this.dataset.itemId;
+                        const newStatus = this.dataset.status === 'true';
+                        toggleItemVisibility(itemId, newStatus);
+                    });
+                }
+            });
+        });
+        </script>
 </body>
 
 </html>

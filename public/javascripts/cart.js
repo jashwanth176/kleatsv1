@@ -2,11 +2,6 @@ let cart = [];
 let debounceTimers = {};
 
 function addToCart(itemId, itemName, itemPrice) {
-
-
-        // const name="btn"+itemId;
-        // document.getElementById(name).innerHTML = "Added";
-
     const existingItem = cart.find(item => item.item_id === itemId);
 
     if (existingItem) {
@@ -14,21 +9,10 @@ function addToCart(itemId, itemName, itemPrice) {
     } else {
         cart.push({ item_id: itemId, item_name: itemName, price: itemPrice, quantity: 1 });
     }
-
-    //document.getElementById("btn"+itemId).innerHTML = "Added";
-
-
-    // if(!existingItem){
-    //     cart.push({ item_id: itemId, item_name: itemName, price: itemPrice, quantity: 1 });
-    //     document.getElementById("btn"+itemId).innerHTML = "Added";
-    // }
     
+    // Remove incrementCartCount() since updateCartDisplay() already handles this
     updateCartDisplay();
     updateButtonState(itemId);
-    saveCartToLocalStorage();
-
-    // New code for incrementing cart count and flashing button
-    incrementCartCount();
 
     // Clear any existing timer for this button
     if (debounceTimers[itemId]) {
@@ -46,7 +30,7 @@ function addToCart(itemId, itemName, itemPrice) {
         button.innerHTML = '<i class="uil uil-plus"></i>';
         button.classList.remove('added');
         button.disabled = false;
-        delete debounceTimers[itemId]; // Clean up the timer reference
+        delete debounceTimers[itemId];
     }, 2500);
 }
 
@@ -72,12 +56,9 @@ function openMyCart() {
 
 // Initialize cart from localStorage on page load
 document.addEventListener('DOMContentLoaded', () => {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-        cart = JSON.parse(savedCart);
-        updateCartDisplay();
-        cart.forEach(item => updateButtonState(item.item_id));
-    }
+    // Initialize empty cart
+    cart = [];
+    updateCartDisplay();
 });
 
 // Save cart to localStorage whenever it changes
@@ -85,12 +66,6 @@ function saveCartToLocalStorage() {
     localStorage.setItem('cart', JSON.stringify(cart));
 }
 
-// New function to increment cart count
-function incrementCartCount() {
-    const cartCountElement = document.getElementById('cart-number-count');
-    let currentCount = parseInt(cartCountElement.textContent, 10);
-    cartCountElement.textContent = currentCount + 1;
-}
 
 // New function to flash button red
 function flashButton(itemId) {

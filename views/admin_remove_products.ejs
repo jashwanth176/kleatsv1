@@ -42,6 +42,31 @@
         .table-responsive table {
             width: 100%;
         }
+
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        .status-badge.active {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .status-badge.paused {
+            background-color: #ffc107;
+            color: black;
+        }
+        
+        .pause-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .pause-btn:hover {
+            opacity: 0.8;
+        }
     </style>
 </head>
 
@@ -111,7 +136,8 @@
                                                     <th>Item ID</th>
                                                     <th>Item Name</th>
                                                     <th>Item Price</th>
-                                                    <th>Action</th>
+                                                    <th>Status</th>
+                                                    <th>Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -137,10 +163,31 @@
                                                                     <%= item.item_price %>
                                                                 </td>
                                                                 <td>
-                                                                    <button type="submit" name="item_id"
-                                                                        value="<%= item.item_id %>"
-                                                                        onclick="return confirm('Are you sure you want to remove this item?');"
-                                                                        style="background: red; color: white; border: none; padding: 5px 10px; border-radius: 5px;">
+                                                                    <span class="status-badge <%= item.is_paused ? 'paused' : 'active' %>">
+                                                                        <%= item.is_paused ? 'Paused' : 'Active' %>
+                                                                    </span>
+                                                                </td>
+                                                                <td>
+                                                                    <button type="button"
+                                                                            onclick="toggleItemStatus('<%= item.item_id %>', <%= item.is_paused %>)"
+                                                                            class="pause-btn <%= item.is_paused ? 'resume' : 'pause' %>"
+                                                                            style="background: <%= item.is_paused ? '#28a745' : '#ffc107' %>; 
+                                                                                   color: white; 
+                                                                                   border: none; 
+                                                                                   padding: 5px 10px; 
+                                                                                   border-radius: 5px;
+                                                                                   margin-right: 5px;">
+                                                                        <%= item.is_paused ? 'Resume' : 'Pause' %>
+                                                                    </button>
+                                                                    <button type="submit" 
+                                                                            name="item_id"
+                                                                            value="<%= item.item_id %>"
+                                                                            onclick="return confirm('Are you sure you want to remove this item?');"
+                                                                            style="background: red; 
+                                                                                   color: white; 
+                                                                                   border: none; 
+                                                                                   padding: 5px 10px; 
+                                                                                   border-radius: 5px;">
                                                                         Remove
                                                                     </button>
                                                                 </td>
@@ -264,6 +311,35 @@
     <script src="/javascripts/smooth-scroll.js"></script>
     <!-- custom js  -->
     <script src="/javascripts/main.js"></script>
+
+    <script>
+    async function toggleItemStatus(itemId, currentStatus) {
+        try {
+            const response = await fetch('/api/toggle-item-status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    itemId: itemId,
+                    status: !currentStatus
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                // Reload the page to show updated status
+                location.reload();
+            } else {
+                alert('Failed to update item status');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while updating the item status');
+        }
+    }
+    </script>
 
 
     </div>

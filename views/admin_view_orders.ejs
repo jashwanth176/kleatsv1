@@ -283,11 +283,11 @@
                             <td>${index + 1}</td>
                             <td>${order.order_id}</td>
                             <td>${order.user_id}</td>
-                            <td>${order.item_id}</td>
+                            <td>${order.order_id.split('-')[1]}</td>
+                            <td>${order.item_name}</td>
                             <td>${order.quantity}</td>
                             <td>${order.price}</td>
                             <td>${new Date(order.datetime).toLocaleString()}</td>
-                            <td><input type="checkbox" class="dispatch form-check-input" name="${order.order_id}" id="dispatch" value="true" onchange="checkingDispatch()"></td>
                         </tr>
                     `;
                     tbody.innerHTML += row;
@@ -312,6 +312,88 @@
             
             // Initial call to set button position
             updateButtonVisibility();
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            let eventSource;
+
+            function connectSSE() {
+                // Close existing connection if any
+                if (eventSource) {
+                    eventSource.close();
+                }
+
+                // Create new EventSource connection
+                eventSource = new EventSource('/admin-orders-stream');
+
+                eventSource.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        updateOrdersTable(data.orders);
+                        updateTotalMoney(data.totalMoney);
+                    } catch (error) {
+                        console.error('Error processing SSE message:', error);
+                    }
+                };
+
+                eventSource.onerror = function(error) {
+                    console.error('SSE Error:', error);
+                    eventSource.close();
+                    // Try to reconnect after 5 seconds
+                    setTimeout(connectSSE, 5000);
+                };
+            }
+
+            // Function to update the orders table
+            function updateOrdersTable(orders) {
+                const tbody = document.querySelector('#order tbody');
+                if (!tbody) return;
+
+                tbody.innerHTML = '';
+
+                if (orders.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="8" class="text-center">No dispatched orders found.</td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                orders.forEach((order, index) => {
+                    const row = `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${order.order_id}</td>
+                            <td>${order.user_id}</td>
+                            <td>${order.order_id.split('-')[1]}</td>
+                            <td>${order.item_name || 'N/A'}</td>
+                            <td>${order.quantity}</td>
+                            <td>${order.price}</td>
+                            <td>${new Date(order.datetime).toLocaleString()}</td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            }
+
+            // Function to update the total money display
+            function updateTotalMoney(totalMoney) {
+                const totalMoneyBox = document.querySelector('.total-money-box');
+                if (totalMoneyBox) {
+                    totalMoneyBox.innerHTML = `Total Money: ₹${totalMoney.toFixed(2)}`;
+                }
+            }
+
+            // Start SSE connection
+            connectSSE();
+
+            // Clean up on page unload
+            window.addEventListener('beforeunload', () => {
+                if (eventSource) {
+                    eventSource.close();
+                }
+            });
         });
     </script>
     <!-- jquery  -->
