@@ -16,6 +16,68 @@
 
       gtag('config', 'G-Y3TDH790Z7');
         </script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap" rel="stylesheet">
+    <style>
+        .contact-us {
+            padding: 20px;
+            max-width: 900px;
+            margin: auto;
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            transition: box-shadow 0.3s;
+        }
+
+        .contact-us:hover {
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .contact-us h1 {
+            font-family: 'Poppins', sans-serif;
+            color: #f40808;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .contact-us h2 {
+            font-family: 'Poppins', sans-serif;
+            color: #f40808;
+            margin: 15px 0;
+            font-size: 1.8em;
+        }
+
+        .contact-info {
+            border: 2px solid #f40808;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            background: linear-gradient(145deg, #ffffff, #e6e6e6);
+            box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            text-align: justify;
+        }
+
+        .contact-info:hover {
+            transform: translateY(-5px);
+            box-shadow: 6px 6px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .contact-info p, .contact-info li {
+            line-height: 1.6;
+            margin-bottom: 15px;
+            color: #000;
+            font-size: 1.1em;
+        }
+
+        .contact-info ul {
+            list-style-type: disc;
+            margin-left: 20px;
+        }
+    </style>
 </head>
 
 <body>
@@ -25,35 +87,27 @@
     </header>
 
     <main class="contact-us">
-        <div class="container">
-            <h1>Contact Us</h1>
+        <h1>Contact Us</h1>
 
-            <% if (typeof message !=='undefined' && message) { %>
-                <div class="alert success">
-                    <p>
-                        <%= message %>
-                    </p>
-                </div>
-                <% } %>
+        <% if (typeof message !== 'undefined' && message) { %>
+            <div class="alert success">
+                <p><%= message %></p>
+            </div>
+        <% } %>
 
-
-                    <!-- Added Contact Information Section -->
-                    <div class="contact-info" style="margin-top: 40px;">
-                        <h2>Contact Information</h2>
-                        <p><strong>Last updated on:</strong> 02-10-2024 12:36:22</p>
-                        <p>You may contact us using the information below:</p>
-                        <ul>
-                            <li><strong>Merchant Legal Entity Name:</strong> VAMSI KRISHNA PASUPUREDDY</li>
-                            <li><strong>Registered Address:</strong> KLEF Deemed to be University, Green Fields,
-                                Vaddeswaram, Guntur, Andhra Pradesh, PIN: 522302</li>
-                            <li><strong>Operational Address:</strong> KLEF Deemed to be University, Green Fields,
-                                Vaddeswaram, Guntur, Andhra Pradesh, PIN: 522302</li>
-                            <li><strong>Telephone No:</strong> 7205655157</li>
-                            <li><strong>E-Mail ID:</strong> 2300031005@kluniversity.in</li>
-                        </ul>
-                    </div>
-                    <!-- End of Contact Information Section -->
-
+        <div class="contact-info">
+            <h2>Contact Information</h2>
+            <p><strong>Last updated on:</strong> 02-10-2024 12:36:22</p>
+            <p>You may contact us using the information below:</p>
+            <ul>
+                <li><strong>Merchant Legal Entity Name:</strong> VAMSI KRISHNA PASUPUREDDY</li>
+                <li><strong>Registered Address:</strong> KLEF Deemed to be University, Green Fields,
+                    Vaddeswaram, Guntur, Andhra Pradesh, PIN: 522302</li>
+                <li><strong>Operational Address:</strong> KLEF Deemed to be University, Green Fields,
+                    Vaddeswaram, Guntur, Andhra Pradesh, PIN: 522302</li>
+                <li><strong>Telephone No:</strong> 7205655157</li>
+                <li><strong>E-Mail ID:</strong> 2300031005@kluniversity.in</li>
+            </ul>
         </div>
     </main>
 

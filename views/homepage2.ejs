@@ -26,15 +26,11 @@
             flex-direction: column;
         }
 
-        /* Add this new style for the header */
         .site-header {
             background-color: rgba(255, 255, 255, 0.9);
-            /* White with 90% opacity */
             backdrop-filter: blur(5px);
-            /* Optional: adds a slight blur effect */
         }
 
-        /* Dropdown Container */
         .dropdown {
             position: relative;
             display: inline-block;
@@ -84,6 +80,16 @@
         hyphens: auto;
         max-width: 100%;
     }
+    @keyframes bounce {
+        from {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateY(-16px);
+            opacity: 0.5;
+        }
+    }
     </style>
         <!-- Google tag (gtag.js) -->
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y3TDH790Z7"></script>
@@ -97,6 +103,46 @@
 </head>
 
 <body class="body-fixed">
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #ffffff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    ">
+        <div style="display: flex; gap: 8px;">
+            <div style="
+                width: 12px;
+                height: 12px;
+                background: #f40808;
+                border-radius: 50%;
+                animation: bounce 0.5s alternate infinite;
+                animation-delay: 0.2s;
+            "></div>
+            <div style="
+                width: 12px;
+                height: 12px;
+                background: #f40808;
+                border-radius: 50%;
+                animation: bounce 0.5s alternate infinite;
+                animation-delay: 0.4s;
+            "></div>
+            <div style="
+                width: 12px;
+                height: 12px;
+                background: #f40808;
+                border-radius: 50%;
+                animation: bounce 0.5s alternate infinite;
+                animation-delay: 0.6s;
+            "></div>
+        </div>
+    </div>
     <!-- start of header  -->
     <header class="site-header">
         <div class="container">
@@ -145,7 +191,7 @@
     <section style="background-image: url(assets/images/menu-bg.png);" class="our-menu section bg-light repeat-img"
         id="menu">
         <div class="sec-wp">
-            <div class="container">
+            <div class="container" style="padding-top: 2rem;">
                 <div class="row">
                     <div class="col-lg-12">
                         <div class="sec-title text-center mb-5">
@@ -198,11 +244,12 @@
                     <div class="row g-xxl-5 bydefault_show" id="menu-dish"
                         style="background-image: url(/images/menu-bg.png);">
                         <% for(let i=0;i<items.length;i++) { %>
-                            <div class="col-lg-4 col-sm-6 dish-box-wp <%= items[i].item_category %>"
+                            <div class="col-lg-3 col-sm-6 dish-box-wp <%= items[i].item_category %>"
                                 data-cat="<%= items[i].item_category %>"
-                                data-item-id="<%= items[i].item_id %>">
-                                <div class="dish-box text-center">
-                                    <div class="dist-img" style="height: 250px; overflow: hidden;">
+                                data-item-id="<%= items[i].item_id %>"
+                                style="margin-bottom: 2rem;">
+                                <div class="dish-box text-center" style="transform: scale(0.75); margin: -2rem;">
+                                    <div class="dist-img" style="height: 187px; overflow: hidden;">
                                         <img src="/images/dish/<%= items[i].item_img %>"
                                             alt="<%= items[i].item_name %>"
                                             style="width: 100%; height: 100%; object-fit: cover; object-position: center;">
@@ -465,6 +512,12 @@
                 }
             });
         });
+        </script>
+
+        <script>
+            window.addEventListener('load', function() {
+                document.getElementById('loading-overlay').style.display = 'none';
+            });
         </script>
 </body>
 

@@ -97,6 +97,47 @@
 </head>
 
 <body class="body-fixed">
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #ffffff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    ">
+        <div style="display: flex; gap: 8px;">
+            <div style="
+                width: 12px;
+                height: 12px;
+                background: #f40808;
+                border-radius: 50%;
+                animation: bounce 0.5s alternate infinite;
+                animation-delay: 0.2s;
+            "></div>
+            <div style="
+                width: 12px;
+                height: 12px;
+                background: #f40808;
+                border-radius: 50%;
+                animation: bounce 0.5s alternate infinite;
+                animation-delay: 0.4s;
+            "></div>
+            <div style="
+                width: 12px;
+                height: 12px;
+                background: #f40808;
+                border-radius: 50%;
+                animation: bounce 0.5s alternate infinite;
+                animation-delay: 0.6s;
+            "></div>
+        </div>
+    </div>
+
     <!-- start of header  -->
     <header class="site-header">
         <div class="container">
@@ -195,9 +236,9 @@
                     <div class="row g-xxl-5 bydefault_show" id="menu-dish"
                         style="background-image: url(/images/menu-bg.png);">
                         <% for(let i=0;i<items.length;i++) { %>
-                            <div class="col-lg-4 col-sm-6 dish-box-wp <%= items[i].item_category %>"
+                            <div class="col-lg-3 col-sm-6 dish-box-wp <%= items[i].item_category %>"
                                 data-cat="breakfast">
-                                <div class="dish-box text-center">
+                                <div class="dish-box text-center" style = "transform: scale(0.80); margin: -0.5rem;">
                                     <div class="dist-img" style="height: 250px; overflow: hidden;">
                                         <img src="/images/dish/<%= items[i].item_img %>"
                                             alt="<%= items[i].item_name %>"
@@ -393,6 +434,25 @@
 
         <!-- Ensure that your custom scripts are loaded after Bootstrap JS -->
         <script src="/javascripts/main.js"></script>
+
+        <style>
+            @keyframes bounce {
+                from {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateY(-16px);
+                    opacity: 0.5;
+                }
+            }
+        </style>
+
+        <script>
+            window.addEventListener('load', function() {
+                document.getElementById('loading-overlay').style.display = 'none';
+            });
+        </script>
 </body>
 
 </html>

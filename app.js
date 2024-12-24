@@ -73,7 +73,7 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-transporter.verify(function(error, success) {
+transporter.verify(function (error, success) {
   if (error) {
     console.log('Server connection failed:', error);
   } else {
@@ -86,16 +86,29 @@ transporter.verify(function(error, success) {
 //BuyNow GateWay
 app.post('/api/buyNow', async (req, res) => {
   try {
-    const { name, phone, email, items, order_time } = req.body; // Add email here
+    const { name, phone, email, items, order_time, orderType } = req.body;
+
+    // Debug logs
+    console.log('=============== ORDER DEBUG ===============');
+    console.log('Raw orderType:', orderType);
+    console.log('Raw request body:', req.body);
+    console.log('Order Type comparison:', {
+      isPickup: orderType === 'pickup',
+      isString: typeof orderType === 'string',
+      trimmedValue: orderType ? orderType.trim() : null
+    });
+
+    const pickupCharge = orderType === 'pickup' ? 5 : 0;
+    console.log('Calculated pickup charge:', pickupCharge);
 
     let totalPrice = 0.00;
     let orderId = uuidv4();
 
+    // Calculate items total
     for (const item of items) {
       console.log(item);
       if (item.quantity > 0) {
-
-        const { data: it, er: userError } = await supabase
+        const { data: it, error: userError } = await supabase
           .from('menu')
           .select('item_price,canteenId')
           .eq('item_id', item.item_id)
@@ -107,12 +120,20 @@ app.post('/api/buyNow', async (req, res) => {
         }
 
         let itemPrice = Number(it.item_price);
+        // Add GST (5%)
         itemPrice = itemPrice + (itemPrice * 0.05);
 
-        totalPrice = totalPrice + (itemPrice * item.quantity);
-        //console.log(totalPrice);
-        //orderId=uuidv4();
+        const itemTotal = itemPrice * item.quantity;
+        totalPrice += itemTotal;
 
+        console.log(`Item ${item.item_id}:`, {
+          basePrice: Number(it.item_price),
+          priceWithGST: itemPrice,
+          quantity: item.quantity,
+          itemTotal: itemTotal
+        });
+
+        // Store in database without pickup charge
         const { error } = await supabase
           .from('orders')
           .insert({
@@ -123,23 +144,33 @@ app.post('/api/buyNow', async (req, res) => {
             payment_status: 'Pending',
             name: name,
             datetime: getTime(),
-            price: itemPrice * item.quantity,
+            price: itemTotal,
             canteenId: it.canteenId,
             orderTime: order_time,
-            email: email // Add this line
+            email: email,
+            order_type: orderType
           });
 
         if (error) {
           console.log('Error inserting order:', error);
-          return res.json({ code: -1, message: 'Error while placeing order.' });
+          return res.json({ code: -1, message: 'Error while placing order.' });
         }
       }
     }
 
-    //console.log(totalPrice);
+    // Calculate final total including pickup charge
+    totalPrice += pickupCharge;
+    console.log('Final total with pickup charge:', totalPrice);
 
-    obj = {
-      order_amount: Math.ceil(totalPrice),
+    // Before creating payment object
+    console.log('Price calculations:', {
+      baseTotal: totalPrice,
+      pickupCharge: pickupCharge,
+      finalTotal: totalPrice + pickupCharge
+    });
+
+    const paymentObj = {
+      order_amount: Math.ceil(totalPrice), // totalPrice already includes pickup charge
       order_currency: "INR",
       order_id: orderId,
       customer_details: {
@@ -148,16 +179,13 @@ app.post('/api/buyNow', async (req, res) => {
         customer_name: name
       },
       order_meta: {
-        //return_url:"https://www.cashfree.com/devstudio/preview/pg/web/checkout?order_id={order_id}"
-        //return_url:"http://127.0.0.1:8090/api/order?order_id={order_id}"
         return_url: "https://kleats.in/api/order?order_id={order_id}"
       }
-    }
+    };
 
-    console.log(JSON.stringify(obj));
+    console.log('Final payment object:', paymentObj);
 
-    await fetch("https://api.cashfree.com/pg/orders", {
-      //await fetch("https://sandbox.cashfree.com/pg/orders",{
+    const response = await fetch("https://api.cashfree.com/pg/orders", {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -165,22 +193,20 @@ app.post('/api/buyNow', async (req, res) => {
         'x-client-secret': process.env.CASHFREE_SECRET,
         'x-api-version': process.env.CASHFREE_API_VERSION
       },
-      body: JSON.stringify(obj)
-    }).then(response => response.json())
-      .then(data => {
-        console.log(data);
-        if (data.type) {
-          return res.json({ code: -1, message: data.message });
-        }
-        return res.json({ code: 1, message: 'Success', data: data });
-      })
-      .catch(error => {
-        console.error('There has been a problem with your fetch operation:', error);
-        return res.json({ code: 0, message: 'failed' });
-      });
+      body: JSON.stringify(paymentObj)
+    });
+
+    const data = await response.json();
+    console.log('Payment Gateway Response:', data);
+
+    if (data.type) {
+      return res.json({ code: -1, message: data.message });
+    }
+    return res.json({ code: 1, message: 'Success', data: data });
+
   } catch (err) {
-    console.log(err);
-    return res.json({ code: -1, message: 'Internal Server' });
+    console.error('Error in buyNow:', err);
+    return res.json({ code: -1, message: 'Internal Server Error' });
   }
 });
 
@@ -243,7 +269,10 @@ app.get('/api/order', async (req, res) => {
 
     if (updateError) {
       console.error("Error updating order:", updateError);
-      return res.render('failed');
+      return res.render('failed', {
+        username: req.cookies.cookuname || null,
+        userid: req.cookies.cookuid || null
+      });
     }
 
     if (data.order_status == 'PAID') {
@@ -305,7 +334,10 @@ app.get('/api/order', async (req, res) => {
         menu: me
       });
     } else {
-      return res.render('failed');
+      return res.render('failed', {
+        username: req.cookies.cookuname || null,
+        userid: req.cookies.cookuid || null
+      });
     }
   } catch (err) {
     console.error("Error processing order:", err);
@@ -541,40 +573,36 @@ app.post('/request-otp', (req, res) => {
 // Routes for User Sign-up, Sign-in, Home Page, Cart, Checkout, Order Confirmation, My Orders, and Settings
 app.get("/", renderIndexPage);
 app.post("/signin", express.json(), async (req, res) => {
-  console.log("Received signin request:", req.body);
-  const { email, password } = req.body;
-
   try {
-    const { data, error } = await supabase
+    const { email, password } = req.body;
+
+    const { data: users, error: userError } = await supabase
       .from('users')
-      .select('user_id, user_name, user_password')
-      .eq('user_email', email)
-      .single();
+      .select('user_id, user_name, user_password, user_email, user_mobileno')
+      .eq('user_email', email);
 
-    if (error) {
-      console.error('Database error:', error);
-      return res.status(500).json({ success: false, error: 'Database error: ' + error.message });
+    if (userError) throw userError;
+    if (!users || users.length === 0) {
+      return res.status(401).json({ success: false, error: 'User not found' });
     }
 
-    if (!data) {
-      console.log('No user found for:', email);
-      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    const user = users[0];
+    if (user.user_password !== password) {
+      return res.status(401).json({ success: false, error: 'Invalid password' });
     }
 
-    if (data.user_password !== password) {
-      console.log('Invalid password for:', email);
-      return res.status(401).json({ success: false, error: 'Invalid credentials' });
-    }
-
-    // Successful login
-    res.cookie("cookuid", data.user_id);
-    res.cookie("cookuname", data.user_name);
-    console.log('Successful login for:', email);
-
-    // Redirect to the canteen page after successful sign-in
-    return res.json({ success: true, redirect: 'https://kleats.in/api/canteen/jashwanth' });
+    res.cookie("cookuid", user.user_id);
+    res.cookie("cookuname", user.user_name);
+    
+    return res.json({ 
+      success: true, 
+      redirect: '/',
+      userName: user.user_name,
+      userEmail: user.user_email,
+      userPhone: user.user_mobileno
+    });
   } catch (error) {
-    console.error('Unexpected error:', error);
+    console.error('Error:', error);
     return res.status(500).json({ success: false, error: 'An unexpected error occurred' });
   }
 });
@@ -637,8 +665,8 @@ app.get('/cart', async (req, res) => {
 
   console.log('Item details:', itemDetails); // Add this line for debugging
 
-  res.render('cart', { 
-    items: itemDetails, 
+  res.render('cart', {
+    items: itemDetails,
     item_count: item_count,
     canteen_name: req.query.canteen_name || '',
     username: req.cookies.cookuname,
@@ -784,7 +812,7 @@ async function signUpUser(req, res) {
     const { data, error } = await supabase
       .from('users')
       .insert([
-        { 
+        {
           user_id: newUserId,
           user_name: name,
           user_address: address,
@@ -1385,8 +1413,8 @@ async function renderViewDispatchOrdersPage(req, res) {
     const { data: orders, error: ordersError } = await supabase
       .from('orders')
       .select('*')
-      .eq('canteenId',admin.admin_name)
-      .eq('payment_status','PAID')
+      .eq('canteenId', admin.admin_name)
+      .eq('payment_status', 'PAID')
       .order('datetime', { ascending: true });
 
     if (ordersError) {
@@ -1399,19 +1427,19 @@ async function renderViewDispatchOrdersPage(req, res) {
       user_id: order.user_id.toString()
     }));
 
-    	
-    for(let i=0;i<formattedOrders.length;i++){
-      const {data:menu,error:menuError} = await supabase
-      .from('menu')
-      .select('item_name')
-      .eq('item_id',formattedOrders[i].item_id)
-      .single();
+
+    for (let i = 0; i < formattedOrders.length; i++) {
+      const { data: menu, error: menuError } = await supabase
+        .from('menu')
+        .select('item_name')
+        .eq('item_id', formattedOrders[i].item_id)
+        .single();
       if (!menuError) {
-        formattedOrders[i].item_name=menu.item_name;
+        formattedOrders[i].item_name = menu.item_name;
       }
       console.log(formattedOrders);
     }
-    
+
     res.render("admin_view_dispatch_orders", {
       username: userName,
       userid: userId,
@@ -1423,6 +1451,11 @@ async function renderViewDispatchOrdersPage(req, res) {
     res.status(500).send("An error occurred while loading the dispatch orders page");
   }
 }
+
+// Add this new route for redirecting /varun to Jashwanth's website
+app.get('/varun', (req, res) => {
+  res.redirect('https://jashwanth53.pythonanywhere.com/');
+});
 
 // Dispatch Orders
 async function dispatchOrders(req, res) {
@@ -1492,7 +1525,7 @@ async function dispatchOrders(req, res) {
     res.json({ success: true, orders: updatedOrders });
   } catch (error) {
     console.error('Error in dispatchOrders:', error);
-    
+
     // Check if the error is not a unique constraint violation
     if (!error.code || error.code !== '23505') {
       //res.status(500).json({ error: 'An error occurred while dispatching orders' });
@@ -1523,7 +1556,7 @@ async function renderChangePricePage(req, res) {
     const { data: menuItems, error: menuError } = await supabase
       .from('menu')
       .select('*')
-      .eq('canteenId',admin.admin_name);
+      .eq('canteenId', admin.admin_name);
 
     if (menuError) throw menuError;
 
@@ -1574,55 +1607,56 @@ async function changePrice(req, res) {
 
 // Logout
 function logout(req, res) {
-  res.clearCookie();
-  return res.redirect("/signin");
+  res.clearCookie('cookuid');  // Clear specific cookies instead of all
+  res.clearCookie('cookuname');
+  return res.json({ success: true, message: 'Logged out successfully' });
 }
 
 /*****************************  Additional Pages ***************************/
 
 // Render Contact Us Page
 function renderContactUsPage(req, res) {
-    res.render("contact_us");
+  res.render("contact_us");
 }
 
 // Render Terms and Conditions Page
 function renderTermsConditionsPage(req, res) {
-    res.render("terms_conditions");
+  res.render("terms_conditions");
 }
 
 // Render Refund Policy Page
 function renderRefundPolicyPage(req, res) {
-    res.render("refund_policy");
+  res.render("refund_policy");
 }
 
 // Handle Contact Form Submission
 function handleContactForm(req, res) {
-    const { name, email, message } = req.body;
-    // Here, you can add logic to store the message in your database or send an email
+  const { name, email, message } = req.body;
+  // Here, you can add logic to store the message in your database or send an email
 
-    console.log(`Contact Form Submission:
+  console.log(`Contact Form Submission:
     Name: ${name}
     Email: ${email}
     Message: ${message}`);
 
-    // Optionally, send a confirmation email to the user
-    const mailOptions = {
-        from: 'noreply@kleats.in',
-        to: email,
-        subject: 'Contact Form Submission Received',
-        text: `Hello ${name},\n\nThank you for contacting us. We have received your message and will get back to you shortly.\n\nBest regards,\nKL Eats Team`
-    };
+  // Optionally, send a confirmation email to the user
+  const mailOptions = {
+    from: 'noreply@kleats.in',
+    to: email,
+    subject: 'Contact Form Submission Received',
+    text: `Hello ${name},\n\nThank you for contacting us. We have received your message and will get back to you shortly.\n\nBest regards,\nKL Eats Team`
+  };
 
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            console.error('Error sending confirmation email:', error);
-            // Even if email fails, you might still want to acknowledge the form submission
-        } else {
-            console.log('Confirmation email sent:', info.response);
-        }
-    });
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error('Error sending confirmation email:', error);
+      // Even if email fails, you might still want to acknowledge the form submission
+    } else {
+      console.log('Confirmation email sent:', info.response);
+    }
+  });
 
-    res.render("contact_us", { message: "Your message has been received. We'll get back to you shortly." });
+  res.render("contact_us", { message: "Your message has been received. We'll get back to you shortly." });
 }
 
 // Register the routes
@@ -1686,7 +1720,7 @@ app.get("/admin_view_orders", async (req, res) => {
         .select('item_name')
         .eq('item_id', orders[i].item_id)
         .single();
-      
+
       if (!menuError && menu) {
         orders[i].item_name = menu.item_name;
       }
@@ -1708,9 +1742,9 @@ app.get("/admin_view_orders", async (req, res) => {
 async function incrementAndGetViewCount() {
   try {
     const { data, error } = await supabase.rpc('increment_views');
-    
+
     if (error) throw error;
-    
+
     return data;
   } catch (error) {
     console.error('Error incrementing view count:', error);
@@ -1926,7 +1960,7 @@ app.get('/admin-orders-stream', async (req, res) => {
           .select('item_name')
           .eq('item_id', orders[i].item_id)
           .single();
-        
+
         if (!menuError && menu) {
           orders[i].item_name = menu.item_name;
         }
@@ -2024,23 +2058,23 @@ app.post('/api/toggle-item-status', async (req, res) => {
 
     if (itemError) {
       console.error('Item query error:', itemError);
-      return res.json({ 
-        success: false, 
-        message: 'Error finding item: ' + itemError.message 
+      return res.json({
+        success: false,
+        message: 'Error finding item: ' + itemError.message
       });
     }
 
     if (!item) {
-      return res.json({ 
-        success: false, 
-        message: 'Item not found' 
+      return res.json({
+        success: false,
+        message: 'Item not found'
       });
     }
 
     if (item.canteenId !== userName) {
-      return res.json({ 
-        success: false, 
-        message: `Unauthorized: ${userName} cannot modify items for ${item.canteenId}` 
+      return res.json({
+        success: false,
+        message: `Unauthorized: ${userName} cannot modify items for ${item.canteenId}`
       });
     }
 
@@ -2055,25 +2089,37 @@ app.post('/api/toggle-item-status', async (req, res) => {
 
     if (updateError) {
       console.error('Update error:', updateError);
-      return res.json({ 
-        success: false, 
-        message: 'Error updating item: ' + updateError.message 
+      return res.json({
+        success: false,
+        message: 'Error updating item: ' + updateError.message
       });
     }
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: 'Item status updated successfully',
       newStatus: status,
       reload: true
     });
   } catch (error) {
     console.error('Error in toggleItemStatus:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'An error occurred: ' + error.message 
+    res.status(500).json({
+      success: false,
+      message: 'An error occurred: ' + error.message
     });
   }
+});
+
+// Add this near your other route handlers
+app.get('/failed', (req, res) => {
+    const orderId = req.query.order_id || '';
+    const tokenId = orderId.split('-')[1] || ''; // Extract the second part after the hyphen
+
+    res.render('failed', {
+        username: req.cookies.cookuname || null,
+        userid: req.cookies.cookuid || null,
+        tokenId: tokenId
+    });
 });
 
 module.exports = app;

@@ -1,5 +1,7 @@
 let cart = [];
 let debounceTimers = {};
+let subtotal = 0;
+const PICKUP_CHARGE = 5;
 
 function addToCart(itemId, itemName, itemPrice) {
     const existingItem = cart.find(item => item.item_id === itemId);
@@ -37,6 +39,7 @@ function addToCart(itemId, itemName, itemPrice) {
 function updateCartDisplay() {
     const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
     document.getElementById("cart-number-count").innerHTML = cartCount;
+    updateTotalWithCharges();
 }
 
 function updateButtonState(itemId) {
@@ -59,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize empty cart
     cart = [];
     updateCartDisplay();
+    updateTotalWithCharges();
 });
 
 // Save cart to localStorage whenever it changes
@@ -75,4 +79,70 @@ function flashButton(itemId) {
     setTimeout(() => {
         button.style.backgroundColor = '';
     }, 1000);
+}
+
+function updateTotalWithCharges() {
+    const orderType = document.getElementById('orderType').value;
+    const subtotalElement = document.getElementById('subtotal');
+    const pickupChargeElement = document.getElementById('pickupCharge');
+    const totalElement = document.getElementById('total');
+    
+    // Calculate subtotal from cart items
+    subtotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    subtotalElement.textContent = subtotal.toFixed(2);
+    
+    // Add pickup charge if applicable
+    const pickupCharge = orderType === 'pickup' ? PICKUP_CHARGE : 0;
+    pickupChargeElement.textContent = pickupCharge.toFixed(2);
+    
+    // Update total
+    const total = subtotal + pickupCharge;
+    totalElement.textContent = total.toFixed(2);
+}
+
+// Modify the existing checkout function
+async function checkout() {
+    const name = document.getElementById('name').value;
+    const phone = document.getElementById('phone').value;
+    const email = document.getElementById('email').value;
+    const orderType = document.getElementById('orderType').value;
+    
+    console.log('Checkout Debug:', {
+        orderType: orderType,
+        selectElement: document.getElementById('orderType'),
+        selectedIndex: document.getElementById('orderType').selectedIndex
+    });
+    
+    const requestBody = {
+        name,
+        phone,
+        email,
+        items: cart,
+        order_time: getCurrentTime(),
+        orderType
+    };
+    
+    console.log('Request Body:', requestBody);
+    
+    try {
+        const response = await fetch('/api/buyNow', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody)
+        });
+        
+        const result = await response.json();
+        console.log('Checkout Response:', result);
+        
+        if (result.code === 1) {
+            window.location.href = result.data.payment_link;
+        } else {
+            alert(result.message || 'Error processing order');
+        }
+    } catch (error) {
+        console.error('Checkout Error:', error);
+        alert('Error processing order');
+    }
 }

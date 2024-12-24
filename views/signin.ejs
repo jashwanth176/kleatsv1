@@ -234,6 +234,9 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    localStorage.setItem('userName', data.userName);
+                    localStorage.setItem('userEmail', data.userEmail);
+                    localStorage.setItem('userPhone', data.userPhone);
                     window.location.href = data.redirect;
                 } else {
                     document.getElementById('errorMessage').textContent = data.error || 'Invalid credentials';

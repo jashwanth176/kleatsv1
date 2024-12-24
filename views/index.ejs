@@ -32,18 +32,51 @@
         }
 
         @media (max-width: 767px) {
-
             html,
             body {
                 max-width: 100%;
                 overflow-x: hidden;
+                scroll-behavior: smooth;
             }
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        #canteens {
+            scroll-margin-top: 100px;
         }
 
         @media (max-width: 767px) {
             .mobile-margin {
                 margin-top: 100px !important;
             }
+        }
+
+        /* Add these styles to adjust card heights */
+        .team-box {
+            max-height: 500px; /* Increased from previous 400px */
+            margin-bottom: 20px;
+        }
+
+        .team-box .team-img.back-img {
+            height: 320px; /* Increased from previous 250px */
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* Ensure text content doesn't overflow */
+        .team-box .h3-title {
+            margin: 15px 0;
+            font-size: 1.2rem;
+            line-height: 1.4;
+        }
+
+        /* Adjust spacing for the button */
+        .team-box .sec-btn {
+            margin-top: 15px;
+            margin-bottom: 15px;
         }
     </style>
     <!-- Google tag (gtag.js) -->
@@ -61,6 +94,59 @@
 </head>
 
 <body class="body-fixed">
+
+    <div id="loading-overlay" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #ffffff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    ">
+        <div style="display: flex; gap: 8px;">
+            <div style="
+                width: 12px;
+                height: 12px;
+                background: #f40808;
+                border-radius: 50%;
+                animation: bounce 0.5s alternate infinite;
+                animation-delay: 0.2s;
+            "></div>
+            <div style="
+                width: 12px;
+                height: 12px;
+                background: #f40808;
+                border-radius: 50%;
+                animation: bounce 0.5s alternate infinite;
+                animation-delay: 0.4s;
+            "></div>
+            <div style="
+                width: 12px;
+                height: 12px;
+                background: #f40808;
+                border-radius: 50%;
+                animation: bounce 0.5s alternate infinite;
+                animation-delay: 0.6s;
+            "></div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes bounce {
+            from {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateY(-16px);
+                opacity: 0.5;
+            }
+        }
+    </style>
 
     <!-- start of header  -->
     <header class="site-header">
@@ -87,8 +173,7 @@
                             </ul>
                         </nav>
                         <div class="header-right">
-                            <!-- Changed from admin_signin to signup -->
-                            <a href="/signup" class="header-btn">
+                            <a href="/signup" class="header-btn" id="authButton">
                                 <i class="uil uil-user-plus" style="color: #f40808;" title="Sign Up"></i>
                             </a>
                         </div>
@@ -118,8 +203,8 @@
                             <div class="col-lg-6">
                                 <div class="banner-text">
                                     <h1 class="h1-title">
-                                        Welcome to
-                                        <span style="color: #f40808;">KL Eats</span>
+                                        Welcome
+                                        <span id="welcomeMessage" style="color: #f40808;">to KL Eats</span>
                                     </h1>
                                     <p>Welcome to KL eats, your one-stop platform for discovering and enjoying the best
                                         food on campus at KL University, Vijayawada. To become a member of this project,
@@ -771,6 +856,61 @@
                 navigator.serviceWorker.register('/service-worker.js');
             }
         }
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const userName = localStorage.getItem('userName');
+            if (userName) {
+                // Split the name and take only the first part
+                const firstName = userName.split(' ')[0];
+                document.getElementById('welcomeMessage').textContent = firstName + '!';
+            }
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const authButton = document.getElementById('authButton');
+            const userName = localStorage.getItem('userName');
+
+            if (userName) {
+                // If user is logged in, change button to logout
+                authButton.href = "#";
+                authButton.querySelector('i').className = "uil uil-signout";
+                authButton.querySelector('i').title = "Sign Out";
+                
+                authButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    fetch('/logout')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                localStorage.removeItem('userName');
+                                localStorage.removeItem('userEmail');
+                                localStorage.removeItem('userPhone');
+                                alert('Logged out successfully');
+                                window.location.href = '/signin';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Error logging out');
+                        });
+                });
+            } else {
+                // If user is not logged in, keep signup functionality
+                authButton.href = "/signup";
+                authButton.querySelector('i').className = "uil uil-user-plus";
+                authButton.querySelector('i').title = "Sign Up";
+            }
+        });
+    </script>
+
+    <script>
+        window.addEventListener('load', function() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        });
     </script>
 </body>
 

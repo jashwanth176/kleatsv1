@@ -16,8 +16,25 @@ window.onclick = function (event) {
   }
 };
 
-$(document).ready(function ($) {
+jQuery(document).ready(function ($) {
   "use strict";
+
+  // Remove custom scrollbar styling
+  document.body.style.overflow = 'auto';
+  document.getElementById('viewport').style.overflow = 'visible';
+  document.getElementById('js-scroll-content').style.overflow = 'visible';
+
+  // Add smooth scroll handling for anchor links
+  $('a[href^="#"]').on('click', function(e) {
+    e.preventDefault();
+    const target = $(this.hash);
+    if (target.length) {
+      const offset = target.offset().top;
+      $('html, body').animate({
+        scrollTop: offset
+      }, 1000, 'swing');
+    }
+  });
 
   var book_table = new Swiper(".book-table-img-slider", {
     slidesPerView: 1,
