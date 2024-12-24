@@ -170,6 +170,9 @@
                                 <li><a href="#canteens">Canteens</a></li>
                                 <li><a href="#testimonials">Our Team</a></li>
                                 <li><a href="#contact">Contact</a></li>
+                                <% if (locals.userName) { %>
+                                    <li><a href="/user-history">Order History</a></li>
+                                <% } %>
                             </ul>
                         </nav>
                         <div class="header-right">
@@ -910,6 +913,19 @@
     <script>
         window.addEventListener('load', function() {
             document.getElementById('loading-overlay').style.display = 'none';
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const userName = localStorage.getItem('userName');
+            if (userName) {
+                // Add the Order History link to the menu
+                const menu = document.querySelector('.food-nav-menu');
+                const historyLink = document.createElement('li');
+                historyLink.innerHTML = '<a href="/user-history">Order History</a>';
+                menu.appendChild(historyLink);
+            }
         });
     </script>
 </body>

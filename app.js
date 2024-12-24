@@ -2122,4 +2122,79 @@ app.get('/failed', (req, res) => {
     });
 });
 
+// Add this new route handler
+app.get("/user-history", async (req, res) => {
+  const userId = req.cookies.cookuid;
+  const userName = req.cookies.cookuname;
+  const page = parseInt(req.query.page) || 1;
+  const ordersPerPage = 10;
+
+  try {
+    // Verify user and get their mobile number
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('user_id, user_name, user_mobileno')
+      .eq('user_id', userId)
+      .eq('user_name', userName)
+      .single();
+
+    if (userError || !user) {
+      return res.redirect("/signin");
+    }
+
+    // Fetch all orders for total count and total spent
+    const { data: allOrders, error: allOrdersError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('user_id', user.user_mobileno);
+
+    if (allOrdersError) throw allOrdersError;
+
+    // Calculate total money spent (only PAID and DISPATCHED orders)
+    let totalSpent = 0;
+    allOrders.forEach(order => {
+      if (order.payment_status === 'PAID' || order.payment_status === 'DISPATCHED') {
+        totalSpent += parseFloat(order.price);
+      }
+    });
+
+    // Fetch paginated orders
+    const { data: orders, error: ordersError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('user_id', user.user_mobileno)
+      .order('datetime', { ascending: false })
+      .range((page - 1) * ordersPerPage, (page * ordersPerPage) - 1);
+
+    if (ordersError) throw ordersError;
+
+    // Fetch item names for each order
+    for (let i = 0; i < orders.length; i++) {
+      const { data: menu, error: menuError } = await supabase
+        .from('menu')
+        .select('item_name')
+        .eq('item_id', orders[i].item_id)
+        .single();
+
+      if (!menuError && menu) {
+        orders[i].item_name = menu.item_name;
+      }
+    }
+
+    res.render("user_history", {
+      username: userName,
+      userid: userId,
+      orders: orders,
+      totalSpent: totalSpent.toFixed(2),
+      currentPage: page,
+      totalPages: Math.ceil(allOrders.length / ordersPerPage),
+      hasMore: allOrders.length > page * ordersPerPage
+    });
+
+  } catch (error) {
+    console.error('Error in user-history:', error);
+    res.status(500).send("An error occurred while loading your order history");
+  }
+});
+
 module.exports = app;

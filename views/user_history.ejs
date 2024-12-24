@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order History - KL Eats</title>
+    <link rel="icon" href="/images/file.png" type="image/x-icon">
+    <!-- for icons  -->
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
+    <!-- bootstrap  -->
+    <link rel="stylesheet" href="/stylesheets/bootstrap.min.css">
+    <!-- custom css  -->
+    <link rel="stylesheet" href="/stylesheets/style.css">
+    <style>
+        .content-padding {
+            padding-top: 120px;
+        }
+
+        table,
+        th,
+        tr,
+        td {
+            border: 2px solid black;
+            padding: 8px 10px;
+            border-radius: 20px;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table-responsive table {
+            width: 100%;
+        }
+
+        #order {
+            min-width: 800px;
+        }
+
+        #order th,
+        #order td {
+            min-width: 100px;
+        }
+
+        .status-paid {
+            color: green;
+            font-weight: bold;
+        }
+
+        .status-pending {
+            color: orange;
+            font-weight: bold;
+        }
+
+        .status-dispatched {
+            color: blue;
+            font-weight: bold;
+        }
+
+        .total-spent {
+            background-color: #ff8243;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            display: inline-block;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .total-spent h3 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .pagination-container {
+            margin: 20px 0;
+        }
+
+        .pagination-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 0 10px;
+            background-color: #ff8243;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .pagination-btn:hover {
+            background-color: #e67300;
+            color: white;
+            text-decoration: none;
+        }
+
+        /* Update table styles for consistent row height */
+        #order tr {
+            transition: opacity 0.3s ease;
+        }
+
+        #order td {
+            vertical-align: middle;
+        }
+    </style>
+</head>
+
+<body class="body-fixed">
+    <!-- header starts  -->
+    <header class="site-header">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-2">
+                </div>
+                <div class="col-lg-10">
+                    <div class="main-navigation">
+                        <button class="menu-toggle"><span></span><span></span></button>
+                        <nav class="header-menu">
+                            <ul class="menu food-nav-menu">
+                                <li><a href="/">Home</a></li>
+                                <li><a href="#about">About</a></li>
+                                <li><a href="#team">Our Team</a></li>
+                                <li><a href="#testimonials">Testimonials</a></li>
+                                <li><a href="#contact">Contact</a></li>
+                            </ul>
+                        </nav>
+                        <div class="header-right">
+                            <a href="/logout" class="header-username" style="color: #ff8243;" title="Click To Log-Out">
+                                <b><i><%= username %></i></b>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- header ends  -->
+
+    <div id="viewport" class="content-padding">
+        <div id="js-scroll-content">
+            <section class="about-sec section" id="about" style="background-image: url(/images/menu-bg.png);">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <div class="sec-title text-center mb-5">
+                                <h2 class="h2-title">Your Order History</h2>
+                                <div class="sec-title-shape mb-4">
+                                    <img src="/images/title-shape.svg" alt="">
+                                </div>
+                                <div class="total-spent mb-4">
+                                    <h3>Total Money Spent: ₹<%= totalSpent %></h3>
+                                </div>
+                                <div class="table-responsive">
+                                    <table id="order">
+                                        <thead>
+                                            <tr>
+                                                <th>S.No.</th>
+                                                <th>Order ID</th>
+                                                <th>Token Number</th>
+                                                <th>Item Name</th>
+                                                <th>Quantity</th>
+                                                <th>Price</th>
+                                                <th>Date/Time</th>
+                                                <th>Status</th>
+                                                <th>Order Type</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% if(orders.length === 0) { %>
+                                                <tr>
+                                                    <td colspan="9" class="text-center">
+                                                        <h3>No Orders Found</h3>
+                                                    </td>
+                                                </tr>
+                                            <% } else { %>
+                                                <% orders.forEach((order, index) => { %>
+                                                    <tr>
+                                                        <td><%= index + 1 %></td>
+                                                        <td><%= order.order_id %></td>
+                                                        <td><%= order.order_id.split('-')[1] %></td>
+                                                        <td><%= order.item_name || 'N/A' %></td>
+                                                        <td><%= order.quantity %></td>
+                                                        <td>₹<%= order.price %></td>
+                                                        <td><%= new Date(order.datetime).toLocaleString() %></td>
+                                                        <td class="status-<%= order.payment_status.toLowerCase() %>">
+                                                            <%= order.payment_status %>
+                                                        </td>
+                                                        <td><%= order.order_type === 'dinein' ? 'Dine In' : 'Pick Up' %></td>
+                                                    </tr>
+                                                <% }); %>
+                                            <% } %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="pagination-container text-center mt-4">
+                                    <% if (currentPage > 1) { %>
+                                        <a href="/user-history?page=<%= currentPage - 1 %>" class="pagination-btn">Previous</a>
+                                    <% } %>
+                                    
+                                    <% if (hasMore) { %>
+                                        <a href="/user-history?page=<%= currentPage + 1 %>" class="pagination-btn">View More</a>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Include your existing scripts here -->
+    <script src="/javascripts/jquery-3.5.1.min.js"></script>
+    <script src="/javascripts/bootstrap.min.js"></script>
+</script>
+<!-- jquery  -->
+<script src="/javascripts/jquery-3.5.1.min.js"></script>
+<!-- bootstrap -->
+<script src="/javascripts/bootstrap.min.js"></script>
+<script src="/javascripts/popper.min.js"></script>
+
+<!-- fontawesome  -->
+<script src="/javascripts/font-awesome.min.js"></script>
+
+<!-- swiper slider  -->
+<script src="/javascripts/swiper-bundle.min.js"></script>
+
+<!-- mixitup -- filter  -->
+<script src="/javascripts/jquery.mixitup.min.js"></script>
+
+<!-- fancy box  -->
+<script src="/javascripts/query.fancybox.min.js"></script>
+
+<!-- parallax  -->
+<script src="/javascripts/parallax.min.js"></script>
+
+<!-- gsap  -->
+<script src="/javascripts/gsap.min.js"></script>
+
+<!-- scroll trigger  -->
+<script src="/javascripts/ScrollTrigger.min.js"></script>
+<!-- scroll to plugin  -->
+<script src="/javascripts/ScrollToPlugin.min.js"></script>
+<!-- rellax  -->
+<!-- <script src="assets/js/rellax.min.js"></script> -->
+<!-- <script src="assets/js/rellax-custom.js"></script> -->
+<!-- smooth scroll  -->
+<script src="/javascripts/smooth-scroll.js"></script>
+<!-- custom js  -->
+<script src="/javascripts/main.js"></script>
+
+    <!-- ... other scripts ... -->
+    <script>
+        // Smooth loading animation when changing pages
+        document.querySelectorAll('.pagination-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const rows = document.querySelectorAll('#order tbody tr');
+                rows.forEach(row => {
+                    row.style.opacity = '0';
+                });
+                setTimeout(() => {
+                    window.location.href = this.href;
+                }, 300);
+            });
+        });
+    </script>
+</body>
+</html>
