@@ -89,10 +89,15 @@ function updateTotalWithCharges() {
     
     // Calculate subtotal from cart items
     subtotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-    subtotalElement.textContent = subtotal.toFixed(2);
     
-    // Add pickup charge if applicable
-    const pickupCharge = orderType === 'pickup' ? PICKUP_CHARGE : 0;
+    // Calculate total quantity for pickup charge
+    const totalQuantity = cart.reduce((total, item) => total + item.quantity, 0);
+    
+    // Add pickup charge if applicable (₹5 per item)
+    const pickupCharge = orderType === 'pickup' ? (5 * totalQuantity) : 0;
+    
+    // Update display elements
+    subtotalElement.textContent = subtotal.toFixed(2);
     pickupChargeElement.textContent = pickupCharge.toFixed(2);
     
     // Update total

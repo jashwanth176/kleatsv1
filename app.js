@@ -27,6 +27,8 @@ const credentials = {
   cert: certificate
 };
 
+
+
 // Add this near the top of your file, after imports
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
@@ -88,26 +90,14 @@ app.post('/api/buyNow', async (req, res) => {
   try {
     const { name, phone, email, items, order_time, orderType } = req.body;
 
-    // Debug logs
-    console.log('=============== ORDER DEBUG ===============');
-    console.log('Raw orderType:', orderType);
-    console.log('Raw request body:', req.body);
-    console.log('Order Type comparison:', {
-      isPickup: orderType === 'pickup',
-      isString: typeof orderType === 'string',
-      trimmedValue: orderType ? orderType.trim() : null
-    });
-
-    const pickupCharge = orderType === 'pickup' ? 5 : 0;
-    console.log('Calculated pickup charge:', pickupCharge);
-
     let totalPrice = 0.00;
+    let totalQuantity = 0;
     let orderId = uuidv4();
 
-    // Calculate items total
+    // Calculate total quantity and base price
     for (const item of items) {
-      console.log(item);
       if (item.quantity > 0) {
+        totalQuantity += item.quantity;
         const { data: it, error: userError } = await supabase
           .from('menu')
           .select('item_price,canteenId')
@@ -122,18 +112,11 @@ app.post('/api/buyNow', async (req, res) => {
         let itemPrice = Number(it.item_price);
         // Add GST (5%)
         itemPrice = itemPrice + (itemPrice * 0.05);
-
+        
         const itemTotal = itemPrice * item.quantity;
         totalPrice += itemTotal;
 
-        console.log(`Item ${item.item_id}:`, {
-          basePrice: Number(it.item_price),
-          priceWithGST: itemPrice,
-          quantity: item.quantity,
-          itemTotal: itemTotal
-        });
-
-        // Store in database without pickup charge
+        // Store in database
         const { error } = await supabase
           .from('orders')
           .insert({
@@ -158,19 +141,12 @@ app.post('/api/buyNow', async (req, res) => {
       }
     }
 
-    // Calculate final total including pickup charge
+    // Add pickup charge if applicable (₹5 per item)
+    const pickupCharge = orderType === 'pickup' ? (5 * totalQuantity) : 0;
     totalPrice += pickupCharge;
-    console.log('Final total with pickup charge:', totalPrice);
-
-    // Before creating payment object
-    console.log('Price calculations:', {
-      baseTotal: totalPrice,
-      pickupCharge: pickupCharge,
-      finalTotal: totalPrice + pickupCharge
-    });
 
     const paymentObj = {
-      order_amount: Math.ceil(totalPrice), // totalPrice already includes pickup charge
+      order_amount: Math.ceil(totalPrice),
       order_currency: "INR",
       order_id: orderId,
       customer_details: {
@@ -2142,7 +2118,7 @@ app.get("/user-history", async (req, res) => {
       return res.redirect("/signin");
     }
 
-    // Fetch all orders for total count and total spent
+    // Fetch all orders for this user
     const { data: allOrders, error: allOrdersError } = await supabase
       .from('orders')
       .select('*')
@@ -2150,13 +2126,36 @@ app.get("/user-history", async (req, res) => {
 
     if (allOrdersError) throw allOrdersError;
 
-    // Calculate total money spent (only PAID and DISPATCHED orders)
+    // Calculate total spent and prepare monthly data
     let totalSpent = 0;
+    const monthlySpending = {};
+    
     allOrders.forEach(order => {
       if (order.payment_status === 'PAID' || order.payment_status === 'DISPATCHED') {
         totalSpent += parseFloat(order.price);
+        
+        // Format date to YYYY-MM
+        const orderDate = new Date(order.datetime);
+        const monthKey = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, '0')}`;
+        
+        monthlySpending[monthKey] = (monthlySpending[monthKey] || 0) + parseFloat(order.price);
       }
     });
+
+    // Convert monthly spending to arrays for Chart.js
+    const sortedMonths = Object.keys(monthlySpending).sort();
+    const monthlyData = {
+      labels: sortedMonths.map(month => {
+        const [year, monthNum] = month.split('-');
+        return `${new Date(year, monthNum - 1).toLocaleString('default', { month: 'short' })} ${year}`;
+      }),
+      values: sortedMonths.map(month => monthlySpending[month]),
+    };
+
+    // Calculate average monthly spending
+    const average = monthlyData.values.length > 0 
+      ? monthlyData.values.reduce((a, b) => a + b, 0) / monthlyData.values.length 
+      : 0;
 
     // Fetch paginated orders
     const { data: orders, error: ordersError } = await supabase
@@ -2188,13 +2187,31 @@ app.get("/user-history", async (req, res) => {
       totalSpent: totalSpent.toFixed(2),
       currentPage: page,
       totalPages: Math.ceil(allOrders.length / ordersPerPage),
-      hasMore: allOrders.length > page * ordersPerPage
+      hasMore: allOrders.length > page * ordersPerPage,
+      monthlyData: JSON.stringify(monthlyData),
+      monthlyAverage: average.toFixed(2)
     });
 
   } catch (error) {
     console.error('Error in user-history:', error);
     res.status(500).send("An error occurred while loading your order history");
   }
+});
+
+app.get('/zoho-domain-verification.html', (req, res) => {
+  res.send('61338537');
+});
+
+// Add this near your other route definitions
+app.get('/.well-known/assetlinks.json', (req, res) => {
+  res.json([{
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "in.kleats.twa",
+      "sha256_cert_fingerprints": ["02:A3:C9:DA:02:84:A9:B5:A6:CA:D5:B4:13:2D:AB:2C:98:20:4D:81:20:95:12:41:5A:4C:7A:E6:D7:36:36:F8"]
+    }
+  }]);
 });
 
 module.exports = app;

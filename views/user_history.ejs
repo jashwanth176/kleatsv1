@@ -105,6 +105,27 @@
         #order td {
             vertical-align: middle;
         }
+
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 1000px;
+            height: 350px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        td a {
+            color: green !important;
+            text-decoration: underline !important;
+            cursor: pointer;
+        }
+
+        td a:hover {
+            color: darkgreen !important;
+            text-decoration: underline !important;
+        }
     </style>
 </head>
 
@@ -121,10 +142,7 @@
                         <nav class="header-menu">
                             <ul class="menu food-nav-menu">
                                 <li><a href="/">Home</a></li>
-                                <li><a href="#about">About</a></li>
-                                <li><a href="#team">Our Team</a></li>
-                                <li><a href="#testimonials">Testimonials</a></li>
-                                <li><a href="#contact">Contact</a></li>
+                                    <li><a href="/contact-us">Contact</a></li>
                             </ul>
                         </nav>
                         <div class="header-right">
@@ -153,6 +171,9 @@
                                 <div class="total-spent mb-4">
                                     <h3>Total Money Spent: ₹<%= totalSpent %></h3>
                                 </div>
+                                <div class="chart-container mb-5">
+                                    <canvas id="spendingChart"></canvas>
+                                </div>
                                 <div class="table-responsive">
                                     <table id="order">
                                         <thead>
@@ -179,14 +200,25 @@
                                                 <% orders.forEach((order, index) => { %>
                                                     <tr>
                                                         <td><%= index + 1 %></td>
-                                                        <td><%= order.order_id %></td>
+                                                        <td>
+                                                            <% if (order.payment_status === 'PAID') { %>
+                                                                <a href="https://kleats.in/api/order?order_id=<%= order.order_id %>" 
+                                                                   target="_blank">
+                                                                    <%= order.order_id %>
+                                                                </a>
+                                                            <% } else { %>
+                                                                <%= order.order_id %>
+                                                            <% } %>
+                                                        </td>
                                                         <td><%= order.order_id.split('-')[1] %></td>
                                                         <td><%= order.item_name || 'N/A' %></td>
                                                         <td><%= order.quantity %></td>
                                                         <td>₹<%= order.price %></td>
                                                         <td><%= new Date(order.datetime).toLocaleString() %></td>
-                                                        <td class="status-<%= order.payment_status.toLowerCase() %>">
-                                                            <%= order.payment_status %>
+                                                        <td>
+                                                            <span class="status-<%= order.payment_status.toLowerCase() %>">
+                                                                <%= order.payment_status %>
+                                                            </span>
                                                         </td>
                                                         <td><%= order.order_type === 'dinein' ? 'Dine In' : 'Pick Up' %></td>
                                                     </tr>
@@ -267,6 +299,77 @@
                 }, 300);
             });
         });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const monthlyData = <%- monthlyData %>;
+        const ctx = document.getElementById('spendingChart').getContext('2d');
+        const average = <%= monthlyAverage %>;
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: monthlyData.labels,
+                datasets: [
+                    {
+                        label: 'Monthly Spending',
+                        data: monthlyData.values,
+                        backgroundColor: 'rgba(255, 130, 67, 0.1)',
+                        borderColor: 'rgba(255, 130, 67, 1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: 'rgba(255, 130, 67, 1)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    },
+                    {
+                        label: 'Average',
+                        data: Array(monthlyData.labels.length).fill(average),
+                        borderColor: '#4CAF50',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        fill: false,
+                        pointStyle: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Monthly Spending Overview',
+                        font: {
+                            size: 16
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₹' + value;
+                            }
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                }
+            }
+        });
+    });
     </script>
 </body>
 </html>

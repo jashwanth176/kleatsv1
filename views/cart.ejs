@@ -243,6 +243,10 @@
                                                                 <td id="subtotal_price">₹ 0</td>
                                                             </tr>
                                                             <tr>
+                                                                <td colspan="5"><strong>Package Charges</strong></td>
+                                                                <td id="package_charges">₹ 0</td>
+                                                            </tr>
+                                                            <tr>
                                                                 <td colspan="5"><strong>GST Charges (5%)</strong></td>
                                                                 <td id="gst_charges">₹ 0</td>
                                                             </tr>
@@ -321,7 +325,7 @@
                                 <div class="col-lg-4">
                                     <div class="footer-info">
                                         <div class="footer-logo">
-                                            <a href="index.html">
+                                            <a href="/">
                                                 <img src="/images/file.png" alt="" height="100" width="100">
                                             </a>
                                         </div>
@@ -394,8 +398,9 @@
         function buyNowBtn() {
             let name = document.getElementById("nameText").value;
             let phone = document.getElementById("phoneText").value;
-            let email = document.getElementById("emailText").value; // Add this line
+            let email = document.getElementById("emailText").value;
             let time = document.getElementById("timeText").value;
+            let orderType = document.getElementById("orderType").value;
             const buyNowButton = document.getElementById("buyNowButton");
 
             if (!name || !phone || !email || !time) {
@@ -421,7 +426,14 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ name: name, phone: phone, email: email, items: obj, order_time: time })
+                    body: JSON.stringify({ 
+                        name: name, 
+                        phone: phone, 
+                        email: email, 
+                        items: obj, 
+                        order_time: time,
+                        orderType: orderType
+                    })
                 }).then(response => response.json())
                     .then(data => {
                         console.log(data);
@@ -472,13 +484,18 @@
                 totalQuantity += parseInt(quantity.value);
             });
 
-            // Calculate GST (2% of subtotal, rounded up)
+            // Calculate GST (5% of subtotal)
             const gstCharges = Math.ceil(subtotalPrice * 0.05);
 
-            // Calculate total (subtotal + GST)
-            const totalPrice = subtotalPrice + gstCharges;
+            // Calculate pickup/package charge based on order type and total quantity
+            const orderType = document.getElementById('orderType').value;
+            const packageCharges = orderType === 'pickup' ? (5 * totalQuantity) : 0;
+
+            // Calculate total (subtotal + GST + package charges)
+            const totalPrice = subtotalPrice + gstCharges + packageCharges;
 
             document.getElementById('subtotal_price').textContent = '₹ ' + subtotalPrice.toFixed(2);
+            document.getElementById('package_charges').textContent = '₹ ' + packageCharges.toFixed(2);
             document.getElementById('gst_charges').textContent = '₹ ' + gstCharges.toFixed(2);
             document.getElementById('total_price').textContent = '₹ ' + totalPrice.toFixed(2);
             document.getElementById('total_quantity').textContent = totalQuantity;
@@ -555,6 +572,9 @@
         window.addEventListener('load', function() {
             document.getElementById('loading-overlay').style.display = 'none';
         });
+
+        // Add event listener for order type change
+        document.getElementById('orderType').addEventListener('change', updateTotal);
 
     </script>
     <!-- jquery  -->
