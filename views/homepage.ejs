@@ -277,14 +277,15 @@
                                             <li>
                                                 <button class="dish-add-btn" id="btn<%= items[i].item_id %>"
                                                     onClick="addToCart('<%= items[i].item_id %>', '<%= items[i].item_name %>', <%= items[i].item_price %>)">
-                                                        <i class="uil uil-plus"></i>
-                                </button>
-                                </li>
-                                </ul>
+                                                    <i class="uil uil-plus"></i>
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        <% } %>
                     </div>
-                    <% } %>
                 </div>
             </div>
         </div>
