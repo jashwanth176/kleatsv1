@@ -83,6 +83,31 @@ transporter.verify(function (error, success) {
   }
 });
 
+// Configure Zoho mail transporter
+const zohoTransporter = nodemailer.createTransport({
+  host: 'smtp.zoho.in',
+  port: 465,
+  secure: true, // use SSL
+  auth: {
+    user: 'orders@kleats.in',
+    pass: 'KLeats@glug24',
+  },
+  tls: {
+    // do not fail on invalid certs
+    rejectUnauthorized: false
+  },
+  debug: true // Enable debug logs
+});
+
+// Verify transporter configuration
+zohoTransporter.verify(function(error, success) {
+  if (error) {
+    console.log('Zoho Mail verification error:', error);
+  } else {
+    console.log('Zoho Mail Server is ready to take our messages');
+  }
+});
+
 
 
 //BuyNow GateWay
@@ -753,58 +778,60 @@ async function signUpUser(req, res) {
   }
 
   try {
-    // Check if user already exists
-    const { data: existingUser, error: checkError } = await supabase
-      .from('users')
-      .select('user_email')
-      .eq('user_email', email)
-      .single();
+    // Check for existing email
+    const { data: emailExists, error: emailError } = await supabase
+        .from('users')
+        .select('user_email')
+        .eq('user_email', email);
 
-    if (checkError && checkError.code !== 'PGRST116') {
-      console.error('Error checking existing user:', checkError);
-      throw checkError;
+    if (emailError) throw emailError;
+    
+    if (emailExists && emailExists.length > 0) {
+        return res.status(400).send("Email already registered");
     }
 
-    if (existingUser) {
-      return res.status(400).send("User already exists");
+    // Check for existing mobile number
+    const { data: mobileExists, error: mobileError } = await supabase
+        .from('users')
+        .select('user_mobileno')
+        .eq('user_mobileno', mobile);
+
+    if (mobileError) throw mobileError;
+
+    if (mobileExists && mobileExists.length > 0) {
+        return res.status(400).send("Phone number already registered");
     }
 
-    // Get the maximum user_id
+    // Get the next user ID
     const { data: maxIdData, error: maxIdError } = await supabase
-      .from('users')
-      .select('user_id')
-      .order('user_id', { ascending: false })
-      .limit(1);
+        .from('users')
+        .select('user_id')
+        .order('user_id', { ascending: false })
+        .limit(1);
 
-    if (maxIdError) {
-      console.error('Error getting max user_id:', maxIdError);
-      throw maxIdError;
-    }
+    if (maxIdError) throw maxIdError;
 
-    // Generate new user_id
     const newUserId = maxIdData.length > 0 ? maxIdData[0].user_id + 1 : 1;
 
     // Insert new user
-    const { data, error } = await supabase
-      .from('users')
-      .insert([
-        {
-          user_id: newUserId,
-          user_name: name,
-          user_address: address,
-          user_email: email,
-          user_mobileno: mobile,
-          user_password: password // Note: In a real application, you should hash the password
-        }
-      ]);
+    const { error: insertError } = await supabase
+        .from('users')
+        .insert([
+            {
+                user_id: newUserId,
+                user_name: name,
+                user_address: address,
+                user_email: email,
+                user_mobileno: mobile,
+                user_password: password
+            }
+        ]);
 
-    if (error) {
-      console.error('Error inserting new user:', error);
-      throw error;
-    }
+    if (insertError) throw insertError;
 
     console.log('User registered successfully:', newUserId);
     res.redirect('/signin');
+
   } catch (error) {
     console.error('Error in signUpUser:', error);
     res.status(500).send(`An error occurred during registration: ${error.message}`);
@@ -908,9 +935,6 @@ async function renderCart(req, res) {
       return res.render("signin");
     }
 
-    // Here, you need to implement a way to fetch cart items from Supabase
-    // For now, I'll assume citemdetails and item_in_cart are global variables
-    // that are updated elsewhere in your code
 
     res.render("cart", {
       username: userName,
@@ -1747,7 +1771,7 @@ https.createServer(credentials, app).listen(443, () => {
   console.log('HTTPS Server running on port 443');
 });
 
-// Add this new route near your other route definitions
+// Add this new route
 app.get('/member', (req, res) => {
   res.redirect('https://forms.office.com/r/iCRskqXN1W');
 });
@@ -1871,7 +1895,11 @@ async function sendOrderConfirmationEmail(email, orderDetails) {
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(tokenNumber)}`;
 
   const mailOptions = {
-    from: process.env.OUTLOOK_USER,
+    // from: process.env.OUTLOOK_USER,  // Comment out old sender
+    from: {  // Use new Zoho Mail sender
+      name: 'KL Eats',
+      address: 'orders@kleats.in'
+    },
     to: email,
     subject: 'Your Order Confirmation',
     html: `
@@ -1894,7 +1922,8 @@ async function sendOrderConfirmationEmail(email, orderDetails) {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    // await transporter.sendMail(mailOptions);  // Comment out old transporter
+    await zohoTransporter.sendMail(mailOptions);  // Use Zoho transporter instead
     console.log('Order confirmation email sent successfully');
   } catch (error) {
     console.error('Error sending order confirmation email:', error);
@@ -2212,6 +2241,164 @@ app.get('/.well-known/assetlinks.json', (req, res) => {
       "sha256_cert_fingerprints": ["02:A3:C9:DA:02:84:A9:B5:A6:CA:D5:B4:13:2D:AB:2C:98:20:4D:81:20:95:12:41:5A:4C:7A:E6:D7:36:36:F8"]
     }
   }]);
+});
+
+// Add these routes after your other route definitions
+app.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    // Check if user exists
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('user_email')
+      .eq('user_email', email)
+      .single();
+
+    if (error || !user) {
+      return res.json({ success: false, message: 'Email not found' });
+    }
+
+    // Generate OTP
+    const otp = crypto.randomInt(100000, 999999).toString();
+    otps.set(email, {
+      code: otp,
+      expiry: Date.now() + 10 * 60 * 1000 // OTP valid for 10 minutes
+    });
+
+    // Configure Zoho mail transporter with environment variables
+    const zohoTransporter = nodemailer.createTransport({
+      host: 'smtp.zoho.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.ZOHO_MAIL, // 'orders@kleats.in'
+        pass: process.env.ZOHO_APP_PASSWORD // Use the App-Specific Password here
+      },
+      tls: {
+        rejectUnauthorized: false,
+        ciphers: 'SSLv3'
+      },
+      debug: true
+    });
+
+    // Verify transporter configuration
+    zohoTransporter.verify(function(error, success) {
+      if (error) {
+        console.log('Zoho Mail verification error:', error);
+      } else {
+        console.log('Zoho Mail Server is ready to take our messages');
+      }
+    });
+
+    // Send email
+    await zohoTransporter.sendMail({
+      from: {
+        name: 'KL Eats',
+        address: process.env.ZOHO_MAIL
+      },
+      to: email,
+      subject: 'Password Reset OTP - KL Eats',
+      html: `
+        <h2>Password Reset Request</h2>
+        <p>Your OTP for password reset is: <strong>${otp}</strong></p>
+        <p>This OTP will expire in 10 minutes.</p>
+        <p>If you didn't request this, please ignore this email.</p>
+      `
+    });
+
+    res.json({ success: true, message: 'OTP sent successfully' });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.json({ success: false, message: 'Failed to send OTP' });
+  }
+});
+
+app.post('/reset-password', async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+
+  try {
+    const storedOTP = otps.get(email);
+    
+    if (!storedOTP || storedOTP.code !== otp || Date.now() > storedOTP.expiry) {
+      return res.json({ success: false, message: 'Invalid or expired OTP' });
+    }
+
+    // Update password in database
+    const { error } = await supabase
+      .from('users')
+      .update({ user_password: newPassword })
+      .eq('user_email', email);
+
+    if (error) throw error;
+
+    // Clear used OTP
+    otps.delete(email);
+
+    res.json({ success: true, message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.json({ success: false, message: 'Failed to reset password' });
+  }
+});
+
+// Fix the check-duplicate route
+app.post('/check-duplicate', async (req, res) => {
+    const { email, mobile } = req.body;
+
+    try {
+        // Check for existing email
+        const { data: emailCheck, error: emailError } = await supabase
+            .from('users')
+            .select('user_email')
+            .eq('user_email', email);
+
+        if (emailError) {
+            console.error('Email check error:', emailError);
+            return res.json({ 
+                success: false, 
+                message: 'An error occurred while checking email' 
+            });
+        }
+
+        if (emailCheck && emailCheck.length > 0) {
+            return res.json({ 
+                success: false, 
+                message: 'This email is already registered' 
+            });
+        }
+
+        // Check for existing mobile
+        const { data: mobileCheck, error: mobileError } = await supabase
+            .from('users')
+            .select('user_mobileno')
+            .eq('user_mobileno', mobile);
+
+        if (mobileError) {
+            console.error('Mobile check error:', mobileError);
+            return res.json({ 
+                success: false, 
+                message: 'An error occurred while checking mobile number' 
+            });
+        }
+
+        if (mobileCheck && mobileCheck.length > 0) {
+            return res.json({ 
+                success: false, 
+                message: 'This mobile number is already registered' 
+            });
+        }
+
+        // No duplicates found
+        res.json({ success: true });
+
+    } catch (error) {
+        console.error('Server error:', error);
+        res.json({ 
+            success: false, 
+            message: 'An unexpected error occurred' 
+        });
+    }
 });
 
 module.exports = app;

@@ -97,6 +97,25 @@
                                 </form>
                                 <div id="errorMessage" style="color: red;"></div>
                                 <br>
+                                <div id="forgotPasswordSection" style="display: none;">
+                                    <form id="forgotPasswordForm">
+                                        <input type="email" placeholder="Enter your Email ID" name="email" required
+                                            class="form-input" style="width: 360px;" /><br><br>
+                                        <input type="button" id="sendOtpButton" value="Send OTP" onclick="sendOTP()" class="sec-btn"
+                                            style="color: white; background: orange;" /><br><br>
+                                    </form>
+                                    <div id="resetPasswordForm" style="display: none;">
+                                        <input type="text" placeholder="Enter OTP" name="otp" required
+                                            class="form-input" style="width: 360px;" /><br><br>
+                                        <input type="password" placeholder="New Password" name="newPassword" required
+                                            class="form-input" style="width: 360px;" /><br><br>
+                                        <input type="password" placeholder="Confirm New Password" name="confirmPassword" required
+                                            class="form-input" style="width: 360px;" /><br><br>
+                                        <input type="button" value="Reset Password" onclick="resetPassword()" class="sec-btn"
+                                            style="color: white; background: orange;" /><br><br>
+                                    </div>
+                                </div>
+                                <p id="forgotPasswordLink"><a href="#" onclick="toggleForgotPassword()" style="color: orange;">Forgot Password?</a></p>
                                 <i class="text-capitalize" style="font-size: 20px;">New registration <a
                                         href="/signup"><span
                                             style="font-weight: 600; color: orange; cursor: pointer;">Click
@@ -246,6 +265,109 @@
                 console.error('Error:', error);
                 document.getElementById('errorMessage').textContent = 'An error occurred during sign in';
             });
+        }
+
+        function toggleForgotPassword() {
+            const signInForm = document.getElementById('userSignInForm');
+            const forgotPasswordSection = document.getElementById('forgotPasswordSection');
+            const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+            const signInEmail = document.querySelector('#userSignInForm input[name="email"]').value;
+            
+            if (forgotPasswordSection.style.display === 'none') {
+                document.querySelector('#forgotPasswordForm input[name="email"]').value = signInEmail;
+                signInForm.style.display = 'none';
+                forgotPasswordSection.style.display = 'block';
+                forgotPasswordLink.style.display = 'none';
+            } else {
+                signInForm.style.display = 'block';
+                forgotPasswordSection.style.display = 'none';
+                forgotPasswordLink.style.display = 'block';
+            }
+        }
+
+        async function sendOTP() {
+            const button = document.getElementById('sendOtpButton');
+            const email = document.querySelector('#forgotPasswordForm input[name="email"]').value;
+            
+            button.disabled = true;
+            button.style.backgroundColor = '#ccc';
+            button.value = 'Sending OTP...';
+            
+            try {
+                const response = await fetch('/forgot-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email }),
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('resetPasswordForm').style.display = 'block';
+                    button.value = 'OTP Sent';
+                    alert('OTP sent successfully to your email');
+                    
+                    let timeLeft = 60;
+                    const timer = setInterval(() => {
+                        if (timeLeft <= 0) {
+                            clearInterval(timer);
+                            button.disabled = false;
+                            button.style.backgroundColor = 'orange';
+                            button.value = 'Send OTP';
+                        } else {
+                            button.value = `Resend in ${timeLeft}s`;
+                            timeLeft--;
+                        }
+                    }, 1000);
+                } else {
+                    alert(data.message);
+                    button.disabled = false;
+                    button.style.backgroundColor = 'orange';
+                    button.value = 'Send OTP';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to send OTP');
+                button.disabled = false;
+                button.style.backgroundColor = 'orange';
+                button.value = 'Send OTP';
+            }
+        }
+
+        async function resetPassword() {
+            const email = document.querySelector('#forgotPasswordForm input[name="email"]').value;
+            const otp = document.querySelector('#resetPasswordForm input[name="otp"]').value;
+            const newPassword = document.querySelector('#resetPasswordForm input[name="newPassword"]').value;
+            const confirmPassword = document.querySelector('#resetPasswordForm input[name="confirmPassword"]').value;
+            
+            if (newPassword !== confirmPassword) {
+                alert('Passwords do not match');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/reset-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, otp, newPassword }),
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Password reset successful');
+                    window.location.href = '/signin';
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to reset password');
+            }
         }
     </script>
 

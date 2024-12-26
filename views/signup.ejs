@@ -23,6 +23,43 @@
             padding-top: 120px;
             /* Adjust this value as needed */
         }
+
+        /* Add loading overlay styles */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        @keyframes bounce {
+            from {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateY(-16px);
+                opacity: 0.5;
+            }
+        }
+
+        .loading-dot {
+            width: 12px;
+            height: 12px;
+            background: #f40808;
+            border-radius: 50%;
+            margin: 0 4px;
+        }
+
+        .loading-dot:nth-child(1) { animation: bounce 0.5s alternate infinite; animation-delay: 0.2s; }
+        .loading-dot:nth-child(2) { animation: bounce 0.5s alternate infinite; animation-delay: 0.4s; }
+        .loading-dot:nth-child(3) { animation: bounce 0.5s alternate infinite; animation-delay: 0.6s; }
     </style>
     
     <!-- Google tag (gtag.js) -->
@@ -37,6 +74,15 @@
 </head>
 
 <body class="body-fixed">
+    <!-- Add loading overlay -->
+    <div id="loading-overlay">
+        <div style="display: flex; gap: 8px;">
+            <div class="loading-dot"></div>
+            <div class="loading-dot"></div>
+            <div class="loading-dot"></div>
+        </div>
+    </div>
+
     <!-- start of header  -->
     <header class="site-header">
         <div class="container">
@@ -86,7 +132,7 @@
                                 <div class="sec-title-shape mb-4">
                                     <img src="/images/title-shape.svg" alt="">
                                 </div>
-                                <form action="/signup" method="post">
+                                <form action="/signup" method="post" onsubmit="return validateAndSubmit(event)">
                                     <input type="text" placeholder="Enter your Name" required class="form-input"
                                         name="name" id="InputName" style="width: 360px;" /><br><br>
                                     <input type="text" placeholder="Enter your Address" required class="form-input"
@@ -94,7 +140,8 @@
                                     <input type="email" placeholder="Enter your Email ID" required class="form-input"
                                         name="email" id="exampleInputEmail1" style="width: 360px;" /><br><br>
                                     <input type="tel" placeholder="Enter your Mobile number" required class="form-input"
-                                        name="mobile" id="InputMobile" maxlength="10" style="width: 360px;" /><br><br>
+                                        name="mobile" id="InputMobile" maxlength="10" style="width: 360px;" 
+                                        onchange="validatePhone(this.value)" /><br><br>
                                     <input type="password" placeholder="Enter your Password" required class="form-input"
                                         name="password" id="InputPassword" pattern=".{6,}" title="Minimum 6 character"
                                         style="width: 360px;" /><br><br>
@@ -218,6 +265,65 @@
     <script src="/javascripts/smooth-scroll.js"></script>
     <!-- custom js  -->
     <script src="/javascripts/main.js"></script>
+
+    <script>
+    function validatePhone(phone) {
+        if (!/^[9876]\d{9}$/.test(phone)) {
+            alert("Please enter a valid 10-digit mobile number starting with 9, 8, 7, or 6");
+            document.getElementById('InputMobile').value = '';
+            document.getElementById('InputMobile').focus();
+        }
+    }
+    </script>
+
+    <!-- Add validation script -->
+    <script>
+        async function validateAndSubmit(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const email = form.email.value;
+            const mobile = form.mobile.value;
+            const password = form.password.value;
+            const confirmPassword = form.confirmPassword.value;
+
+            // Show loading overlay
+            document.getElementById('loading-overlay').style.display = 'flex';
+
+            try {
+                // Check for existing email/mobile
+                const response = await fetch('/check-duplicate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, mobile })
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    alert(result.message);
+                    document.getElementById('loading-overlay').style.display = 'none';
+                    return false;
+                }
+
+                // If no duplicates found, submit the form
+                form.submit();
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+                document.getElementById('loading-overlay').style.display = 'none';
+                return false;
+            }
+        }
+
+        // Hide loading overlay when page is fully loaded
+        window.addEventListener('load', function() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        });
+    </script>
 
     </div>
     </div>
