@@ -163,7 +163,7 @@
                         <nav class="header-menu">
                             <ul class="menu food-nav-menu">
                                 <% if (locals.userName) { %>
-                                    <li><a href="/user-history">Order History</a></li>
+                                    <li><a href="/user-history">My Orders</a></li>
                                 <% } %>
                                 <li style="color: #f40808; font-weight: bold;">
                                     <a href="https://kleats.in/member">Become a member</a>
@@ -172,7 +172,6 @@
                                 <li><a href="#about">About</a></li>
                                 <li><a href="#canteens">Canteens</a></li>
                                 <li><a href="#testimonials">Our Team</a></li>
-                                <li><a href="#contact">Contact</a></li>
                             </ul>
                         </nav>
                         <div class="header-right">
@@ -923,7 +922,7 @@
                 // Add the Order History link to the menu
                 const menu = document.querySelector('.food-nav-menu');
                 const historyLink = document.createElement('li');
-                historyLink.innerHTML = '<a href="/user-history">Order History</a>';
+                historyLink.innerHTML = '<a href="/user-history">My Orders</a>';
                 menu.appendChild(historyLink);
             }
         });

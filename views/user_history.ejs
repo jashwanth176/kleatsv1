@@ -146,7 +146,7 @@
                             </ul>
                         </nav>
                         <div class="header-right">
-                            <a href="/logout" class="header-username" style="color: #ff8243;" title="Click To Log-Out">
+                            <a href="#" onclick="handleLogout(event)" class="header-username" style="color: #ff8243;" title="Click To Log-Out">
                                 <b><i><%= username %></i></b>
                             </a>
                         </div>
@@ -370,6 +370,24 @@
             }
         });
     });
+    </script>
+
+    <script>
+    function handleLogout(event) {
+        event.preventDefault();
+        fetch('/logout')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/signin';
+                } else {
+                    console.error('Logout failed:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error during logout:', error);
+            });
+    }
     </script>
 </body>
 </html>

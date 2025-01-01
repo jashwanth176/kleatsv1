@@ -1607,9 +1607,9 @@ async function changePrice(req, res) {
 
 // Logout
 function logout(req, res) {
-  res.clearCookie('cookuid');  // Clear specific cookies instead of all
+  res.clearCookie('cookuid');
   res.clearCookie('cookuname');
-  return res.json({ success: true, message: 'Logged out successfully' });
+  res.json({ success: true, message: 'Logged out successfully' });
 }
 
 /*****************************  Additional Pages ***************************/
