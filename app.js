@@ -724,16 +724,15 @@ app.post("/signin", express.json(), (req, res) => {
 app.get("/signup", renderSignUpPage);
 app.post("/signup", async (req, res) => {
     try {
-        const { turnstileToken } = req.body;
-        
-        // Verify Turnstile response
+        // Remove Turnstile verification
+        /* const { turnstileToken } = req.body;
         const isValid = await verifyTurnstile(turnstileToken);
         if (!isValid) {
             return res.status(400).json({ 
                 success: false, 
                 message: 'Invalid Turnstile response' 
             });
-        }
+        } */
 
         await signUpUser(req, res);
     } catch (error) {
@@ -2488,19 +2487,67 @@ app.once('ready', () => {
 
 // Add this helper function to verify Turnstile response
 async function verifyTurnstile(token) {
-  const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      secret: TURNSTILE_SECRET_KEY,
-      response: token,
-    }),
-  });
+    try {
+        const formData = new URLSearchParams();
+        formData.append('secret', process.env.TURNSTILE_SECRET_KEY);
+        formData.append('response', token);
 
-  const data = await response.json();
-  return data.success;
+        const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formData
+        });
+
+        const data = await response.json();
+        console.log('Turnstile verification response:', data); // Debug log
+        return data.success;
+    } catch (error) {
+        console.error('Turnstile verification error:', error);
+        return false;
+    }
 }
+
+// Add this new route for checking duplicates
+app.post('/check-duplicate', async (req, res) => {
+  try {
+    const { email, mobile } = req.body;
+
+    // Check for existing email
+    const { data: emailExists } = await supabase
+      .from('users')
+      .select('user_email')
+      .eq('user_email', email);
+
+    if (emailExists && emailExists.length > 0) {
+      return res.json({ 
+        success: false, 
+        message: 'Email already registered' 
+      });
+    }
+
+    // Check for existing mobile
+    const { data: mobileExists } = await supabase
+      .from('users')
+      .select('user_mobileno')
+      .eq('user_mobileno', mobile);
+
+    if (mobileExists && mobileExists.length > 0) {
+      return res.json({ 
+        success: false, 
+        message: 'Phone number already registered' 
+      });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error in check-duplicate:', error);
+    res.json({ 
+      success: false, 
+      message: 'An error occurred. Please try again.' 
+    });
+  }
+});
 
 module.exports = app;
