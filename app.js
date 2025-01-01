@@ -17,6 +17,8 @@ const fs = require('fs');
 const http = require('http');
 const qr = require('qrcode');
 const axios = require('axios');
+const bcrypt = require('bcrypt');
+const SALT_ROUNDS = 10;
 
 // Read SSL certificate files
 const privateKey = fs.readFileSync('/etc/letsencrypt/live/kleats.in/privkey.pem', 'utf8');
@@ -27,7 +29,9 @@ const credentials = {
   cert: certificate
 };
 
-
+// Add these environment variables near the top with your other requires
+const TURNSTILE_SITE_KEY = process.env.TURNSTILE_SITE_KEY;
+const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY;
 
 // Add this near the top of your file, after imports
 process.on('unhandledRejection', (reason, promise) => {
@@ -575,7 +579,13 @@ app.post('/request-otp', (req, res) => {
 app.get("/", renderIndexPage);
 app.post("/signin", express.json(), async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, turnstileToken } = req.body;
+
+    // Verify Turnstile response
+    const isValid = await verifyTurnstile(turnstileToken);
+    if (!isValid) {
+      return res.status(400).json({ success: false, error: 'Invalid Turnstile response' });
+    }
 
     const { data: users, error: userError } = await supabase
       .from('users')
@@ -588,7 +598,31 @@ app.post("/signin", express.json(), async (req, res) => {
     }
 
     const user = users[0];
-    if (user.user_password !== password) {
+    let isValidPassword = false;
+
+    // Check if password is hashed (bcrypt hashes start with '$2')
+    if (user.user_password.startsWith('$2')) {
+      // For hashed passwords, use bcrypt compare
+      isValidPassword = await bcrypt.compare(password, user.user_password);
+    } else {
+      // For plain text passwords, use direct comparison
+      isValidPassword = user.user_password === password;
+
+      // Optionally, update to hashed password after successful login
+      if (isValidPassword) {
+        const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ user_password: hashedPassword })
+          .eq('user_id', user.user_id);
+
+        if (updateError) {
+          console.error('Error updating to hashed password:', updateError);
+        }
+      }
+    }
+
+    if (!isValidPassword) {
       return res.status(401).json({ success: false, error: 'Invalid password' });
     }
 
@@ -689,12 +723,23 @@ app.post("/signin", express.json(), (req, res) => {
 // Add these lines near other route definitions
 app.get("/signup", renderSignUpPage);
 app.post("/signup", async (req, res) => {
-  try {
-    await signUpUser(req, res);
-  } catch (error) {
-    console.error('Error in signup route:', error);
-    res.status(500).send(`An error occurred during registration: ${error.message}`);
-  }
+    try {
+        const { turnstileToken } = req.body;
+        
+        // Verify Turnstile response
+        const isValid = await verifyTurnstile(turnstileToken);
+        if (!isValid) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid Turnstile response' 
+            });
+        }
+
+        await signUpUser(req, res);
+    } catch (error) {
+        console.error('Error in signup route:', error);
+        res.status(500).send(`An error occurred during registration: ${error.message}`);
+    }
 });
 
 /***************************************** Admin End Portal ********************************************/
@@ -771,7 +816,7 @@ function renderSignUpPage(req, res) {
 async function signUpUser(req, res) {
   const { name, address, email, mobile, password, confirmPassword } = req.body;
 
-  console.log('Received signup request:', { name, address, email, mobile });
+  console.log('Received signup request:', { name, address, email, mobile }); // Don't log password
 
   if (password !== confirmPassword) {
     return res.status(400).send("Passwords do not match");
@@ -813,7 +858,9 @@ async function signUpUser(req, res) {
 
     const newUserId = maxIdData.length > 0 ? maxIdData[0].user_id + 1 : 1;
 
-    // Insert new user
+    // Hash the password before storing
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
     const { error: insertError } = await supabase
         .from('users')
         .insert([
@@ -823,13 +870,11 @@ async function signUpUser(req, res) {
                 user_address: address,
                 user_email: email,
                 user_mobileno: mobile,
-                user_password: password
+                user_password: hashedPassword // Store hashed password
             }
         ]);
 
     if (insertError) throw insertError;
-
-    console.log('User registered successfully:', newUserId);
     res.redirect('/signin');
 
   } catch (error) {
@@ -855,18 +900,14 @@ async function signInUser(req, res) {
       .eq('user_email', email)
       .single();
 
-    if (error) {
-      console.error('Database error:', error);
-      return res.status(500).json({ success: false, error: 'Database error: ' + error.message });
-    }
-
-    if (!data) {
-      console.log('No user found for:', email);
+    if (error || !data) {
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
-    if (data.user_password !== password) {
-      console.log('Invalid password for:', email);
+    // Compare password with hashed password
+    const passwordMatch = await bcrypt.compare(password, data.user_password);
+    
+    if (!passwordMatch) {
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
@@ -2324,10 +2365,13 @@ app.post('/reset-password', async (req, res) => {
       return res.json({ success: false, message: 'Invalid or expired OTP' });
     }
 
-    // Update password in database
+    // Hash new password before updating
+    const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+    // Update with hashed password
     const { error } = await supabase
       .from('users')
-      .update({ user_password: newPassword })
+      .update({ user_password: hashedPassword })
       .eq('user_email', email);
 
     if (error) throw error;
@@ -2400,5 +2444,63 @@ app.post('/check-duplicate', async (req, res) => {
         });
     }
 });
+
+// Add a new function to migrate existing passwords
+async function migrateExistingPasswords() {
+  try {
+    // Fetch all users
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('user_id, user_password');
+
+    if (error) throw error;
+
+    console.log(`Starting password migration for ${users.length} users...`);
+
+    for (const user of users) {
+      // Check if password is already hashed (bcrypt hashes start with '$2b$')
+      if (!user.user_password.startsWith('$2b$')) {
+        const hashedPassword = await bcrypt.hash(user.user_password, SALT_ROUNDS);
+        
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ user_password: hashedPassword })
+          .eq('user_id', user.user_id);
+
+        if (updateError) {
+          console.error(`Failed to update user ${user.user_id}:`, updateError);
+        } else {
+          console.log(`Successfully migrated password for user ${user.user_id}`);
+        }
+      }
+    }
+
+    console.log('Password migration completed!');
+  } catch (error) {
+    console.error('Password migration failed:', error);
+  }
+}
+
+// Call this function once when starting your server
+app.once('ready', () => {
+  migrateExistingPasswords();
+});
+
+// Add this helper function to verify Turnstile response
+async function verifyTurnstile(token) {
+  const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      secret: TURNSTILE_SECRET_KEY,
+      response: token,
+    }),
+  });
+
+  const data = await response.json();
+  return data.success;
+}
 
 module.exports = app;

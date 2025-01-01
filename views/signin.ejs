@@ -34,6 +34,8 @@
 
       gtag('config', 'G-Y3TDH790Z7');
     </script>
+
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 
 <body class="body-fixed">
@@ -92,6 +94,7 @@
                                         class="form-input" style="width: 360px;" /><br><br>
                                     <input type="password" placeholder="Password" name="password" required
                                         class="form-input" style="width: 360px;" /><br><br>
+                                    <div class="cf-turnstile" data-sitekey="<%= process.env.TURNSTILE_SITE_KEY %>" data-theme="light"></div>
                                     <input type="button" value="Sign In" onclick="submitForm()" class="sec-btn"
                                         style="color: white; background: orange;" /><br>
                                 </form>
@@ -241,7 +244,12 @@
         function submitForm() {
             const form = document.getElementById('userSignInForm');
             const formData = new FormData(form);
-            const data = Object.fromEntries(formData.entries());
+            const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]').value;
+            
+            const data = {
+                ...Object.fromEntries(formData.entries()),
+                turnstileToken: turnstileResponse
+            };
 
             fetch('/signin', {
                 method: 'POST',
@@ -259,11 +267,13 @@
                     window.location.href = data.redirect;
                 } else {
                     document.getElementById('errorMessage').textContent = data.error || 'Invalid credentials';
+                    turnstile.reset();
                 }
             })
             .catch((error) => {
                 console.error('Error:', error);
                 document.getElementById('errorMessage').textContent = 'An error occurred during sign in';
+                turnstile.reset();
             });
         }
 

@@ -71,6 +71,8 @@
 
       gtag('config', 'G-Y3TDH790Z7');
     </script>
+
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 
 <body class="body-fixed">
@@ -148,6 +150,7 @@
                                     <input type="password" placeholder="Re-Enter your Password" required
                                         class="form-input" name="confirmPassword" id="ConfirmInputPassword"
                                         style="width: 360px;" /><br><br>
+                                    <div class="cf-turnstile" data-sitekey="<%= process.env.TURNSTILE_SITE_KEY %>" data-theme="light"></div>
                                     <input type="submit" value="Sign Up" class="sec-btn"
                                         style="color: white; background: orange" /><br>
                                 </form>
@@ -286,6 +289,7 @@
             const mobile = form.mobile.value;
             const password = form.password.value;
             const confirmPassword = form.confirmPassword.value;
+            const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]').value;
 
             // Show loading overlay
             document.getElementById('loading-overlay').style.display = 'flex';
@@ -297,7 +301,11 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ email, mobile })
+                    body: JSON.stringify({ 
+                        email, 
+                        mobile,
+                        turnstileToken: turnstileResponse 
+                    })
                 });
 
                 const result = await response.json();
@@ -309,6 +317,15 @@
                 }
 
                 // If no duplicates found, submit the form
+                const formData = new FormData(form);
+                formData.append('turnstileToken', turnstileResponse);
+                
+                // Convert FormData to URLSearchParams for form submission
+                const params = new URLSearchParams();
+                for (const pair of formData) {
+                    params.append(pair[0], pair[1]);
+                }
+                
                 form.submit();
 
             } catch (error) {
