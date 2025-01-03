@@ -296,7 +296,7 @@
                                                 <div class="form-group mb-3">
                                                     <label for="orderType" class="form-label">Order Type:</label>
                                                     <select class="form-control" id="orderType" name="orderType" required onchange="updateTotalWithCharges()">
-                                                        <option value="pickup">Pick Up (+₹5)</option>
+                                                        <option value="pickup">Pick Up (+₹10)</option>
                                                         <option value="dinein">Dine In</option>
                                                     </select>
                                                 </div>
@@ -489,7 +489,7 @@
 
             // Calculate pickup/package charge based on order type and total quantity
             const orderType = document.getElementById('orderType').value;
-            const packageCharges = orderType === 'pickup' ? (5 * totalQuantity) : 0;
+            const packageCharges = orderType === 'pickup' ? (10 * totalQuantity) : 0;
 
             // Calculate total (subtotal + GST + package charges)
             const totalPrice = subtotalPrice + gstCharges + packageCharges;

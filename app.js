@@ -19,6 +19,7 @@ const qr = require('qrcode');
 const axios = require('axios');
 const bcrypt = require('bcrypt');
 const SALT_ROUNDS = 10;
+const webpush = require('web-push');
 
 // Read SSL certificate files
 const privateKey = fs.readFileSync('/etc/letsencrypt/live/kleats.in/privkey.pem', 'utf8');
@@ -112,12 +113,33 @@ zohoTransporter.verify(function(error, success) {
   }
 });
 
+// Initialize web-push with environment variables
+webpush.setVapidDetails(
+  'mailto:orders@kleats.in',
+  process.env.VAPID_PUBLIC_KEY,
+  process.env.VAPID_PRIVATE_KEY
+);
 
+// Store subscriptions (in production, use a database)
+let pushSubscriptions = new Set();
+
+// Serve VAPID public key
+app.get('/api/vapid-public-key', (req, res) => {
+  res.send(process.env.VAPID_PUBLIC_KEY);
+});
+
+// Save push subscription
+app.post('/api/save-subscription', (req, res) => {
+  const subscription = req.body;
+  pushSubscriptions.add(subscription);
+  res.json({ success: true });
+});
 
 //BuyNow GateWay
 app.post('/api/buyNow', async (req, res) => {
   try {
     const { name, phone, email, items, order_time, orderType } = req.body;
+    console.log('New order received:', { name, phone, orderType });
 
     let totalPrice = 0.00;
     let totalQuantity = 0;
@@ -171,7 +193,7 @@ app.post('/api/buyNow', async (req, res) => {
     }
 
     // Add pickup charge if applicable (₹5 per item)
-    const pickupCharge = orderType === 'pickup' ? (5 * totalQuantity) : 0;
+    const pickupCharge = orderType === 'pickup' ? (10 * totalQuantity) : 0;
     totalPrice += pickupCharge;
 
     const paymentObj = {
@@ -207,6 +229,7 @@ app.post('/api/buyNow', async (req, res) => {
     if (data.type) {
       return res.json({ code: -1, message: data.message });
     }
+
     return res.json({ code: 1, message: 'Success', data: data });
 
   } catch (err) {
@@ -274,13 +297,47 @@ app.get('/api/order', async (req, res) => {
 
     if (updateError) {
       console.error("Error updating order:", updateError);
-      return res.render('failed', {
-        username: req.cookies.cookuname || null,
-        userid: req.cookies.cookuid || null
-      });
+      return res.render('failed');
     }
 
-    if (data.order_status == 'PAID') {
+    if (data.order_status === 'PAID') {
+      // Fetch order details for notification
+      const { data: orderDetails, error: orderError } = await supabase
+        .from('orders')
+        .select('name, quantity, order_type, email')
+        .eq('order_id', orderId)
+        .single();
+
+      if (!orderError && orderDetails) {
+        // Send push notification
+        const notificationPayload = {
+          title: 'New Paid Order Received!',
+          customerName: orderDetails.name,
+          orderId: orderId,
+          orderDetails: `${orderDetails.quantity} items for ${orderDetails.order_type}`,
+          timestamp: new Date().toISOString()
+        };
+
+        console.log('Sending notifications for paid order:', notificationPayload);
+
+        const notificationPromises = Array.from(pushSubscriptions).map(subscription => {
+          return webpush.sendNotification(subscription, JSON.stringify(notificationPayload))
+            .then(() => {
+              console.log('Notification sent successfully to:', subscription.endpoint);
+            })
+            .catch(error => {
+              console.error('Push notification error:', error);
+              if (error.statusCode === 410) {
+                console.log('Removing expired subscription:', subscription.endpoint);
+                pushSubscriptions.delete(subscription);
+              }
+            });
+        });
+
+        await Promise.all(notificationPromises);
+        console.log('All notifications processed for paid order');
+      }
+
       let me = [];
       // Fetch order items
       const { data: orderItems, error: orderItemsError } = await supabase
@@ -339,10 +396,7 @@ app.get('/api/order', async (req, res) => {
         menu: me
       });
     } else {
-      return res.render('failed', {
-        username: req.cookies.cookuname || null,
-        userid: req.cookies.cookuid || null
-      });
+      return res.render('failed');
     }
   } catch (err) {
     console.error("Error processing order:", err);
@@ -741,58 +795,164 @@ app.post("/signup", async (req, res) => {
     }
 });
 
+// User logout route
+app.get("/logout", async (req, res) => {
+  try {
+    const userId = req.cookies.cookuid;
+    
+    if (userId) {
+      // Check if this is an admin
+      const { data: admin } = await supabase
+        .from('admin')
+        .select('admin_id')
+        .eq('admin_id', userId)
+        .single();
+
+      if (admin) {
+        // If admin, redirect to admin logout
+        return res.redirect('/admin-logout');
+      }
+
+      // Clear user cookies
+      res.clearCookie('cookuid');
+      res.clearCookie('cookuname');
+    }
+    
+    // Always redirect to signin page for user logout
+    res.redirect('/signin');
+    
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.redirect('/signin');
+  }
+});
+
+// Admin logout route
+app.get("/admin-logout", async (req, res) => {
+  try {
+    const userId = req.cookies.cookuid;
+    
+    if (userId) {
+      // Check if this is an admin
+      const { data: admin } = await supabase
+        .from('admin')
+        .select('admin_id')
+        .eq('admin_id', userId)
+        .single();
+
+      if (admin) {
+        // Clear all admin-related cookies
+        res.clearCookie('cookuid');
+        res.clearCookie('cookuname');
+        res.clearCookie('kleats_session');
+        res.clearCookie('connect.sid'); // Clear express session cookie
+        
+        // Clear any other potential session data
+        if (req.session) {
+          req.session.destroy();
+        }
+      }
+    }
+    
+    // Always redirect to admin signin page
+    res.redirect('/admin_signin');
+    
+  } catch (error) {
+    console.error('Admin logout error:', error);
+    // Even if there's an error, try to clear cookies and redirect
+    res.clearCookie('cookuid');
+    res.clearCookie('cookuname');
+    res.clearCookie('kleats_session');
+    res.clearCookie('connect.sid');
+    res.redirect('/admin_signin');
+  }
+});
+
 /***************************************** Admin End Portal ********************************************/
 // Routes for Admin Sign-in, Admin Homepage, Adding Food, Viewing and Dispatching Orders, Changing Price, and Logout
 app.get("/admin_signin", renderAdminSignInPage);
-app.post("/admin_signin", express.json(), adminSignIn);
-
-async function adminSignIn(req, res) {
-  const { email, password } = req.body;
-  //console.log('Received sign-in request:', { email, otp }); // Don't log passwords
-
-  // Check if the OTP is correct
-  // if (otps.get(email) !== otp) {
-  //   console.log('Invalid OTP for:', email);
-  //   return res.status(400).json({ success: false, error: 'Invalid OTP' });
-  // }
-
-  // Clear the OTP after use
-  //otps.delete(email);
-
+app.post("/admin_signin", async (req, res) => {
   try {
+    const { email, password } = req.body;
+    
     const { data, error } = await supabase
       .from('admin')
       .select('admin_id, admin_name, admin_email, admin_password')
       .eq('admin_email', email)
       .single();
 
-    if (error) throw error;
-
-    if (!data || data.admin_password !== password) {
-      console.log('Invalid credentials for:', email);
-      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    if (error || !data || data.admin_password !== password) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Invalid credentials' 
+      });
     }
 
-    const { admin_id, admin_name } = data;
-    res.cookie("cookuid", admin_id);
-    res.cookie("cookuname", admin_name);
-    console.log('Successful admin login for:', email);
+    // Initialize the session object if it doesn't exist
+    if (!req.session) {
+      req.session = {};
+    }
+
+    // Set session data
+    req.session.adminId = data.admin_id;
+    req.session.adminName = data.admin_name;
+    req.session.adminEmail = data.admin_email;
+
+    // Set backup cookies
+    res.cookie('cookuid', data.admin_id, {
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      httpOnly: true
+    });
+    
+    res.cookie('cookuname', data.admin_name, {
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      httpOnly: true
+    });
+
+    console.log('Login successful. Session:', req.session);
     return res.json({ success: true });
 
   } catch (error) {
-    console.error('Database error:', error);
-    return res.status(500).json({ success: false, error: 'Database error: ' + error.message });
+    console.error('Login error:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: 'Server error during login' 
+    });
   }
-}
+});
 
-app.get("/adminHomepage", renderAdminHomepage);
-app.get("/admin_addFood", renderAddFoodPage);
-app.post("/admin_addFood", addFood);
-app.get("/admin_view_dispatch_orders", renderViewDispatchOrdersPage);
-app.post("/admin_view_dispatch_orders", express.json(), dispatchOrders);
-app.get("/admin_change_price", renderChangePricePage);
-app.post("/admin_change_price", changePrice);
-app.get("/logout", logout);
+// Update your auth middleware
+const checkAdminAuth = (req, res, next) => {
+  // Initialize session if it doesn't exist
+  if (!req.session) {
+    req.session = {};
+  }
+  
+  if (req.session && req.session.adminId) {
+    return next();
+  }
+  
+  // Fallback to cookie check
+  const userId = req.cookies.cookuid;
+  const userName = req.cookies.cookuname;
+  
+  if (userId && userName) {
+    // Set session from cookies if they exist
+    if (req.session) {
+      req.session.adminId = userId;
+      req.session.adminName = userName;
+    }
+    return next();
+  }
+  
+  res.redirect('/admin_signin');
+};
+
+// Update your admin routes to use the middleware
+app.get("/adminHomepage", checkAdminAuth, renderAdminHomepage);
+app.get("/admin_addFood", checkAdminAuth, renderAddFoodPage);
+app.get("/admin_view_dispatch_orders", checkAdminAuth, renderViewDispatchOrdersPage);
+app.get("/admin_change_price", checkAdminAuth, renderChangePricePage);
 
 /***************************** Route Handlers ***************************/
 
@@ -1308,8 +1468,33 @@ async function renderAdminHomepage(req, res) {
 
 // Admin Sign-in
 
-function renderAdminSignInPage(req, res) {
-  res.render("admin_signin");
+async function renderAdminSignInPage(req, res) {
+  try {
+    // Check for admin session
+    const userId = req.cookies.cookuid;
+    const userName = req.cookies.cookuname;
+
+    if (userId && userName) {
+      // Verify if this is a valid admin account
+      const { data: admin, error } = await supabase
+        .from('admin')
+        .select('admin_id, admin_name')
+        .eq('admin_id', userId)
+        .eq('admin_name', userName)
+        .single();
+
+      if (!error && admin) {
+        // Valid admin session exists, redirect to admin homepage
+        return res.redirect('/adminHomepage');
+      }
+    }
+
+    // No valid admin session, render the sign-in page
+    res.render("admin_signin");
+  } catch (error) {
+    console.error('Error in renderAdminSignInPage:', error);
+    res.render("admin_signin");
+  }
 }
 
 // Render Add Food Page
@@ -1645,13 +1830,6 @@ async function changePrice(req, res) {
   }
 }
 
-// Logout
-function logout(req, res) {
-  res.clearCookie('cookuid');
-  res.clearCookie('cookuname');
-  res.json({ success: true, message: 'Logged out successfully' });
-}
-
 /*****************************  Additional Pages ***************************/
 
 // Render Contact Us Page
@@ -1853,77 +2031,116 @@ async function renderAdminScanOrderPage(req, res) {
 
 // Add this route handler for processing scanned orders
 app.post("/process_scanned_order", async (req, res) => {
-  const { orderId, newStatus } = req.body;
-  const userId = req.cookies.cookuid;
-  const userName = req.cookies.cookuname;
+    const { orderId, newStatus } = req.body;
+    const userId = req.cookies.cookuid;
+    const userName = req.cookies.cookuname;
 
-  try {
-    // Verify admin
-    const { data: admin, error: adminError } = await supabase
-      .from('admin')
-      .select('admin_id, admin_name')
-      .eq('admin_id', userId)
-      .eq('admin_name', userName)
-      .single();
+    try {
+        // Verify admin
+        const { data: admin, error: adminError } = await supabase
+            .from('admin')
+            .select('admin_id, admin_name')
+            .eq('admin_id', userId)
+            .eq('admin_name', userName)
+            .single();
 
-    if (adminError || !admin) {
-      return res.status(401).json({ error: 'Unauthorized' });
+        if (adminError || !admin) {
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Unauthorized access'
+            });
+        }
+
+        // First verify the order belongs to this admin's canteen
+        const { data: order, error: orderError } = await supabase
+            .from('orders')
+            .select('canteenId')
+            .eq('order_id', orderId)
+            .single();
+
+        if (orderError || !order) {
+            return res.json({ 
+                success: false, 
+                message: 'Order not found'
+            });
+        }
+
+        if (order.canteenId !== admin.admin_name) {
+            return res.json({ 
+                success: false, 
+                message: 'This order belongs to a different canteen'
+            });
+        }
+
+        // Update order status
+        const { error: updateError } = await supabase
+            .from('orders')
+            .update({ payment_status: newStatus })
+            .eq('order_id', orderId);
+
+        if (updateError) {
+            console.error('Update error:', updateError);
+            return res.json({ 
+                success: false, 
+                message: 'Failed to update order status'
+            });
+        }
+
+        console.log(`Order ${orderId} status updated to ${newStatus}`);
+        res.json({ 
+            success: true, 
+            message: 'Order status updated successfully'
+        });
+
+    } catch (error) {
+        console.error('Error in process_scanned_order:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'An error occurred while updating the order status'
+        });
     }
-
-    // Update order status
-    const { data, error } = await supabase
-      .from('orders')
-      .update({ payment_status: newStatus })
-      .eq('order_id', orderId)
-      .eq('canteenId', admin.admin_name);
-
-    if (error) throw error;
-
-    res.json({ success: true, message: 'Order status updated successfully' });
-  } catch (error) {
-    console.error('Error in process_scanned_order:', error);
-    res.status(500).json({ error: 'An error occurred while updating the order status' });
-  }
 });
 
 // Add this new route
 app.get('/api/order-details/:orderId', async (req, res) => {
-  const orderId = req.params.orderId;
-  const userId = req.cookies.cookuid;
-  const userName = req.cookies.cookuname;
+    try {
+        const { orderId } = req.params;
+        
+        // Fetch order details including item_id
+        const { data: order, error } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('order_id', orderId)
+            .single();
 
-  try {
-    // Verify admin
-    const { data: admin, error: adminError } = await supabase
-      .from('admin')
-      .select('admin_id, admin_name')
-      .eq('admin_id', userId)
-      .eq('admin_name', userName)
-      .single();
+        if (error) throw error;
 
-    if (adminError || !admin) {
-      return res.status(401).json({ error: 'Unauthorized' });
+        // Fetch item name from menu table
+        const { data: menuItem, error: menuError } = await supabase
+            .from('menu')
+            .select('item_name')
+            .eq('item_id', order.item_id)
+            .single();
+
+        if (menuError) throw menuError;
+
+        // Combine order details with item name
+        const orderWithItemName = {
+            ...order,
+            item_name: menuItem.item_name
+        };
+
+        res.json({
+            success: true,
+            order: orderWithItemName
+        });
+    } catch (error) {
+        console.error('Error fetching order details:', error);
+        res.json({
+            success: false,
+            error: 'Failed to fetch order details'
+        });
     }
-
-    // Fetch order details
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('order_id', orderId)
-      .eq('canteenId', admin.admin_name)
-      .single();
-
-    if (orderError) throw orderError;
-
-    if (!order) {
-      return res.status(404).json({ success: false, message: 'Order not found' });
-    }
-
-    res.json({ success: true, order });
-  } catch (error) {
-    console.error('Error in fetchOrderDetails:', error);
-    res.status(500).json({ success: false, message: 'An error occurred while fetching order details' });
-  }
 });
 
 async function sendOrderConfirmationEmail(email, orderDetails) {
@@ -2547,6 +2764,142 @@ app.post('/check-duplicate', async (req, res) => {
       success: false, 
       message: 'An error occurred. Please try again.' 
     });
+  }
+});
+
+// Add this new route for SSE
+app.get('/admin-dispatch-orders-stream', async (req, res) => {
+    const userName = req.cookies.cookuname;
+
+    // Set headers for SSE
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    // Function to send updates
+    const sendUpdate = async () => {
+        try {
+            // Fetch pending orders
+            const { data: orders, error: ordersError } = await supabase
+                .from('orders')
+                .select('*')
+                .eq('canteenId', userName)
+                .eq('payment_status', 'PAID')
+                .order('datetime', { ascending: true });
+
+            if (ordersError) throw ordersError;
+
+            // Format user_id as string
+            const formattedOrders = orders.map(order => ({
+                ...order,
+                user_id: order.user_id.toString()
+            }));
+
+            // Fetch item names
+            for (let i = 0; i < formattedOrders.length; i++) {
+                const { data: menu, error: menuError } = await supabase
+                    .from('menu')
+                    .select('item_name')
+                    .eq('item_id', formattedOrders[i].item_id)
+                    .single();
+
+                if (!menuError && menu) {
+                    formattedOrders[i].item_name = menu.item_name;
+                }
+            }
+
+            res.write(`data: ${JSON.stringify({ orders: formattedOrders })}\n\n`);
+        } catch (error) {
+            console.error('Error in SSE update:', error);
+        }
+    };
+
+    // Initial data send
+    await sendUpdate();
+
+    // Set up Supabase realtime subscription
+    const channel = supabase.channel('custom-dispatch-channel')
+        .on(
+            'postgres_changes',
+            {
+                event: '*',
+                schema: 'public',
+                table: 'orders'
+            },
+            async (payload) => {
+                console.log('Change received:', payload);
+                await sendUpdate();
+            }
+        )
+        .subscribe((status) => {
+            console.log('Subscription status:', status);
+        });
+
+    // Clean up on client disconnect
+    req.on('close', () => {
+        channel.unsubscribe();
+    });
+});
+
+// Add this POST route handler for dispatching orders
+app.post("/admin_view_dispatch_orders", async (req, res) => {
+  try {
+    const orderIds = req.body.order_id_s;
+    const userId = req.cookies.cookuid;
+    const userName = req.cookies.cookuname;
+
+    // Verify admin
+    const { data: admin, error: adminError } = await supabase
+      .from('admin')
+      .select('admin_id, admin_name')
+      .eq('admin_id', userId)
+      .eq('admin_name', userName)
+      .single();
+
+    if (adminError || !admin) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    // Process each order
+    for (const orderId of orderIds) {
+      // Update order status to DISPATCHED
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ payment_status: 'DISPATCHED' })
+        .eq('order_id', orderId)
+        .eq('canteenId', admin.admin_name);
+
+      if (updateError) throw updateError;
+    }
+
+    // Fetch updated orders list
+    const { data: updatedOrders, error: ordersError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('canteenId', admin.admin_name)
+      .eq('payment_status', 'PAID')
+      .order('datetime', { ascending: true });
+
+    if (ordersError) throw ordersError;
+
+    // Add item names to orders
+    for (let order of updatedOrders) {
+      const { data: menu, error: menuError } = await supabase
+        .from('menu')
+        .select('item_name')
+        .eq('item_id', order.item_id)
+        .single();
+
+      if (!menuError && menu) {
+        order.item_name = menu.item_name;
+      }
+    }
+
+    return res.json({ success: true, orders: updatedOrders });
+
+  } catch (error) {
+    console.error('Error in dispatch orders:', error);
+    return res.status(500).json({ success: false, error: 'An error occurred while dispatching orders' });
   }
 });
 

@@ -375,17 +375,22 @@
     <script>
     function handleLogout(event) {
         event.preventDefault();
-        fetch('/logout')
+        fetch('/user-logout')
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    localStorage.removeItem('userName');
+                    localStorage.removeItem('userEmail');
+                    localStorage.removeItem('userPhone');
                     window.location.href = '/signin';
                 } else {
                     console.error('Logout failed:', data.message);
+                    alert('Error logging out');
                 }
             })
             .catch(error => {
                 console.error('Error during logout:', error);
+                alert('Error logging out');
             });
     }
     </script>

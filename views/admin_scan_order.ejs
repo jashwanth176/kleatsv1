@@ -261,17 +261,34 @@
             document.getElementById('order-id').textContent = `Order ID: ${orderId}`;
             document.getElementById('order-status').textContent = 'Status: Fetching...';
             document.getElementById('order-details').style.display = 'block';
+            
+            // Clear any existing item details
+            const existingDetails = document.getElementById('item-details');
+            if (existingDetails) {
+                existingDetails.remove();
+            }
 
             // Fetch order details from the server
             fetch(`/api/order-details/${orderId}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
+                        // Update order status
                         document.getElementById('order-status').textContent = `Status: ${data.order.payment_status}`;
+                        
+                        // Only show item details and add status class if status is PAID
                         if (data.order.payment_status.toUpperCase() === 'PAID') {
                             document.getElementById('order-status').classList.add('status-paid');
+                            
+                            // Add item details
+                            const itemDetails = `
+                                <div id="item-details">
+                                    <p><strong>Item:</strong> ${data.order.item_name}</p>
+                                    <p><strong>Quantity:</strong> ${data.order.quantity}</p>
+                                </div>
+                            `;
+                            document.getElementById('order-id').insertAdjacentHTML('afterend', itemDetails);
                         }
-                        // Add more details as needed
                     } else {
                         document.getElementById('order-status').textContent = 'Status: Error fetching order details';
                     }
@@ -297,10 +314,18 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    // Update the displayed status
                     document.getElementById('order-status').textContent = `Status: ${newStatus}`;
+                    // Remove the paid status class if it exists
+                    document.getElementById('order-status').classList.remove('status-paid');
+                    // Hide the item details since it's no longer in PAID status
+                    const itemDetails = document.getElementById('item-details');
+                    if (itemDetails) {
+                        itemDetails.remove();
+                    }
                     alert('Order status updated successfully');
                 } else {
-                    alert('Failed to update order status');
+                    alert('Failed to update order status: ' + (data.message || 'Unknown error'));
                 }
             })
             .catch((error) => {

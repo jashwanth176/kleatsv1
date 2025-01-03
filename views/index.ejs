@@ -212,7 +212,7 @@
                                         food on campus at KL University, Vijayawada. To become a member of this project,
                                         Please go to <span style="color: #0805cc;"
                                             href="https://kleats.in/member">kleats.in/member</span> or find us at KL
-                                        GLUG (C424).
+                                        GLUG (C424). <span style="color: #f40808;">Currently we are in pilot phase so we are only available at KL Adda </span>
                                     </p>
                                     <div class="banner-btn mt-4">
                                         <a href="#canteens" class="sec-btn" style="color: #f40808;">Order Now</a>
@@ -301,7 +301,7 @@
                                         <div style="background-image: url(/images/chef/adda.jpg);"
                                             class="team-img back-img"></div>
                                         <h3 class="h3-title">KL Adda : C Block</h3>
-                                        <a href="/api/canteen2/KL_Adda" class="sec-btn" style="color: #f40808;">Order
+                                        <a href="/api/canteen/KL_Adda" class="sec-btn" style="color: #f40808;">Order
                                             Now</a>
                                     </div>
                                 </div>
@@ -884,21 +884,13 @@
                 
                 authButton.addEventListener('click', function(e) {
                     e.preventDefault();
-                    fetch('/logout')
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                localStorage.removeItem('userName');
-                                localStorage.removeItem('userEmail');
-                                localStorage.removeItem('userPhone');
-                                alert('Logged out successfully');
-                                window.location.href = '/signin';
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            alert('Error logging out');
-                        });
+                    // First clear local storage
+                    localStorage.removeItem('userName');
+                    localStorage.removeItem('userEmail');
+                    localStorage.removeItem('userPhone');
+                    
+                    // Then call logout endpoint
+                    window.location.href = '/logout';
                 });
             } else {
                 // If user is not logged in, keep signup functionality

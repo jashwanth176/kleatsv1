@@ -236,54 +236,56 @@
                     <div class="row g-xxl-5 bydefault_show" id="menu-dish"
                         style="background-image: url(/images/menu-bg.png);">
                         <% for(let i=0;i<items.length;i++) { %>
-                            <div class="col-lg-3 col-sm-6 dish-box-wp <%= items[i].item_category %>"
-                                data-cat="breakfast">
-                                <div class="dish-box text-center" style = "transform: scale(0.80); margin: -0.5rem;">
-                                    <div class="dist-img" style="height: 250px; overflow: hidden;">
-                                        <img src="/images/dish/<%= items[i].item_img %>"
-                                            alt="<%= items[i].item_name %>"
-                                            style="width: 100%; height: 100%; object-fit: cover; object-position: center;">
-                                    </div>
-                                    <div class="dish-rating">
-                                        <%= items[i].item_rating %>
-                                            <i class="uil uil-star"></i>
-                                    </div>
-                                    <div class="dish-title">
-                                        <h3 class="h3-title">
-                                            <%= items[i].item_name %>
-                                        </h3>
-                                    </div>
-                                    <div class="dish-info">
-                                        <ul>
-                                            <li>
-                                                <p>Type</p>
-                                                <b>
-                                                    <%= items[i].item_type %>
-                                                </b>
-                                            </li>
-                                            <li>
-                                                <p>Persons</p>
-                                                <b>
-                                                    <%= items[i].item_serving %>
-                                                </b>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                    <div class="dist-bottom-row">
-                                        <ul>
-                                            <li>
-                                                <b>₹ <%= items[i].item_price %></b>
-                                            </li>
-                                            <li>
-                                                <button class="dish-add-btn" id="btn<%= items[i].item_id %>"
-                                                    onClick="addToCart('<%= items[i].item_id %>', '<%= items[i].item_name %>', <%= items[i].item_price %>)">
-                                                    <i class="uil uil-plus"></i>
-                                                </button>
-                                            </li>
-                                        </ul>
+                            <% if (!items[i].is_paused) { %>
+                                <div class="col-lg-3 col-sm-6 dish-box-wp <%= items[i].item_category %>"
+                                    data-cat="breakfast">
+                                    <div class="dish-box text-center" style = "transform: scale(0.80); margin: -0.5rem;">
+                                        <div class="dist-img" style="height: 250px; overflow: hidden;">
+                                            <img src="/images/dish/<%= items[i].item_img %>"
+                                                alt="<%= items[i].item_name %>"
+                                                style="width: 100%; height: 100%; object-fit: cover; object-position: center;">
+                                        </div>
+                                        <div class="dish-rating">
+                                            <%= items[i].item_rating %>
+                                                <i class="uil uil-star"></i>
+                                        </div>
+                                        <div class="dish-title">
+                                            <h3 class="h3-title">
+                                                <%= items[i].item_name %>
+                                            </h3>
+                                        </div>
+                                        <div class="dish-info">
+                                            <ul>
+                                                <li>
+                                                    <p>Type</p>
+                                                    <b>
+                                                        <%= items[i].item_type %>
+                                                    </b>
+                                                </li>
+                                                <li>
+                                                    <p>Persons</p>
+                                                    <b>
+                                                        <%= items[i].item_serving %>
+                                                    </b>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="dist-bottom-row">
+                                            <ul>
+                                                <li>
+                                                    <b>₹ <%= items[i].item_price %></b>
+                                                </li>
+                                                <li>
+                                                    <button class="dish-add-btn" id="btn<%= items[i].item_id %>"
+                                                        onClick="addToCart('<%= items[i].item_id %>', '<%= items[i].item_name %>', <%= items[i].item_price %>)">
+                                                        <i class="uil uil-plus"></i>
+                                                    </button>
+                                                </li>
+                                            </ul>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            <% } %>
                         <% } %>
                     </div>
                 </div>
@@ -305,7 +307,7 @@
                                             <img src="/images/file.png" alt="KL Eats Logo" height="100" width="100">
                                         </a>
                                     </div>
-                                    <p>Bringing campus dining to your fingertips.</p>
+                                    <p>Bringing Campus Dining to your fingertips.</p>
                                     <div class="social-icon">
                                         <ul>
                                             <li><a
@@ -453,6 +455,23 @@
             window.addEventListener('load', function() {
                 document.getElementById('loading-overlay').style.display = 'none';
             });
+        </script>
+
+        <script>
+            // Add event listener for page visibility changes
+            document.addEventListener('visibilitychange', function() {
+                if (document.visibilityState === 'visible') {
+                    window.location.reload();
+                }
+            });
+
+            // Add event listener for page loads
+            window.onpageshow = function(event) {
+                if (event.persisted) {
+                    window.location.reload();
+                }
+            };
+            
         </script>
 </body>
 

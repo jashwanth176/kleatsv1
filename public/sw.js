@@ -73,3 +73,66 @@ workbox.routing.registerRoute(
   })
 );
 
+// Handle push notifications
+self.addEventListener('push', function(event) {
+  console.log('Push event received:', event);
+  
+  if (event.data) {
+    try {
+      const data = event.data.json();
+      console.log('Push data:', data);
+
+      const options = {
+        body: `${data.customerName} placed a new order (${data.orderDetails})`,
+        icon: '/images/file.png',
+        badge: '/images/file.png',
+        vibrate: [200, 100, 200],
+        tag: data.orderId, // Prevents duplicate notifications
+        renotify: true, // Allows notification even if tag exists
+        data: {
+          orderId: data.orderId,
+          url: '/admin_view_dispatch_orders',
+          timestamp: data.timestamp
+        },
+        actions: [
+          {
+            action: 'view',
+            title: 'View Order'
+          },
+          {
+            action: 'close',
+            title: 'Close'
+          }
+        ],
+        // Add more engaging features
+        requireInteraction: true, // Notification persists until user interacts
+        silent: false // Play sound
+      };
+
+      event.waitUntil(
+        self.registration.showNotification(data.title || 'New Order - KL Eats', options)
+          .then(() => {
+            console.log('Notification shown successfully');
+          })
+          .catch(error => {
+            console.error('Error showing notification:', error);
+          })
+      );
+    } catch (error) {
+      console.error('Error processing push event:', error);
+    }
+  }
+});
+
+// Handle notification click
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+
+  if (event.action === 'view') {
+    // Open the orders page when notification is clicked
+    event.waitUntil(
+      clients.openWindow(event.notification.data.url)
+    );
+  }
+});
+

@@ -13,6 +13,7 @@
     "bcrypt": "^5.1.1",
     "body-parser": "^1.20.0",
     "combined-stream": "^1.0.8",
+    "connect-pg-simple": "^10.0.0",
     "cookie-parser": "~1.4.4",
     "crypto": "^1.0.1",
     "debug": "~2.6.9",
@@ -21,7 +22,7 @@
     "ejs": "^3.1.6",
     "express": "^4.17.1",
     "express-fileupload": "^1.4.0",
-    "express-session": "^1.18.0",
+    "express-session": "^1.18.1",
     "follow-redirects": "^1.15.9",
     "form-data": "^4.0.0",
     "http-errors": "~1.6.3",
@@ -32,6 +33,7 @@
     "nodemailer": "^6.9.15",
     "nodemon": "^2.0.16",
     "qrcode": "^1.5.4",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "web-push": "^3.6.7"
   }
 }
