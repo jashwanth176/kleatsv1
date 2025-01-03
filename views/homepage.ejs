@@ -458,20 +458,35 @@
         </script>
 
         <script>
-            // Add event listener for page visibility changes
+            function validateCartState() {
+                const currentCanteen = document.querySelector('.h2-title').textContent.trim();
+                const storedCanteen = localStorage.getItem('currentCanteen');
+                
+                if (currentCanteen === storedCanteen) {
+                    const savedCart = localStorage.getItem(`cart_${currentCanteen}`);
+                    if (savedCart) {
+                        cart = JSON.parse(savedCart);
+                        updateCartDisplay();
+                    }
+                }
+            }
+
+            // Call on page load
+            document.addEventListener('DOMContentLoaded', validateCartState);
+
+            // Call when page becomes visible
             document.addEventListener('visibilitychange', function() {
                 if (document.visibilityState === 'visible') {
-                    window.location.reload();
+                    validateCartState();
                 }
             });
 
-            // Add event listener for page loads
+            // Call when navigating back
             window.onpageshow = function(event) {
                 if (event.persisted) {
-                    window.location.reload();
+                    validateCartState();
                 }
             };
-            
         </script>
 </body>
 

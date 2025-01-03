@@ -745,22 +745,16 @@ app.get("/homepage", async (req, res) => {
   }
 });
 app.get('/cart', async (req, res) => {
-  const cart = JSON.parse(req.query.cart || '[]');
-  const item_count = parseInt(req.query.item_count || '0');
-
-  console.log('Received cart:', cart); // Add this line for debugging
-
-  const itemDetails = await getItemDetails(cart);
-
-  console.log('Item details:', itemDetails); // Add this line for debugging
-
-  res.render('cart', {
-    items: itemDetails,
-    item_count: item_count,
-    canteen_name: req.query.canteen_name || '',
-    username: req.cookies.cookuname,
-    userid: req.cookies.cookuid
-  });
+    try {
+        // The cart page will now get data from localStorage on the client side
+        res.render('cart', { 
+            item_count: 0,  // This will be updated by client-side JS
+            items: []       // This will be populated from localStorage
+        });
+    } catch (error) {
+        console.error('Error loading cart:', error);
+        res.status(500).send("Error loading cart");
+    }
 });
 app.post("/checkout", checkout);
 app.get("/confirmation", renderConfirmationPage);

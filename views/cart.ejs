@@ -69,6 +69,40 @@
                 opacity: 0.5;
             }
         }
+
+        .qty-btn {
+            background-color: #f40808;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .qty-btn:hover {
+            background-color: #d40707;
+        }
+
+        .quantity {
+            min-width: 24px;
+            text-align: center;
+            display: inline-block;
+            width: 24px;
+        }
+
+        .remove-item {
+            background-color: #555;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .remove-item:hover {
+            background-color: #333;
+        }
     </style>
 
     <!-- Google tag (gtag.js) -->
@@ -191,68 +225,35 @@
                                                                 <th style="width: 10%;">Product</th>
                                                                 <th style="width: 45%;">Product Name</th>
                                                                 <th style="width: 10%;">Price</th>
-                                                                <th style="width: 5%;">Quantity</th>
+                                                                <th style="width: 10%;">Quantity</th>
                                                                 <th style="width: 15%;">SubTotal</th>
                                                                 <th style="width: 10%;">Action</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
-                                                            <% if (items && items.length> 0) { %>
-                                                                <% items.forEach((item, index)=> { %>
-                                                                    <tr>
-                                                                        <td>
-                                                                            <%= index + 1 %>
-                                                                        </td>
-                                                                        <td><img src="<%= item.item_img %>"
-                                                                                alt="<%= item.item_name %>"
-                                                                                style="width: 50px; height: 50px;"></td>
-                                                                        <td>
-                                                                            <%= item.item_name %>
-                                                                        </td>
-                                                                        <td>₹ <span class="item-price">
-                                                                                <%= item.item_price %>
-                                                                            </span></td>
-                                                                        <td><input type="number" class="quantity"
-                                                                                name="quantity"
-                                                                                value="<%= item.quantity %>" min="1"
-                                                                                onchange="updateSubtotal(this);"></td>
-                                                                        <td>₹ <span class="subtotal">
-                                                                                <%= item.item_price * item.quantity %>
-                                                                            </span></td>
-                                                                        <td><button class="remove-item"
-                                                                                onclick="removeItem(this)">Remove</button>
-                                                                        </td>
-                                                                        <td style="display: none;" class="ItemIdSto"
-                                                                            value="<%= item.item_id %>">
-                                                                            <%= item.item_id %>
-                                                                        </td>
-                                                                    </tr>
-                                                                    <% }); %>
-                                                                        <% } else { %>
-                                                                            <tr>
-                                                                                <td colspan="7">Your cart is empty</td>
-                                                                            </tr>
-                                                                            <% } %>
+                                                            <!-- Cart items will be injected here by JavaScript -->
                                                         </tbody>
                                                         <tfoot>
                                                             <tr>
                                                                 <td colspan="4"><strong>Subtotal</strong></td>
-                                                                <td id="total_quantity">
-                                                                    <%= item_count %>
-                                                                </td>
-                                                                <td id="subtotal_price">₹ 0</td>
+                                                                <td id="total_quantity">0</td>
+                                                                <td>₹ <span id="subtotal_price">0.00</span></td>
+                                                                <td></td>
                                                             </tr>
                                                             <tr>
                                                                 <td colspan="5"><strong>Package Charges</strong></td>
-                                                                <td id="package_charges">₹ 0</td>
+                                                                <td>₹ <span id="package_charges">0.00</span></td>
+                                                                <td></td>
                                                             </tr>
                                                             <tr>
                                                                 <td colspan="5"><strong>GST Charges (5%)</strong></td>
-                                                                <td id="gst_charges">₹ 0</td>
+                                                                <td>₹ <span id="gst_charges">0.00</span></td>
+                                                                <td></td>
                                                             </tr>
                                                             <tr>
                                                                 <td colspan="5"><strong>Total</strong></td>
-                                                                <td id="total_price">₹ 0</td>
+                                                                <td>₹ <span id="total_price">0.00</span></td>
+                                                                <td></td>
                                                             </tr>
                                                         </tfoot>
                                                     </table>
@@ -268,7 +269,7 @@
                                                         Name</label>
                                                     <div class="col-sm-8">
                                                         <input id="nameText" type="text" class="form-control"
-                                                            placeholder="Name">
+                                                            placeholder="Name" required>
                                                     </div>
                                                 </div>
                                                 <div class="mb-3 row">
@@ -276,13 +277,13 @@
                                                         Number</label>
                                                     <div class="col-sm-8">
                                                         <input id="phoneText" type="tel" class="form-control"
-                                                            placeholder="Phone Number">
+                                                            placeholder="Phone Number" required>
                                                     </div>
                                                 </div>
                                                 <div class="mb-3 row">
                                                     <label for="emailText" class="col-sm-4 col-form-label">Enter Email</label>
                                                     <div class="col-sm-8">
-                                                        <input id="emailText" type="email" class="form-control" placeholder="Email">
+                                                        <input id="emailText" type="email" class="form-control" placeholder="Email" required>
                                                     </div>
                                                 </div>
                                                 <div class="mb-3 row">
@@ -290,12 +291,12 @@
                                                         Time</label>
                                                     <div class="col-sm-8">
                                                         <input id="timeText" type="time" class="form-control"
-                                                            placeholder="Enter Pick up Time">
+                                                            placeholder="Enter Pick up Time" required>
                                                     </div>
                                                 </div>
                                                 <div class="form-group mb-3">
                                                     <label for="orderType" class="form-label">Order Type:</label>
-                                                    <select class="form-control" id="orderType" name="orderType" required onchange="updateTotalWithCharges()">
+                                                    <select class="form-control" id="orderType" name="orderType" required onchange="updateTotal()">
                                                         <option value="pickup">Pick Up (+₹10)</option>
                                                         <option value="dinein">Dine In</option>
                                                     </select>
@@ -394,188 +395,260 @@
             mode: "production" //or production
         });
 
-        // Update the buyNowBtn function
+        // Function to handle the Buy Now button click
         function buyNowBtn() {
-            let name = document.getElementById("nameText").value;
-            let phone = document.getElementById("phoneText").value;
-            let email = document.getElementById("emailText").value;
-            let time = document.getElementById("timeText").value;
+            let name = document.getElementById("nameText").value.trim();
+            let phone = document.getElementById("phoneText").value.trim();
+            let email = document.getElementById("emailText").value.trim();
+            let time = document.getElementById("timeText").value.trim();
             let orderType = document.getElementById("orderType").value;
             const buyNowButton = document.getElementById("buyNowButton");
 
             if (!name || !phone || !email || !time) {
-                alert("Please enter name, phone, and email.");
-            } else {
-                console.log(time);
-                // Disable the button and change its text
-                buyNowButton.disabled = true;
-                buyNowButton.textContent = "Processing...";
+                alert("Please enter all required fields.");
+                return;
+            }
 
-                const items = document.querySelectorAll('#mycart tbody tr');
-                const obj = [];
+            // Disable the button and change its text
+            buyNowButton.disabled = true;
+            buyNowButton.textContent = "Processing...";
 
-                items.forEach(item => {
-                    obj.push({
-                        item_id: parseInt(item.querySelector('.ItemIdSto').innerHTML),
-                        quantity: parseInt(item.querySelector('.quantity').value)
-                    });
-                });
+            // Load cart from localStorage
+            const currentCanteen = localStorage.getItem('currentCanteen');
+            const cartData = localStorage.getItem(`cart_${currentCanteen}`);
 
-                fetch('/api/buyNow', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ 
-                        name: name, 
-                        phone: phone, 
-                        email: email, 
-                        items: obj, 
-                        order_time: time,
-                        orderType: orderType
-                    })
-                }).then(response => response.json())
-                    .then(data => {
-                        console.log(data);
-                        if (data.code == 1) {
-                            document.querySelector(".qwqwqw").style.display = 'none';
-                            let checkoutOptions = {
-                                paymentSessionId: data.data.payment_session_id,
-                                returnUrl: "https://kleats.in/api/order?order_id={order_id}",
-                                redirectTarget: "_self"
-                            }
-                            cashfree.checkout(checkoutOptions);
-                        } else {
-                            alert(data.message);
-                            // Re-enable the button if there's an error
-                            buyNowButton.disabled = false;
-                            buyNowButton.textContent = "Buy Now";
+            if (!cartData || JSON.parse(cartData).length === 0) {
+                alert("Your cart is empty.");
+                buyNowButton.disabled = false;
+                buyNowButton.textContent = "Buy Now";
+                return;
+            }
+
+            const items = JSON.parse(cartData).map(item => ({
+                item_id: parseInt(item.item_id),
+                quantity: parseInt(item.quantity)
+            }));
+
+            fetch('/api/buyNow', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    name: name, 
+                    phone: phone, 
+                    email: email, 
+                    items: items, 
+                    order_time: time,
+                    orderType: orderType
+                })
+            }).then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    if (data.code === 1) {
+                        // Handle successful order
+                        // Example: Redirect to payment page or show success message
+                        // Here, assuming Cashfree integration
+                        let checkoutOptions = {
+                            paymentSessionId: data.data.payment_session_id,
+                            returnUrl: "https://kleats.in/api/order?order_id={order_id}",
+                            redirectTarget: "_self"
                         }
-                    }).catch(error => {
-                        console.error('There has been a problem with your fetch operation:', error);
+                        cashfree.checkout(checkoutOptions);
+                    } else {
+                        alert(data.message || "An error occurred during the order.");
                         // Re-enable the button if there's an error
                         buyNowButton.disabled = false;
                         buyNowButton.textContent = "Buy Now";
-                    });
-            }
+                    }
+                }).catch(error => {
+                    console.error('Fetch error:', error);
+                    alert("An error occurred while processing your order.");
+                    // Re-enable the button if there's an error
+                    buyNowButton.disabled = false;
+                    buyNowButton.textContent = "Buy Now";
+                });
         }
 
-        function updateSubtotal(quantityInput) {
-            const row = quantityInput.closest('tr');
-            const price = parseFloat(row.querySelector('.item-price').textContent);
-            const quantity = parseInt(quantityInput.value);
-            const subtotal = quantity * price;
-            const subtotalElement = row.querySelector('.subtotal');
-            subtotalElement.textContent = subtotal.toFixed(2);
+        // Function to handle quantity updates
+        function updateQuantity(button, change) {
+            const row = button.closest('tr');
+            const quantitySpan = row.querySelector('.quantity');
+            const itemId = row.querySelector('.ItemIdSto').textContent.trim();
+            const priceText = row.querySelector('.item-price').textContent.trim();
+
+            // Parse price correctly
+            const price = parseFloat(priceText);
+            if (isNaN(price)) {
+                console.error(`Invalid price for item ${itemId}: ${priceText}`);
+                return;
+            }
+
+            // Parse current quantity
+            let currentQuantity = parseInt(quantitySpan.textContent);
+            if (isNaN(currentQuantity)) {
+                console.error(`Invalid quantity for item ${itemId}: ${quantitySpan.textContent}`);
+                return;
+            }
+
+            let newQuantity = currentQuantity + change;
+            if (newQuantity < 1) {
+                alert("Quantity cannot be less than 1.");
+                return;
+            }
+
+            // Update the quantity in the display
+            quantitySpan.textContent = newQuantity;
+            // Update the subtotal in the display
+            const subtotalSpan = row.querySelector('.subtotal');
+            subtotalSpan.textContent = (price * newQuantity).toFixed(2);
+
+            // Update the cart in localStorage
+            const currentCanteen = localStorage.getItem('currentCanteen');
+            let cartData = localStorage.getItem(`cart_${currentCanteen}`);
+            if (cartData) {
+                let cart = JSON.parse(cartData);
+                const item = cart.find(item => item.item_id.toString() === itemId.toString());
+                if (item) {
+                    item.quantity = newQuantity;
+                    localStorage.setItem(`cart_${currentCanteen}`, JSON.stringify(cart));
+
+                    // Update cart count
+                    const totalQuantity = cart.reduce((total, item) => total + item.quantity, 0);
+                    document.getElementById('cart-number-count').textContent = totalQuantity;
+                    document.getElementById('total_quantity').textContent = totalQuantity;
+                }
+            }
+
+            // Update totals
             updateTotal();
         }
 
+        // Function to handle item removal
+        function removeItem(button) {
+            const row = button.closest('tr');
+            const itemId = row.querySelector('.ItemIdSto').textContent.trim();
+
+            const currentCanteen = localStorage.getItem('currentCanteen');
+            let cartData = localStorage.getItem(`cart_${currentCanteen}`);
+            if (cartData) {
+                let cart = JSON.parse(cartData);
+                cart = cart.filter(item => item.item_id.toString() !== itemId.toString());
+                localStorage.setItem(`cart_${currentCanteen}`, JSON.stringify(cart));
+
+                // Update cart count
+                const totalQuantity = cart.reduce((total, item) => total + item.quantity, 0);
+                document.getElementById('cart-number-count').textContent = totalQuantity;
+                document.getElementById('total_quantity').textContent = totalQuantity;
+            }
+
+            // Remove the row from the table
+            row.remove();
+
+            // Update totals
+            updateTotal();
+
+            // If cart is empty, show the empty message
+            const tbody = document.querySelector('#mycart tbody');
+            if (!localStorage.getItem(`cart_${currentCanteen}`) || JSON.parse(localStorage.getItem(`cart_${currentCanteen}`)).length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7">Your cart is empty</td></tr>';
+            }
+        }
+
+        // Function to update all totals
         function updateTotal() {
-            const subtotals = document.querySelectorAll('.subtotal');
-            const quantities = document.querySelectorAll('.quantity');
-            let subtotalPrice = 0;
+            let subtotal = 0;
             let totalQuantity = 0;
 
-            subtotals.forEach(subtotal => {
-                subtotalPrice += parseFloat(subtotal.textContent);
+            const tbody = document.querySelector('#mycart tbody');
+            const rows = tbody.querySelectorAll('tr');
+
+            rows.forEach(row => {
+                const subtotalSpan = row.querySelector('.subtotal');
+                const quantitySpan = row.querySelector('.quantity');
+
+                const itemSubtotal = parseFloat(subtotalSpan.textContent);
+                const itemQuantity = parseInt(quantitySpan.textContent);
+
+                if (!isNaN(itemSubtotal)) {
+                    subtotal += itemSubtotal;
+                }
+
+                if (!isNaN(itemQuantity)) {
+                    totalQuantity += itemQuantity;
+                }
             });
 
-            quantities.forEach(quantity => {
-                totalQuantity += parseInt(quantity.value);
-            });
-
-            // Calculate GST (5% of subtotal)
-            const gstCharges = Math.ceil(subtotalPrice * 0.05);
-
-            // Calculate pickup/package charge based on order type and total quantity
+            // Calculate package charges based on order type
             const orderType = document.getElementById('orderType').value;
-            const packageCharges = orderType === 'pickup' ? (10 * totalQuantity) : 0;
+            let packageCharges = 0;
+            if (orderType === 'pickup') {
+                packageCharges = 10 * totalQuantity;
+            }
 
-            // Calculate total (subtotal + GST + package charges)
-            const totalPrice = subtotalPrice + gstCharges + packageCharges;
+            // Calculate GST (5% on subtotal) and ceil it
+            const gstCharges = Math.ceil(subtotal * 0.05);
 
-            document.getElementById('subtotal_price').textContent = '₹ ' + subtotalPrice.toFixed(2);
-            document.getElementById('package_charges').textContent = '₹ ' + packageCharges.toFixed(2);
-            document.getElementById('gst_charges').textContent = '₹ ' + gstCharges.toFixed(2);
-            document.getElementById('total_price').textContent = '₹ ' + totalPrice.toFixed(2);
+            // Total price (using ceil)
+            const totalPrice = Math.ceil(subtotal + packageCharges + gstCharges);
+
+            // Update totals in the table
+            document.getElementById('subtotal_price').textContent = subtotal.toFixed(2);
+            document.getElementById('package_charges').textContent = packageCharges.toFixed(2);
+            document.getElementById('gst_charges').textContent = gstCharges.toFixed(2);
+            document.getElementById('total_price').textContent = totalPrice.toFixed(2);
             document.getElementById('total_quantity').textContent = totalQuantity;
             document.getElementById('cart-number-count').textContent = totalQuantity;
         }
 
-        function updateCartData() {
-            const items = document.querySelectorAll('#mycart tbody tr');
-            const cartData = [];
+        // Function to load and render the cart
+        function loadCart() {
+            const currentCanteen = localStorage.getItem('currentCanteen');
+            const cartData = localStorage.getItem(`cart_${currentCanteen}`);
+            const tbody = document.querySelector('#mycart tbody');
 
-            items.forEach(item => {
-                const itemId = item.querySelector('.ItemIdSto').textContent;
-                const quantity = parseInt(item.querySelector('.quantity').value);
-                const price = parseFloat(item.querySelector('.item-price').textContent);
+            if (cartData) {
+                const cart = JSON.parse(cartData);
+                tbody.innerHTML = ''; // Clear existing rows
 
-                cartData.push({
-                    item_id: itemId,
-                    quantity: quantity,
-                    price: price
+                cart.forEach((item, index) => {
+                    const row = `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td><img src="${item.item_img}" alt="${item.item_name}" style="width: 50px; height: 50px;"></td>
+                            <td>${item.item_name}</td>
+                            <td>₹ <span class="item-price">${item.price.toFixed(2)}</span></td>
+                            <td>
+                                <div class="quantity-controls" style="display: flex; align-items: center; gap: 8px;">
+                                    <button onclick="updateQuantity(this, -1)" class="qty-btn">-</button>
+                                    <span class="quantity">${item.quantity}</span>
+                                    <button onclick="updateQuantity(this, 1)" class="qty-btn">+</button>
+                                </div>
+                            </td>
+                            <td>₹ <span class="subtotal">${(item.price * item.quantity).toFixed(2)}</span></td>
+                            <td><button class="remove-item" onclick="removeItem(this)">Remove</button></td>
+                            <td style="display: none;" class="ItemIdSto">${item.item_id}</td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
                 });
-            });
 
-            const subtotalPrice = parseFloat(document.getElementById('subtotal_price').textContent.replace('₹ ', ''));
-            const gstCharges = parseFloat(document.getElementById('gst_charges').textContent.replace('₹ ', ''));
-            const totalPrice = parseFloat(document.getElementById('total_price').textContent.replace('₹ ', ''));
-
-            const cartDataWithTotals = {
-                items: cartData,
-                subtotal: subtotalPrice,
-                gst: gstCharges,
-                total: totalPrice
-            };
-
-            document.getElementById('cartData').value = JSON.stringify(cartDataWithTotals);
+                updateTotal();
+            } else {
+                tbody.innerHTML = '<tr><td colspan="7">Your cart is empty</td></tr>';
+            }
         }
 
-        // Call updateTotal on page load
+        // Initialize cart on page load
         document.addEventListener('DOMContentLoaded', () => {
-            updateTotal();
-            updateCartData(); // Initialize cart data
-        });
+            loadCart();
 
-        function removeItem(button) {
-            const row = button.closest('tr');
-            row.remove();
-            updateTotal();
-            updateCartData();
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const userName = localStorage.getItem('userName');
-            if (userName) {
-                document.getElementById('nameText').value = userName;
-            }
-        });
-
-        document.addEventListener('DOMContentLoaded', function() {
-            // Auto-fill form fields from localStorage
-            const userName = localStorage.getItem('userName');
-            const userEmail = localStorage.getItem('userEmail');
-            const userPhone = localStorage.getItem('userPhone');
-
-            if (userName) {
-                document.getElementById('nameText').value = userName;
-            }
-            if (userEmail) {
-                document.getElementById('emailText').value = userEmail;
-            }
-            if (userPhone) {
-                document.getElementById('phoneText').value = userPhone;
-            }
-        });
-
-        window.addEventListener('load', function() {
+            // After loading cart, hide the loading overlay
             document.getElementById('loading-overlay').style.display = 'none';
         });
 
-        // Add event listener for order type change
+        // Update cart when order type changes
         document.getElementById('orderType').addEventListener('change', updateTotal);
-
     </script>
     <!-- jquery  -->
     <script src="/javascripts/jquery-3.5.1.min.js"></script>
