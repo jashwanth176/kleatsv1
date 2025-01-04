@@ -2897,4 +2897,90 @@ app.post("/admin_view_dispatch_orders", async (req, res) => {
   }
 });
 
+// Add this new route for filtering orders by date
+app.get('/admin-orders-by-date', async (req, res) => {
+  try {
+    const userId = req.cookies.cookuid;
+    const userName = req.cookies.cookuname;
+    const selectedDate = req.query.date;
+
+    // Verify admin
+    const { data: admin, error: adminError } = await supabase
+      .from('admin')
+      .select('admin_id, admin_name')
+      .eq('admin_id', userId)
+      .eq('admin_name', userName)
+      .single();
+
+    if (adminError || !admin) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Unauthorized access' 
+      });
+    }
+
+    // Create date range for the selected date
+    const startDate = new Date(selectedDate);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(selectedDate);
+    endDate.setHours(23, 59, 59, 999);
+
+    // Format dates for Supabase query
+    const startDateStr = startDate.toISOString();
+    const endDateStr = endDate.toISOString();
+
+    console.log('Fetching orders between:', startDateStr, 'and', endDateStr);
+
+    // Fetch filtered orders
+    const { data: orders, error: ordersError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('canteenId', admin.admin_name)
+      .eq('payment_status', 'DISPATCHED')
+      .gte('datetime', startDateStr)
+      .lte('datetime', endDateStr);
+
+    if (ordersError) {
+      console.error('Error fetching orders:', ordersError);
+      throw ordersError;
+    }
+
+    // Fetch item names for the orders
+    const ordersWithNames = await Promise.all(orders.map(async (order) => {
+      const { data: menu, error: menuError } = await supabase
+        .from('menu')
+        .select('item_name')
+        .eq('item_id', order.item_id)
+        .single();
+
+      return {
+        ...order,
+        item_name: menuError ? 'Unknown Item' : menu.item_name
+      };
+    }));
+
+    // Calculate total money for filtered orders
+    const totalMoney = ordersWithNames.reduce((sum, order) => {
+      const orderTotal = parseFloat(order.price) || 0;
+      const pickupCharge = order.order_type === 'pickup' ? 10 * order.quantity : 0;
+      return sum + orderTotal + pickupCharge;
+    }, 0);
+
+    console.log(`Found ${ordersWithNames.length} orders, total money: ${totalMoney}`);
+
+    res.json({
+      success: true,
+      orders: ordersWithNames,
+      totalMoney: totalMoney
+    });
+
+  } catch (error) {
+    console.error('Error in admin-orders-by-date:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error fetching filtered orders'
+    });
+  }
+});
+
 module.exports = app;

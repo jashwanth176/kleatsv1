@@ -116,6 +116,13 @@
                                 <div class="sec-title-shape mb-4">
                                     <img src="/images/title-shape.svg" alt="">
                                 </div>
+                                
+                                <!-- Add date picker -->
+                                <div class="date-filter mb-4">
+                                    <label for="orderDate">Filter by date:</label>
+                                    <input type="date" id="orderDate" class="form-control" style="width: 200px; margin: 0 auto;">
+                                </div>
+
                                 <div class="total-money-box">
                                     Total Money: ₹<%= totalMoney.toFixed(2) %>
                                 </div>
@@ -276,7 +283,7 @@
             tbody.innerHTML = '';
 
             if (orders.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8"><h1>No Orders Are Pending</h1></td></tr>';
+                tbody.innerHTML = `<tr><td colspan="8"><h1>No Orders Placed on this date</h1></td></tr>`;
             } else {
                 orders.forEach((order, index) => {
                     const row = `
@@ -374,8 +381,8 @@
                             <td>${order.quantity}</td>
                             <td>${order.price}</td>
                             <td>${new Date(order.datetime).toLocaleString()}</td>
-                            <td>${order.order_type === 'dinein' ? 'Dine In' : 'Pick Up' }</td>
-                            <td>${order.order_type === 'pickup' ? '₹5.00' : '₹0.00' }</td>
+                            <td>${order.order_type === 'dinein' ? 'Dine In' : 'Parcel' }</td>
+                            <td>${order.order_type === 'pickup' ? '₹10.00' : '₹0.00' }</td>
                         </tr>
                     `;
                     tbody.innerHTML += row;
@@ -399,6 +406,48 @@
                     eventSource.close();
                 }
             });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const datePicker = document.getElementById('orderDate');
+            
+            // Set default value to today
+            const today = new Date().toISOString().split('T')[0];
+            datePicker.value = today;
+
+            datePicker.addEventListener('change', async function() {
+                try {
+                    // Show loading state
+                    const tbody = document.querySelector('#order tbody');
+                    tbody.innerHTML = '<tr><td colspan="10" class="text-center">Loading...</td></tr>';
+
+                    const response = await fetch(`/admin-orders-by-date?date=${this.value}`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        updateOrdersTable(data.orders);
+                        updateTotalMoney(data.totalMoney);
+                    } else {
+                        // If no orders found, show appropriate message
+                        tbody.innerHTML = '<tr><td colspan="10" class="text-center">No orders found for selected date</td></tr>';
+                        updateTotalMoney(0);
+                    }
+                } catch (error) {
+                    console.error('Error fetching orders:', error);
+                    // Show a more user-friendly message in the table instead of an alert
+                    const tbody = document.querySelector('#order tbody');
+                    tbody.innerHTML = '<tr><td colspan="10" class="text-center">Unable to load orders. Please try again.</td></tr>';
+                    updateTotalMoney(0);
+                }
+            });
+
+            // Function to update total money display
+            function updateTotalMoney(amount) {
+                const totalMoneyBox = document.querySelector('.total-money-box');
+                if (totalMoneyBox) {
+                    totalMoneyBox.innerHTML = `Total Money: ₹${amount.toFixed(2)}`;
+                }
+            }
         });
     </script>
     <!-- jquery  -->
