@@ -91,17 +91,16 @@ transporter.verify(function (error, success) {
 // Configure Zoho mail transporter
 const zohoTransporter = nodemailer.createTransport({
   host: 'smtp.zoho.in',
-  port: 465,
-  secure: true, // use SSL
+  port: 587, // Changed from 465 to 587 for better reliability
+  secure: false, // Changed to false for STARTTLS
   auth: {
-    user: 'orders@kleats.in',
-    pass: 'KLeats@glug24',
+    user: process.env.ZOHO_MAIL || 'orders@kleats.in',
+    pass: process.env.ZOHO_APP_PASSWORD // Make sure this is set in your .env file
   },
   tls: {
-    // do not fail on invalid certs
     rejectUnauthorized: false
   },
-  debug: true // Enable debug logs
+  debug: true
 });
 
 // Verify transporter configuration
@@ -365,7 +364,7 @@ app.get('/api/order', async (req, res) => {
 
       // Send email if not sent already
       if (!existingOrder.email_sent) {
-        await sendOrderConfirmationEmail(existingOrder.email, {
+        const emailSent = await sendOrderConfirmationEmail(existingOrder.email, {
           userName: data.customer_details.customer_name,
           phoneNumber: data.customer_details.customer_phone,
           totalPrice: data.order_amount,
@@ -374,14 +373,16 @@ app.get('/api/order', async (req, res) => {
           menu: me
         });
 
-        // Update email_sent status
-        const { error: emailSentUpdateError } = await supabase
-          .from('orders')
-          .update({ email_sent: true })
-          .eq('order_id', orderId);
+        if (emailSent) {
+          // Update email_sent status only if email was sent successfully
+          const { error: emailSentUpdateError } = await supabase
+            .from('orders')
+            .update({ email_sent: true })
+            .eq('order_id', orderId);
 
-        if (emailSentUpdateError) {
-          console.error("Error updating email_sent status:", emailSentUpdateError);
+          if (emailSentUpdateError) {
+            console.error("Error updating email_sent status:", emailSentUpdateError);
+          }
         }
       }
 
@@ -2138,46 +2139,69 @@ app.get('/api/order-details/:orderId', async (req, res) => {
 });
 
 async function sendOrderConfirmationEmail(email, orderDetails) {
-  const { userName, phoneNumber, totalPrice, paymentStatus, tokenNumber, menu } = orderDetails;
-
-  let menuHtml = menu.map(item => `<li>${item.item_name} x ${item.quantity}</li>`).join('');
-
-  // Generate QR code URL
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(tokenNumber)}`;
-
-  const mailOptions = {
-    // from: process.env.OUTLOOK_USER,  // Comment out old sender
-    from: {  // Use new Zoho Mail sender
-      name: 'KL Eats',
-      address: 'orders@kleats.in'
-    },
-    to: email,
-    subject: 'Your Order Confirmation',
-    html: `
-      <h1>Order Confirmation</h1>
-      <p>Thank you for your order, ${userName}!</p>
-      <p>Order Details:</p>
-      <ul>
-        <li>Token Number: ${tokenNumber.split('-')[1]}</li>
-        <li>Total Price: ₹${totalPrice}</li>
-        <li>Payment Status: ${paymentStatus}</li>
-        <li>Phone Number: ${phoneNumber}</li>
-      </ul>
-      <h2>Your Order:</h2>
-      <ul>
-        ${menuHtml}
-      </ul>
-      <p>Please show the QR code below when collecting your order:</p>
-      <img src="${qrCodeUrl}" alt="Order QR Code" />
-    `
-  };
-
   try {
-    // await transporter.sendMail(mailOptions);  // Comment out old transporter
-    await zohoTransporter.sendMail(mailOptions);  // Use Zoho transporter instead
-    console.log('Order confirmation email sent successfully');
+    const { userName, phoneNumber, totalPrice, paymentStatus, tokenNumber, menu } = orderDetails;
+    console.log('Sending email to:', email, 'with details:', orderDetails);
+
+    // Initialize Zoho transporter
+    const zohoTransporter = nodemailer.createTransport({
+      host: 'smtp.zoho.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.ZOHO_MAIL,
+        pass: process.env.ZOHO_APP_PASSWORD
+      },
+      tls: {
+        rejectUnauthorized: false,
+        ciphers: 'SSLv3'
+      }
+    });
+
+    let menuHtml = menu.map(item => `<li>${item.item_name} x ${item.quantity}</li>`).join('');
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(tokenNumber)}`;
+
+    const mailOptions = {
+      from: {
+        name: 'KL Eats',
+        address: process.env.ZOHO_MAIL
+      },
+      to: email,
+      subject: 'Your KL Eats Order Confirmation',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #ff8243;">Order Confirmation</h1>
+          <p>Dear ${userName},</p>
+          <p>Thank you for your order! Here are your order details:</p>
+          <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px;">
+            <p><strong>Token Number:</strong> ${tokenNumber.split('-')[1]}</p>
+            <p><strong>Total Amount:</strong> ₹${totalPrice}</p>
+            <p><strong>Payment Status:</strong> ${paymentStatus}</p>
+            <p><strong>Phone Number:</strong> ${phoneNumber}</p>
+          </div>
+          <h2>Order Summary:</h2>
+          <ul style="list-style-type: none; padding-left: 0;">
+            ${menuHtml}
+          </ul>
+          <p>Please show the QR code below when collecting your order:</p>
+          <img src="${qrCodeUrl}" alt="Order QR Code" style="max-width: 150px;"/>
+          <p style="color: #666; font-size: 12px; margin-top: 20px;">
+            This is an automated message, please do not reply to this email.
+          </p>
+        </div>
+      `
+    };
+
+    // Add verification step
+    await zohoTransporter.verify();
+    
+    const info = await zohoTransporter.sendMail(mailOptions);
+    console.log('Email sent successfully:', info.response);
+    return true;
   } catch (error) {
-    console.error('Error sending order confirmation email:', error);
+    console.error('Error sending order confirmation email:', error.message);
+    console.error('Full error:', error);
+    return false;
   }
 }
 
@@ -2982,5 +3006,12 @@ app.get('/admin-orders-by-date', async (req, res) => {
     });
   }
 });
+
+// Add these route handlers
+app.get('/admin_change_price', renderChangePricePage);
+app.post('/admin_change_price', changePrice);
+
+app.get('/admin_addFood', renderAddFoodPage);
+app.post('/admin_addFood', addFood);
 
 module.exports = app;

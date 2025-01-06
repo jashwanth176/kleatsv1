@@ -144,7 +144,7 @@
                                                     <th style="width: 8%;">Price</th>
                                                     <th style="width: 15%;">Date/Time</th>
                                                     <th style="width: 8%;">Order Type</th>
-                                                    <th style="width: 8%;">Pickup Charge</th>
+                                                    <th style="width: 8%;">Parcel Charge</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -158,8 +158,8 @@
                                                         <td><%= order.quantity %></td>
                                                         <td><%= order.price %></td>
                                                         <td><%= new Date(order.datetime).toLocaleString() %></td>
-                                                        <td><%= order.order_type === 'dinein' ? 'Dine In' : 'Pick Up' %></td>
-                                                        <td><%= order.order_type === 'pickup' ? '₹5.00' : '₹0.00' %></td>
+                                                        <td><%= order.order_type === 'dinein' ? 'Dine In' : 'Parcel' %></td>
+                                                        <td><%= order.order_type === 'pickup' ? '₹10.00' : '₹0.00' %></td>
                                                     </tr>
                                                 <% }); %>
                                             </tbody>
@@ -296,8 +296,8 @@
                             <td>${order.quantity}</td>
                             <td>${order.price}</td>
                             <td>${new Date(order.datetime).toLocaleString()}</td>
-                            <td>${order.order_type === 'dinein' ? 'Dine In' : 'Pick Up' }</td>
-                            <td>${order.order_type === 'pickup' ? '₹5.00' : '₹0.00' }</td>
+                            <td>${order.order_type === 'dinein' ? 'Dine In' : 'Parcel' }</td>
+                            <td>${order.order_type === 'pickup' ? '₹10.00' : '₹0.00' }</td>
                         </tr>
                     `;
                     tbody.innerHTML += row;
