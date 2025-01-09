@@ -144,11 +144,15 @@
                                                     <th style="width: 8%;">Price</th>
                                                     <th style="width: 15%;">Date/Time</th>
                                                     <th style="width: 8%;">Order Type</th>
-                                                    <th style="width: 8%;">Parcel Charge</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <% orders.forEach((order, index) => { %>
+                                                    <% 
+                                                    const basePrice = Number(order.price);
+                                                    const packingCharge = (order.order_type === 'pickup' || order.order_type === 'parcel') ? (10 * Number(order.quantity)) : 0;
+                                                    const finalPrice = basePrice + packingCharge;
+                                                    %>
                                                     <tr>
                                                         <td><%= index + 1 %></td>
                                                         <td><%= order.order_id %></td>
@@ -156,10 +160,9 @@
                                                         <td><%= order.order_id.split('-')[1] %></td>
                                                         <td><%= order.item_name %></td>
                                                         <td><%= order.quantity %></td>
-                                                        <td><%= order.price %></td>
+                                                        <td>₹<%= finalPrice.toFixed(2) %></td>
                                                         <td><%= new Date(order.datetime).toLocaleString() %></td>
                                                         <td><%= order.order_type === 'dinein' ? 'Dine In' : 'Parcel' %></td>
-                                                        <td><%= order.order_type === 'pickup' ? '₹10.00' : '₹0.00' %></td>
                                                     </tr>
                                                 <% }); %>
                                             </tbody>
@@ -283,26 +286,30 @@
             tbody.innerHTML = '';
 
             if (orders.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8"><h1>No Orders Placed on this date</h1></td></tr>`;
-            } else {
-                orders.forEach((order, index) => {
-                    const row = `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td>${order.order_id}</td>
-                            <td>${order.user_id}</td>
-                            <td>${order.order_id.split('-')[1]}</td>
-                            <td>${order.item_name}</td>
-                            <td>${order.quantity}</td>
-                            <td>${order.price}</td>
-                            <td>${new Date(order.datetime).toLocaleString()}</td>
-                            <td>${order.order_type === 'dinein' ? 'Dine In' : 'Parcel' }</td>
-                            <td>${order.order_type === 'pickup' ? '₹10.00' : '₹0.00' }</td>
-                        </tr>
-                    `;
-                    tbody.innerHTML += row;
-                });
+                tbody.innerHTML = `<tr><td colspan="9"><h1>No Orders Placed on this date</h1></td></tr>`;
+                return;
             }
+
+            orders.forEach((order, index) => {
+                const basePrice = Number(order.price);
+                const packingCharge = (order.order_type === 'pickup' || order.order_type === 'parcel') ? (10 * order.quantity) : 0;
+                const finalPrice = basePrice + packingCharge;
+
+                const row = `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${order.order_id}</td>
+                        <td>${order.user_id}</td>
+                        <td>${order.order_id.split('-')[1]}</td>
+                        <td>${order.item_name || 'N/A'}</td>
+                        <td>${order.quantity}</td>
+                        <td>₹${finalPrice.toFixed(2)}</td>
+                        <td>${new Date(order.datetime).toLocaleString()}</td>
+                        <td>${order.order_type === 'dinein' ? 'Dine In' : 'Parcel'}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
         }
 
         // Add this new script at the end of your existing scripts
@@ -324,53 +331,32 @@
             updateButtonVisibility();
         });
 
+        // Disable any existing event source
+        if (window.existingEventSource) {
+            window.existingEventSource.close();
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
-            let eventSource;
-
-            function connectSSE() {
-                // Close existing connection if any
-                if (eventSource) {
-                    eventSource.close();
-                }
-
-                // Create new EventSource connection
-                eventSource = new EventSource('/admin-orders-stream');
-
-                eventSource.onmessage = function(event) {
-                    try {
-                        const data = JSON.parse(event.data);
-                        updateOrdersTable(data.orders);
-                        updateTotalMoney(data.totalMoney);
-                    } catch (error) {
-                        console.error('Error processing SSE message:', error);
-                    }
-                };
-
-                eventSource.onerror = function(error) {
-                    console.error('SSE Error:', error);
-                    eventSource.close();
-                    // Try to reconnect after 5 seconds
-                    setTimeout(connectSSE, 5000);
-                };
+            function calculateFinalPrice(order) {
+                const basePrice = Number(order.price);
+                const quantity = Number(order.quantity);
+                const packingCharge = (order.order_type === 'pickup' || order.order_type === 'parcel') ? (10 * quantity) : 0;
+                return basePrice + packingCharge;
             }
 
-            // Function to update the orders table
             function updateOrdersTable(orders) {
                 const tbody = document.querySelector('#order tbody');
                 if (!tbody) return;
 
                 tbody.innerHTML = '';
-
+                
                 if (orders.length === 0) {
-                    tbody.innerHTML = `
-                        <tr>
-                            <td colspan="8" class="text-center">No dispatched orders found.</td>
-                        </tr>
-                    `;
+                    tbody.innerHTML = `<tr><td colspan="9"><h1>No Orders Placed on this date</h1></td></tr>`;
                     return;
                 }
 
                 orders.forEach((order, index) => {
+                    const finalPrice = calculateFinalPrice(order);
                     const row = `
                         <tr>
                             <td>${index + 1}</td>
@@ -379,76 +365,67 @@
                             <td>${order.order_id.split('-')[1]}</td>
                             <td>${order.item_name || 'N/A'}</td>
                             <td>${order.quantity}</td>
-                            <td>${order.price}</td>
+                            <td>₹${finalPrice.toFixed(2)}</td>
                             <td>${new Date(order.datetime).toLocaleString()}</td>
-                            <td>${order.order_type === 'dinein' ? 'Dine In' : 'Parcel' }</td>
-                            <td>${order.order_type === 'pickup' ? '₹10.00' : '₹0.00' }</td>
+                            <td>${order.order_type === 'dinein' ? 'Dine In' : 'Parcel'}</td>
                         </tr>
                     `;
                     tbody.innerHTML += row;
                 });
             }
 
-            // Function to update the total money display
-            function updateTotalMoney(totalMoney) {
-                const totalMoneyBox = document.querySelector('.total-money-box');
-                if (totalMoneyBox) {
-                    totalMoneyBox.innerHTML = `Total Money: ₹${totalMoney.toFixed(2)}`;
-                }
+            const datePicker = document.getElementById('orderDate');
+            if (datePicker) {
+                datePicker.addEventListener('change', async function() {
+                    try {
+                        const response = await fetch(`/admin-orders-by-date?date=${this.value}`);
+                        const data = await response.json();
+                        if (data.success) {
+                            updateOrdersTable(data.orders);
+                            updateTotalMoney(data.totalMoney);
+                        }
+                    } catch (error) {
+                        console.error('Error fetching orders:', error);
+                    }
+                });
             }
 
-            // Start SSE connection
-            connectSSE();
+            const eventSource = new EventSource('/admin-orders-stream');
+            window.existingEventSource = eventSource;
 
-            // Clean up on page unload
-            window.addEventListener('beforeunload', () => {
-                if (eventSource) {
-                    eventSource.close();
-                }
-            });
-        });
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const datePicker = document.getElementById('orderDate');
-            
-            // Set default value to today
-            const today = new Date().toISOString().split('T')[0];
-            datePicker.value = today;
-
-            datePicker.addEventListener('change', async function() {
+            eventSource.onmessage = function(event) {
                 try {
-                    // Show loading state
-                    const tbody = document.querySelector('#order tbody');
-                    tbody.innerHTML = '<tr><td colspan="10" class="text-center">Loading...</td></tr>';
-
-                    const response = await fetch(`/admin-orders-by-date?date=${this.value}`);
-                    const data = await response.json();
-
-                    if (data.success) {
+                    const data = JSON.parse(event.data);
+                    if (data.orders) {
                         updateOrdersTable(data.orders);
+                    }
+                    if (data.totalMoney !== undefined) {
                         updateTotalMoney(data.totalMoney);
-                    } else {
-                        // If no orders found, show appropriate message
-                        tbody.innerHTML = '<tr><td colspan="10" class="text-center">No orders found for selected date</td></tr>';
-                        updateTotalMoney(0);
                     }
                 } catch (error) {
-                    console.error('Error fetching orders:', error);
-                    // Show a more user-friendly message in the table instead of an alert
-                    const tbody = document.querySelector('#order tbody');
-                    tbody.innerHTML = '<tr><td colspan="10" class="text-center">Unable to load orders. Please try again.</td></tr>';
-                    updateTotalMoney(0);
+                    console.error('Error processing SSE message:', error);
                 }
-            });
+            };
 
-            // Function to update total money display
-            function updateTotalMoney(amount) {
-                const totalMoneyBox = document.querySelector('.total-money-box');
-                if (totalMoneyBox) {
-                    totalMoneyBox.innerHTML = `Total Money: ₹${amount.toFixed(2)}`;
-                }
-            }
+            eventSource.onerror = function(error) {
+                console.error('SSE Error:', error);
+                eventSource.close();
+            };
         });
+
+        // Function to calculate total price
+        function calculateTotalPrice(price, quantity, orderType) {
+            const basePrice = Number(price);
+            const quant = Number(quantity);
+            let totalPrice = basePrice * quant;
+
+            if (orderType === 'parcel') {
+                totalPrice += 10 * quant; // Add parcel charge per item
+            }
+
+            console.log(`Calculating: ${basePrice} * ${quant} for ${orderType}, Total: ${totalPrice}`);
+            return totalPrice;
+        }
     </script>
     <!-- jquery  -->
     <script src="/javascripts/jquery-3.5.1.min.js"></script>

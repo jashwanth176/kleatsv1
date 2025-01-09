@@ -145,7 +145,6 @@
                                                 <th style="width: 8%;">Quantity</th>
                                                 <th style="width: 8%;">Price</th>
                                                 <th style="width: 15%;">Date/Time</th>
-                                                <th style="width: 8%;">Order Type</th>
                                                 <th style="width: 5%;">Dispatch</th>
                                             </tr>
                                         </thead>
@@ -166,7 +165,7 @@
                                                         <td><%= orders[i].orderTime %></td>
                                                         <td><%= orders[i].item_name %></td>
                                                         <td><%= orders[i].quantity %></td>
-                                                        <td><%= orders[i].price %></td>
+                                                        <td>₹<%= orders[i].order_type === 'parcel' ? (orders[i].price + 10) * orders[i].quantity : orders[i].price * orders[i].quantity %></td>
                                                         <td><%= new Date(orders[i].datetime).toLocaleString() %></td>
                                                         <td><%= orders[i].order_type === 'dinein' ? 'Dine In' : 'Parcel' %></td>
                                                         <td>
@@ -325,7 +324,7 @@
                         <td>${order.orderTime || ''}</td>
                         <td>${order.item_name || ''}</td>
                         <td>${order.quantity}</td>
-                        <td>${order.price}</td>
+                        <td>₹${order.order_type === 'parcel' ? (order.price + 10) * order.quantity : order.price * order.quantity}</td>
                         <td>${new Date(order.datetime).toLocaleString()}</td>
                         <td>${order.order_type === 'dinein' ? 'Dine In' : 'Parcel'}</td>
                         <td>
@@ -361,49 +360,43 @@
             updateButtonVisibility();
         });
 
-        // Add this after your existing scripts
+        // Replace the existing subscribeToNotifications function
         async function subscribeToNotifications() {
             try {
-                // Check if service worker is registered
+                if (!('Notification' in window)) {
+                    throw new Error('This browser does not support notifications');
+                }
+
                 if (!('serviceWorker' in navigator)) {
                     throw new Error('Service Worker not supported');
                 }
 
-                // Register service worker if not already registered
-                const registration = await navigator.serviceWorker.register('/sw.js');
-                console.log('Service Worker registered:', registration);
-
-                // Request notification permission
                 const permission = await Notification.requestPermission();
-                console.log('Notification permission:', permission);
-                
                 if (permission !== 'granted') {
                     throw new Error('Notification permission denied');
                 }
 
-                // Get push subscription
+                // Register service worker
+                const registration = await navigator.serviceWorker.register('/sw.js');
+                console.log('Service Worker registered');
+
+                // Get VAPID public key
+                const response = await fetch('/api/vapid-public-key');
+                const vapidPublicKey = await response.text();
+
+                // Get subscription
                 let subscription = await registration.pushManager.getSubscription();
                 
                 if (!subscription) {
-                    console.log('Getting VAPID public key...');
-                    const response = await fetch('/api/vapid-public-key');
-                    const vapidPublicKey = await response.text();
-                    console.log('VAPID public key received');
-                    
                     const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
-                    
-                    // Subscribe to push notifications
-                    console.log('Creating push subscription...');
                     subscription = await registration.pushManager.subscribe({
                         userVisibleOnly: true,
                         applicationServerKey: convertedVapidKey
                     });
-                    console.log('Push subscription created');
                 }
 
-                // Send subscription to server
-                console.log('Sending subscription to server...');
-                const saveResponse = await fetch('/api/save-subscription', {
+                // Save subscription to server
+                await fetch('/api/save-subscription', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -411,13 +404,9 @@
                     body: JSON.stringify(subscription)
                 });
 
-                const saveResult = await saveResponse.json();
-                console.log('Subscription saved result:', saveResult);
-
-                // Test notification
-                console.log('Subscription active and ready for notifications');
+                console.log('Notification subscription successful');
             } catch (error) {
-                console.error('Error in subscribeToNotifications:', error);
+                console.error('Error setting up notifications:', error);
                 alert('Failed to enable notifications: ' + error.message);
             }
         }
@@ -450,27 +439,86 @@
             document.querySelector('.sec-title').appendChild(notifyBtn);
         });
 
-        // Add this new function for SSE connection
-        function connectToOrderStream() {
-            const eventSource = new EventSource('/admin-dispatch-orders-stream');
-            
-            eventSource.onmessage = function(event) {
-                const data = JSON.parse(event.data);
-                updateOrdersTable(data.orders);
-            };
-
-            eventSource.onerror = function(error) {
-                console.error('EventSource failed:', error);
-                eventSource.close();
-                // Attempt to reconnect after 5 seconds
-                setTimeout(connectToOrderStream, 5000);
-            };
+        // Add this function to handle real-time updates
+        function handleOrderUpdate(orders) {
+            updateOrdersTable(orders);
+            // Show notification if there are new orders
+            if (orders && orders.length > 0) {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('New Order!', {
+                        body: 'You have new orders waiting to be dispatched',
+                        icon: '/images/file.png'
+                    });
+                }
+            }
         }
 
-        // Call this when the page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            connectToOrderStream();
-            subscribeToNotifications();
+        // Update the connectToOrderStream function
+        function connectToOrderStream() {
+            let eventSource;
+            
+            function connect() {
+                eventSource = new EventSource('/admin-order-stream');
+                
+                eventSource.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        
+                        // Ignore heartbeat messages
+                        if (data.heartbeat) return;
+                        
+                        // Update table with new orders
+                        if (data.orders) {
+                            updateOrdersTable(data.orders);
+                            
+                            // Show notification for new orders
+                            if (data.orders.length > 0 && Notification.permission === 'granted') {
+                                new Notification('New Order!', {
+                                    body: `You have ${data.orders.length} order(s) waiting to be dispatched`,
+                                    icon: '/images/file.png'
+                                });
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error processing message:', error);
+                    }
+                };
+
+                eventSource.onerror = function(error) {
+                    console.error('EventSource failed:', error);
+                    eventSource.close();
+                    // Attempt to reconnect after 5 seconds
+                    setTimeout(connect, 5000);
+                };
+            }
+
+            // Initial connection
+            connect();
+
+            // Cleanup on page unload
+            window.addEventListener('unload', () => {
+                if (eventSource) {
+                    eventSource.close();
+                }
+            });
+        }
+
+        // Initialize notifications and real-time updates
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Request notification permission
+                if ('Notification' in window) {
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted') {
+                        console.log('Notification permission granted');
+                    }
+                }
+
+                // Start real-time updates
+                connectToOrderStream();
+            } catch (error) {
+                console.error('Error initializing:', error);
+            }
         });
     </script>
     <!-- jquery  -->

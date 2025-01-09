@@ -205,7 +205,7 @@ app.post('/api/buyNow', async (req, res) => {
         customer_name: name
       },
       order_meta: {
-        return_url: "https://kleats.in/api/order?order_id={order_id}"
+        return_url: "https://kleats.in/api/order?order_id={order_id}&payment_status=PAID"
       }
     };
 
@@ -258,150 +258,145 @@ function getTime() {
 app.get('/api/order', async (req, res) => {
   try {
     const orderId = req.query.order_id;
+    const paymentStatus = req.query.payment_status;
 
-    // Check if the email has already been sent for this order
-    const { data: existingOrder, error: existingOrderError } = await supabase
-      .from('orders')
-      .select('email_sent, email')
-      .eq('order_id', orderId)
-      .single();
-
-    if (existingOrderError) {
-      console.error("Error checking existing order:", existingOrderError);
-      return res.render('error', { message: 'Error processing order' });
-    }
-
-    // Fetch order details from Cashfree API
-    const response = await fetch('https://api.cashfree.com/pg/orders/' + orderId, {
-      method: "GET",
+    // Verify payment status with Cashfree
+    const response = await fetch(`https://api.cashfree.com/pg/orders/${orderId}`, {
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'x-client-Id': process.env.CASHFREE_APP_ID,
+        'x-client-id': process.env.CASHFREE_APP_ID,
         'x-client-secret': process.env.CASHFREE_SECRET,
         'x-api-version': process.env.CASHFREE_API_VERSION
       }
     });
 
-    const data = await response.json();
-
-    if (data.type) {
-      return res.json({ code: -1, message: data.message });
-    }
-
-    // Update order status in database
-    const { error: updateError } = await supabase
-      .from('orders')
-      .update({ payment_status: data.order_status })
-      .eq('order_id', orderId);
-
-    if (updateError) {
-      console.error("Error updating order:", updateError);
-      return res.render('failed');
-    }
-
-    if (data.order_status === 'PAID') {
-      // Fetch order details for notification
-      const { data: orderDetails, error: orderError } = await supabase
+    const paymentData = await response.json();
+    
+    // Only proceed if Cashfree confirms payment is successful
+    if (paymentData.order_status === 'PAID') {
+      // Update order status in database
+      const { error: updateError } = await supabase
         .from('orders')
-        .select('name, quantity, order_type, email')
-        .eq('order_id', orderId)
-        .single();
-
-      if (!orderError && orderDetails) {
-        // Send push notification
-        const notificationPayload = {
-          title: 'New Paid Order Received!',
-          customerName: orderDetails.name,
-          orderId: orderId,
-          orderDetails: `${orderDetails.quantity} items for ${orderDetails.order_type}`,
-          timestamp: new Date().toISOString()
-        };
-
-        console.log('Sending notifications for paid order:', notificationPayload);
-
-        const notificationPromises = Array.from(pushSubscriptions).map(subscription => {
-          return webpush.sendNotification(subscription, JSON.stringify(notificationPayload))
-            .then(() => {
-              console.log('Notification sent successfully to:', subscription.endpoint);
-            })
-            .catch(error => {
-              console.error('Push notification error:', error);
-              if (error.statusCode === 410) {
-                console.log('Removing expired subscription:', subscription.endpoint);
-                pushSubscriptions.delete(subscription);
-              }
-            });
-        });
-
-        await Promise.all(notificationPromises);
-        console.log('All notifications processed for paid order');
-      }
-
-      let me = [];
-      // Fetch order items
-      const { data: orderItems, error: orderItemsError } = await supabase
-        .from('orders')
-        .select('item_id,quantity')
+        .update({ payment_status: 'PAID' })
         .eq('order_id', orderId);
 
-      if (orderItemsError) {
-        console.error("Error fetching order items:", orderItemsError);
-        return res.render('error', { message: 'Error fetching order details' });
-      }
-
-      // Fetch menu items for each order item
-      for (const item of orderItems) {
-        const { data: menuItem, error: menuError } = await supabase
-          .from('menu')
-          .select('item_name')
-          .eq('item_id', item.item_id)
-          .single();
-
-        if (!menuError && menuItem) {
-          me.push({ item_name: menuItem.item_name, quantity: item.quantity });
-        }
-      }
-
-      // Send email if not sent already
-      if (!existingOrder.email_sent) {
-        const emailSent = await sendOrderConfirmationEmail(existingOrder.email, {
-          userName: data.customer_details.customer_name,
-          phoneNumber: data.customer_details.customer_phone,
-          totalPrice: data.order_amount,
-          paymentStatus: data.order_status,
-          tokenNumber: data.order_id,
-          menu: me
+      if (updateError) {
+        console.error("Error updating payment status:", updateError);
+        return res.render('error', {
+          message: 'Error processing payment verification',
+          error: { status: 500, stack: updateError.message }
         });
+      }
+    }
+
+    // First fetch the order details from our database
+    const { data: orderDetails, error: orderError } = await supabase
+      .from('orders')
+      .select('*, email_sent')  // Add email_sent to the selection
+      .eq('order_id', orderId)
+      .eq('payment_status', 'PAID');
+
+    if (orderError) {
+      console.error("Error fetching order:", orderError);
+      return res.render('error', {
+        message: 'Error processing order',
+        error: {
+          status: 500,
+          stack: orderError.message
+        }
+      });
+    }
+
+    // Check if we got any orders
+    if (!orderDetails || orderDetails.length === 0) {
+      return res.render('error', {
+        message: 'Order not found or not paid',
+        error: {
+          status: 404,
+          stack: 'No matching paid order found'
+        }
+      });
+    }
+
+    // Get the first order if multiple exist
+    const order = orderDetails[0];
+
+    // Fetch menu items
+    let me = [];
+    const { data: menuItems, error: menuError } = await supabase
+      .from('menu')
+      .select('item_name')
+      .eq('item_id', order.item_id)
+      .single();
+
+    if (menuError) {
+      console.error("Error fetching menu items:", menuError);
+      return res.render('error', {
+        message: 'Error fetching menu details',
+        error: {
+          status: 500,
+          stack: menuError.message
+        }
+      });
+    }
+
+    me.push({
+      item_name: menuItems.item_name,
+      quantity: order.quantity
+    });
+
+    // Check if email hasn't been sent and user has an email
+    if (!order.email_sent && order.email) {
+      try {
+        // Prepare order details for email
+        const emailOrderDetails = {
+          userName: order.user_name || 'Customer',
+          phoneNumber: order.user_id || 'N/A',
+          totalPrice: parseFloat(order.price),
+          paymentStatus: order.payment_status,
+          tokenNumber: order.order_id,
+          menu: me
+        };
+
+        // Send the email
+        const emailSent = await sendOrderConfirmationEmail(order.email, emailOrderDetails);
 
         if (emailSent) {
-          // Update email_sent status only if email was sent successfully
-          const { error: emailSentUpdateError } = await supabase
+          // Update email_sent status in database
+          const { error: updateError } = await supabase
             .from('orders')
             .update({ email_sent: true })
             .eq('order_id', orderId);
 
-          if (emailSentUpdateError) {
-            console.error("Error updating email_sent status:", emailSentUpdateError);
+          if (updateError) {
+            console.error("Error updating email sent status:", updateError);
           }
         }
+      } catch (emailError) {
+        console.error("Error sending email:", emailError);
+        // Continue with page render even if email fails
       }
-
-      return res.render('confirmation2', {
-        order: {
-          userName: data.customer_details.customer_name,
-          phoneNumber: data.customer_details.customer_phone,
-          totalPrice: data.order_amount,
-          paymentStatus: data.order_status,
-          tokenNumber: data.order_id
-        },
-        menu: me
-      });
-    } else {
-      return res.render('failed');
     }
+
+    // Render the confirmation page
+    return res.render('confirmation2', {
+      order: {
+        userName: order.user_name || 'Customer',
+        phoneNumber: order.user_id || 'N/A',
+        totalPrice: parseFloat(order.price),
+        paymentStatus: order.payment_status,
+        tokenNumber: order.order_id
+      },
+      menu: me
+    });
+
   } catch (err) {
-    console.error("Error processing order:", err);
-    return res.render('error', { message: 'Error processing order' });
+    console.error("Error verifying payment:", err);
+    return res.render('error', {
+      message: 'Error verifying payment',
+      error: { status: 500, stack: err.message }
+    });
   }
 });
 
@@ -2793,6 +2788,7 @@ app.get('/admin-dispatch-orders-stream', async (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', '*');
 
     // Function to send updates
     const sendUpdate = async () => {
@@ -3013,5 +3009,66 @@ app.post('/admin_change_price', changePrice);
 
 app.get('/admin_addFood', renderAddFoodPage);
 app.post('/admin_addFood', addFood);
+
+// Add near your other routes
+app.get('/admin-dispatch-orders-stream', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  // Send initial heartbeat
+  res.write('data: {"heartbeat": true}\n\n');
+
+  // Set up interval to send updates
+  const intervalId = setInterval(async () => {
+    try {
+      // Fetch latest orders
+      const { data: orders, error } = await supabase
+        .from('orders')
+        .select('*, menu(item_name)')
+        .eq('payment_status', 'PAID')
+        .eq('dispatch_status', false)
+        .order('datetime', { ascending: true });
+
+      if (error) throw error;
+
+      // Send the orders data
+      res.write(`data: ${JSON.stringify({ orders })}\n\n`);
+    } catch (error) {
+      console.error('Error fetching orders for SSE:', error);
+    }
+  }, 5000); // Update every 5 seconds
+
+  // Clean up on client disconnect
+  req.on('close', () => {
+    clearInterval(intervalId);
+    res.end();
+  });
+});
+
+// Add web push notification endpoint
+app.post('/send-notification', async (req, res) => {
+  try {
+    const { data: subscriptions } = await supabase
+      .from('push_subscriptions')
+      .select('subscription');
+
+    const notifications = subscriptions.map(sub => 
+      webpush.sendNotification(
+        sub.subscription,
+        JSON.stringify({
+          title: 'New Order!',
+          body: 'You have a new order waiting to be dispatched.'
+        })
+      )
+    );
+
+    await Promise.all(notifications);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error sending notifications:', error);
+    res.status(500).json({ error: 'Failed to send notifications' });
+  }
+});
 
 module.exports = app;
