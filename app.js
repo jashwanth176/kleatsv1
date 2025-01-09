@@ -20,6 +20,12 @@ const axios = require('axios');
 const bcrypt = require('bcrypt');
 const SALT_ROUNDS = 10;
 const webpush = require('web-push');
+const admin = require('firebase-admin');
+const serviceAccount = require('./config/firebase-admin-sdk.json');
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
 
 // Read SSL certificate files
 const privateKey = fs.readFileSync('/etc/letsencrypt/live/kleats.in/privkey.pem', 'utf8');
@@ -288,6 +294,9 @@ app.get('/api/order', async (req, res) => {
           error: { status: 500, stack: updateError.message }
         });
       }
+
+      // Send notification
+      await sendOrderNotification(orderId);
     }
 
     // First fetch the order details from our database
@@ -3049,26 +3058,125 @@ app.get('/admin-dispatch-orders-stream', (req, res) => {
 // Add web push notification endpoint
 app.post('/send-notification', async (req, res) => {
   try {
-    const { data: subscriptions } = await supabase
-      .from('push_subscriptions')
-      .select('subscription');
+    const { data: tokens } = await supabase
+      .from('fcm_tokens')
+      .select('token');
 
-    const notifications = subscriptions.map(sub => 
-      webpush.sendNotification(
-        sub.subscription,
-        JSON.stringify({
-          title: 'New Order!',
-          body: 'You have a new order waiting to be dispatched.'
-        })
-      )
+    const messages = tokens.map(({ token }) => ({
+      token,
+      notification: {
+        title: 'New Order!',
+        body: 'You have a new order waiting to be dispatched.'
+      },
+      webpush: {
+        fcm_options: {
+          link: '/admin_view_dispatch_orders'
+        }
+      }
+    }));
+
+    const responses = await Promise.all(
+      messages.map(message => admin.messaging().send(message))
     );
 
-    await Promise.all(notifications);
     res.json({ success: true });
   } catch (error) {
     console.error('Error sending notifications:', error);
     res.status(500).json({ error: 'Failed to send notifications' });
   }
 });
+
+// Add this endpoint to handle saving FCM tokens
+app.post('/api/save-fcm-token', async (req, res) => {
+  try {
+    const { token } = req.body;
+    console.log('Attempting to save FCM token:', token);
+    
+    if (!token) {
+      console.error('No token provided');
+      return res.status(400).json({ error: 'Token is required' });
+    }
+
+    // Save to Supabase
+    const { data, error } = await supabase
+      .from('fcm_tokens')
+      .upsert({ 
+        token: token 
+      }, { 
+        onConflict: 'token' 
+      });
+
+    if (error) {
+      console.error('Supabase error saving token:', error);
+      throw error;
+    }
+
+    console.log('Token saved successfully:', data);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error saving FCM token:', error);
+    res.status(500).json({ error: 'Failed to save token' });
+  }
+});
+
+// Add this function to send notifications when new orders come in
+async function sendOrderNotification(orderId) {
+  try {
+    const { data: tokens } = await supabase
+      .from('fcm_tokens')
+      .select('token');
+
+    if (!tokens || tokens.length === 0) {
+      console.log('No FCM tokens found');
+      return;
+    }
+
+    const message = {
+      notification: {
+        title: 'New Order!',
+        body: `New order received: ${orderId}`
+      },
+      data: {
+        orderId: orderId,
+        click_action: '/admin_view_dispatch_orders'
+      },
+      android: {
+        notification: {
+          sound: 'notification'
+        }
+      },
+      apns: {
+        payload: {
+          aps: {
+            sound: 'notification.mp3'
+          }
+        }
+      }
+    };
+
+    // Send to all tokens
+    const sendPromises = tokens.map(({ token }) => 
+      admin.messaging().send({
+        ...message,
+        token: token
+      }).catch(error => {
+        if (error.code === 'messaging/invalid-registration-token' ||
+            error.code === 'messaging/registration-token-not-registered') {
+          // Remove invalid token
+          return supabase
+            .from('fcm_tokens')
+            .delete()
+            .eq('token', token);
+        }
+        throw error;
+      })
+    );
+
+    await Promise.all(sendPromises);
+    console.log('Notifications sent successfully');
+  } catch (error) {
+    console.error('Error sending notifications:', error);
+  }
+}
 
 module.exports = app;

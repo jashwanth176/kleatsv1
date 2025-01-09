@@ -75,6 +75,8 @@
             background-color: #e67300;
         }
     </style>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js"></script>
 </head>
 
 <body class="body-fixed">
@@ -520,6 +522,132 @@
                 console.error('Error initializing:', error);
             }
         });
+
+        async function initializeFirebase() {
+            try {
+                console.log('Starting Firebase initialization...');
+                
+                // Initialize Firebase with your config
+                const firebaseConfig = {
+                    apiKey: "AIzaSyB-oOp_rQ6RrzLU3C9VKX7KdzKw6arj9xY",
+                    authDomain: "kl-eats.firebaseapp.com",
+                    projectId: "kl-eats",
+                    storageBucket: "kl-eats.firebasestorage.app",
+                    messagingSenderId: "288126510969",
+                    appId: "1:288126510969:web:b149f480c894dd1e2ff1a8",
+                    measurementId: "G-6GSMC0MBKB"
+                };
+
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                
+                console.log('Firebase app initialized');
+                const messaging = firebase.messaging();
+                console.log('Firebase messaging initialized');
+
+                // Request permission and get token
+                const permission = await Notification.requestPermission();
+                console.log('Notification permission:', permission);
+
+                if (permission === 'granted') {
+                    try {
+                        // Get registration token
+                        console.log('Getting FCM token...');
+                        const token = await messaging.getToken({
+                            vapidKey: 'BGUnBgUl_1d4Tcp3L_1l4ntR8xG4vDsDbI-40M107jQ8dXodlDGiuZW2Q6VqBkbm1Av4Lh-aLc65btiLmQKEKXM' // Replace this with your actual VAPID key
+                        });
+                        console.log('FCM Token received:', token);
+
+                        // Save token to your backend
+                        console.log('Saving token to backend...');
+                        const response = await fetch('/api/save-fcm-token', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ token })
+                        });
+
+                        const responseData = await response.json();
+                        console.log('Save token response:', responseData);
+
+                        if (!response.ok) {
+                            throw new Error(`Failed to save token: ${JSON.stringify(responseData)}`);
+                        }
+
+                        // Handle foreground messages
+                        messaging.onMessage((payload) => {
+                            console.log('Received foreground message:', payload);
+                            
+                            // Play sound first
+                            try {
+                                notificationSound.currentTime = 0; // Reset sound to start
+                                notificationSound.play()
+                                    .catch(error => console.error('Error playing notification sound:', error));
+                            } catch (error) {
+                                console.error('Error with notification sound:', error);
+                            }
+
+                            // Show notification
+                            if ('Notification' in window && Notification.permission === 'granted') {
+                                const { title, body } = payload.notification;
+                                new Notification(title, {
+                                    body,
+                                    icon: '/images/file.png',
+                                    silent: true, // Important: set to true so it doesn't play default sound
+                                    data: {
+                                        click_action: '/admin_view_dispatch_orders'
+                                    }
+                                });
+                            }
+                        });
+
+                        console.log('Firebase initialization complete');
+                    } catch (tokenError) {
+                        console.error('Error getting/saving token:', tokenError);
+                        throw tokenError;
+                    }
+                } else {
+                    console.log('Notification permission denied');
+                }
+            } catch (error) {
+                console.error('Error in initializeFirebase:', error);
+                alert('Error initializing notifications: ' + error.message);
+            }
+        }
+
+        // Initialize when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM Content Loaded, initializing Firebase...');
+            initializeFirebase().catch(error => {
+                console.error('Failed to initialize Firebase:', error);
+            });
+        });
+
+        // Add a visible button for testing
+        const notifyBtn = document.createElement('button');
+        notifyBtn.textContent = 'Enable Notifications';
+        notifyBtn.className = 'sec-btn';
+        notifyBtn.style.marginTop = '20px';
+        notifyBtn.onclick = () => {
+            console.log('Notification button clicked');
+            initializeFirebase().catch(error => {
+                console.error('Failed to initialize Firebase from button:', error);
+            });
+        };
+        document.querySelector('.sec-title').appendChild(notifyBtn);
+
+        // Add click handler for notifications
+        if ('Notification' in window) {
+            self.addEventListener('notificationclick', function(event) {
+                event.notification.close();
+                window.focus();
+                window.location.href = '/admin_view_dispatch_orders';
+            });
+        }
+
+        document.querySelector('.sec-title').appendChild(testSoundBtn);
     </script>
     <!-- jquery  -->
     <script src="/javascripts/jquery-3.5.1.min.js"></script>

@@ -1,2 +1,4 @@
 .vercel
 .env
+config/firebase-admin-sdk.json
+node_modules
