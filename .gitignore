@@ -1,5 +1,12 @@
-.vercel
+# Dependencies
+node_modules/
+
+# Environment variables
 .env
-config
-config/firebase-admin-sdk.json.json
-node_modules
+
+# Configuration files
+/config/
+/config/firebase-admin-sdk.json
+
+# Build output
+.vercel/
