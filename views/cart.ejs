@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="/stylesheets/jquery.fancybox.min.css">
     <!-- custom css  -->
     <link rel="stylesheet" href="/stylesheets/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         .content-padding {
             padding-top: 120px;
@@ -102,6 +103,21 @@
 
         .remove-item:hover {
             background-color: #333;
+        }
+
+        /* Time picker styles */
+        #timeText {
+            background-color: #ffffff;
+            border: 2px solid #ddd;
+            cursor: pointer;
+        }
+        .flatpickr-time .flatpickr-hour,
+        .flatpickr-time .flatpickr-minute {
+            color: #f40808;
+        }
+        .flatpickr-confirm {
+            background-color: #f40808 !important;
+            color: #ffffff !important;
         }
     </style>
 
@@ -290,8 +306,7 @@
                                                     <label for="timeText" class="col-sm-4 col-form-label">Enter Pick up
                                                         Time</label>
                                                     <div class="col-sm-8">
-                                                        <input id="timeText" type="time" class="form-control"
-                                                            placeholder="Enter Pick up Time" required>
+                                                        <input id="timeText" type="text" class="form-control" placeholder="Select Time" required>
                                                     </div>
                                                 </div>
                                                 <div class="form-group mb-3">
@@ -307,9 +322,15 @@
                                 </div>
 
                                 <input type="hidden" id="cartData" name="cartData" value="">
-                                <button type="submit" class="sec-btn" id="buyNowButton"
-                                    style="color: white; background: orange; margin-top: 20px;"
-                                    onclick="buyNowBtn()">Buy Now</button>
+                                <div class="text-center" style="margin-top: 20px;">
+                                    <button type="submit" 
+                                            class="sec-btn" 
+                                            id="buyNowButton"
+                                            style="color: white; background: orange;"
+                                            onclick="buyNowBtn()">
+                                        Buy Now
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -643,12 +664,55 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadCart();
 
-            // After loading cart, hide the loading overlay
+            // Auto-fill user details from localStorage
+            const userName = localStorage.getItem('userName');
+            const userEmail = localStorage.getItem('userEmail');
+            const userPhone = localStorage.getItem('userPhone');
+
+            const nameInput = document.getElementById('nameText');
+            const emailInput = document.getElementById('emailText');
+            const phoneInput = document.getElementById('phoneText');
+
+            if (userName) {
+                nameInput.value = userName;
+                nameInput.readOnly = true;
+                nameInput.style.backgroundColor = '#b5b5b5';  // Light gray background to indicate read-only
+            }
+            if (userEmail) {
+                emailInput.value = userEmail;
+                emailInput.readOnly = true;
+                emailInput.style.backgroundColor = '#b5b5b5';
+            }
+            if (userPhone) {
+                phoneInput.value = userPhone;
+                phoneInput.readOnly = true;
+                phoneInput.style.backgroundColor = '#b5b5b5';
+            }
+
+            // Hide loading overlay
             document.getElementById('loading-overlay').style.display = 'none';
         });
 
         // Update cart when order type changes
         document.getElementById('orderType').addEventListener('change', updateTotal);
+
+        // Initialize Flatpickr with time-only mode
+        document.addEventListener("DOMContentLoaded", function () {
+            flatpickr("#timeText", {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "h:i K", // 12-hour format with AM/PM
+                time_24hr: false,    // change to true for 24-hour format
+                defaultHour: 12,
+                defaultMinute: 0,
+                minuteIncrement: 5,
+                minTime: "now",      // Prevents selecting times before current time
+                onOpen: function(selectedDates, dateStr, instance) {
+                    // Update the minTime whenever the picker is opened
+                    instance.set('minTime', new Date());
+                }
+            });
+        });
     </script>
     <!-- jquery  -->
     <script src="/javascripts/jquery-3.5.1.min.js"></script>
@@ -685,6 +749,7 @@
     <script src="/javascripts/smooth-scroll.js"></script>
     <!-- custom js  -->
     <script src="/javascripts/main.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </body>
 
 </html>

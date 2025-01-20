@@ -794,6 +794,117 @@ app.post("/signup", async (req, res) => {
     }
 });
 
+// Add or update the save-fcm-token endpoint
+app.post('/api/save-fcm-token', async (req, res) => {
+  try {
+    const { token } = req.body;
+    
+    if (!token) {
+      console.error('No token provided');
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Token is required' 
+      });
+    }
+
+    console.log('Attempting to save FCM token:', token);
+
+    // Save to Supabase
+    const { data, error } = await supabase
+      .from('fcm_tokens')
+      .upsert({ 
+        token: token,
+        created_at: new Date().toISOString()
+      }, { 
+        onConflict: 'token',
+        returning: true  // This will return the inserted/updated row
+      });
+
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
+
+    console.log('Token saved successfully:', data);
+    res.json({ 
+      success: true, 
+      message: 'Token saved successfully' 
+    });
+
+  } catch (error) {
+    console.error('Error saving FCM token:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Error saving token' 
+    });
+  }
+});
+
+async function sendOrderNotification(orderId) {
+  try {
+    const { data: tokens } = await supabase
+      .from('fcm_tokens')
+      .select('token');
+
+    if (!tokens || tokens.length === 0) {
+      console.log('No FCM tokens found');
+      return;
+    }
+
+    console.log('Sending notification to tokens:', tokens);
+
+    const message = {
+      notification: {
+        title: 'New Order!',
+        body: `New order received: ${orderId}`
+      },
+      data: {
+        orderId: orderId,
+        click_action: '/admin_view_dispatch_orders',
+        sound: 'notification.mp3' // Add sound info to data
+      },
+      webpush: {
+        headers: {
+          Urgency: 'high'
+        },
+        notification: {
+          requireInteraction: true,
+          silent: true
+        },
+        fcm_options: {
+          link: '/admin_view_dispatch_orders'
+        }
+      }
+    };
+
+    console.log('Sending message:', message);
+
+    const sendPromises = tokens.map(({ token }) => 
+      admin.messaging().send({
+        ...message,
+        token: token
+      }).then(() => {
+        console.log('Successfully sent message to token:', token);
+      }).catch(error => {
+        console.error('Error sending to token:', token, error);
+        if (error.code === 'messaging/invalid-registration-token' ||
+            error.code === 'messaging/registration-token-not-registered') {
+          return supabase
+            .from('fcm_tokens')
+            .delete()
+            .eq('token', token);
+        }
+        throw error;
+      })
+    );
+
+    await Promise.all(sendPromises);
+    console.log('All notifications sent successfully');
+  } catch (error) {
+    console.error('Error sending notifications:', error);
+  }
+}
+
 // User logout route
 app.get("/logout", async (req, res) => {
   try {
@@ -3112,7 +3223,7 @@ app.post('/api/save-fcm-token', async (req, res) => {
     }
 
     console.log('Token saved successfully:', data);
-    res.json({ success: true });
+    res.json({ success: true, message: 'Token saved successfully' });
   } catch (error) {
     console.error('Error saving FCM token:', error);
     res.status(500).json({ error: 'Failed to save token' });
@@ -3131,6 +3242,8 @@ async function sendOrderNotification(orderId) {
       return;
     }
 
+    console.log('Sending notification to tokens:', tokens);
+
     const message = {
       notification: {
         title: 'New Order!',
@@ -3138,31 +3251,35 @@ async function sendOrderNotification(orderId) {
       },
       data: {
         orderId: orderId,
-        click_action: '/admin_view_dispatch_orders'
+        click_action: '/admin_view_dispatch_orders',
+        sound: 'notification.mp3' // Add sound info to data
       },
-      android: {
+      webpush: {
+        headers: {
+          Urgency: 'high'
+        },
         notification: {
-          sound: 'notification'
-        }
-      },
-      apns: {
-        payload: {
-          aps: {
-            sound: 'notification.mp3'
-          }
+          requireInteraction: true,
+          silent: true
+        },
+        fcm_options: {
+          link: '/admin_view_dispatch_orders'
         }
       }
     };
 
-    // Send to all tokens
+    console.log('Sending message:', message);
+
     const sendPromises = tokens.map(({ token }) => 
       admin.messaging().send({
         ...message,
         token: token
+      }).then(() => {
+        console.log('Successfully sent message to token:', token);
       }).catch(error => {
+        console.error('Error sending to token:', token, error);
         if (error.code === 'messaging/invalid-registration-token' ||
             error.code === 'messaging/registration-token-not-registered') {
-          // Remove invalid token
           return supabase
             .from('fcm_tokens')
             .delete()
@@ -3173,7 +3290,7 @@ async function sendOrderNotification(orderId) {
     );
 
     await Promise.all(sendPromises);
-    console.log('Notifications sent successfully');
+    console.log('All notifications sent successfully');
   } catch (error) {
     console.error('Error sending notifications:', error);
   }

@@ -527,7 +527,12 @@
             try {
                 console.log('Starting Firebase initialization...');
                 
-                // Initialize Firebase with your config
+                // Check for service worker support
+                if (!('serviceWorker' in navigator)) {
+                    throw new Error('Service Worker not supported');
+                }
+
+                // Initialize Firebase
                 const firebaseConfig = {
                     apiKey: "AIzaSyB-oOp_rQ6RrzLU3C9VKX7KdzKw6arj9xY",
                     authDomain: "kl-eats.firebaseapp.com",
@@ -541,26 +546,32 @@
                 if (!firebase.apps.length) {
                     firebase.initializeApp(firebaseConfig);
                 }
-                
-                console.log('Firebase app initialized');
+
+                // Register service worker first
+                const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+                console.log('Service Worker registered:', registration);
+
+                // Wait for the service worker to be ready
+                await navigator.serviceWorker.ready;
+                console.log('Service Worker is ready');
+
                 const messaging = firebase.messaging();
                 console.log('Firebase messaging initialized');
 
-                // Request permission and get token
+                // Request notification permission
                 const permission = await Notification.requestPermission();
                 console.log('Notification permission:', permission);
 
                 if (permission === 'granted') {
                     try {
-                        // Get registration token
-                        console.log('Getting FCM token...');
+                        // Get FCM token with the correct VAPID key
                         const token = await messaging.getToken({
-                            vapidKey: 'BGUnBgUl_1d4Tcp3L_1l4ntR8xG4vDsDbI-40M107jQ8dXodlDGiuZW2Q6VqBkbm1Av4Lh-aLc65btiLmQKEKXM' // Replace this with your actual VAPID key
+                            vapidKey: 'BGUnBgUl_1d4Tcp3L_1l4ntR8xG4vDsDbI-40M107jQ8dXodlDGiuZW2Q6VqBkbm1Av4Lh-aLc65btiLmQKEKXM', // Replace with your actual VAPID key from Firebase Console
+                            serviceWorkerRegistration: registration
                         });
                         console.log('FCM Token received:', token);
 
-                        // Save token to your backend
-                        console.log('Saving token to backend...');
+                        // Save token to backend
                         const response = await fetch('/api/save-fcm-token', {
                             method: 'POST',
                             headers: {
@@ -575,33 +586,6 @@
                         if (!response.ok) {
                             throw new Error(`Failed to save token: ${JSON.stringify(responseData)}`);
                         }
-
-                        // Handle foreground messages
-                        messaging.onMessage((payload) => {
-                            console.log('Received foreground message:', payload);
-                            
-                            // Play sound first
-                            try {
-                                notificationSound.currentTime = 0; // Reset sound to start
-                                notificationSound.play()
-                                    .catch(error => console.error('Error playing notification sound:', error));
-                            } catch (error) {
-                                console.error('Error with notification sound:', error);
-                            }
-
-                            // Show notification
-                            if ('Notification' in window && Notification.permission === 'granted') {
-                                const { title, body } = payload.notification;
-                                new Notification(title, {
-                                    body,
-                                    icon: '/images/file.png',
-                                    silent: true, // Important: set to true so it doesn't play default sound
-                                    data: {
-                                        click_action: '/admin_view_dispatch_orders'
-                                    }
-                                });
-                            }
-                        });
 
                         console.log('Firebase initialization complete');
                     } catch (tokenError) {
