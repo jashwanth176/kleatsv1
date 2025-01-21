@@ -7,8 +7,8 @@ firebase.initializeApp({
   projectId: "kl-eats",
   storageBucket: "kl-eats.firebasestorage.app",
   messagingSenderId: "288126510969",
-  appId: "1:288126510969:web:b149f480c894dd1e2ff1a8",
-  measurementId: "G-6GSMC0MBKB"
+  appId: "1:288126510969:web:6dfff551e3b01c5c2ff1a8",
+  measurementId: "G-3JG81ZE51M"
 });
 
 const messaging = firebase.messaging();
@@ -38,21 +38,14 @@ async function playNotificationSound() {
 
 messaging.onBackgroundMessage(async (payload) => {
   console.log('Received background message:', payload);
-  
-  // Play sound first
-  await playNotificationSound();
 
-  const notificationTitle = payload.notification.title;
+  // Use the actual notification data from the payload
+  const notificationTitle = payload.notification.title || 'Order Received';
   const notificationOptions = {
-    body: payload.notification.body,
+    body: payload.notification.body || 'New order waiting to be dispatched',
     icon: '/images/file.png',
     badge: '/images/file.png',
-    silent: true, // We handle the sound manually
-    vibrate: [200, 100, 200],
-    data: {
-      click_action: '/admin_view_dispatch_orders'
-    },
-    requireInteraction: true // Keep notification until user interacts
+    requireInteraction: true
   };
 
   return self.registration.showNotification(notificationTitle, notificationOptions);

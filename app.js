@@ -167,7 +167,7 @@ app.post('/api/buyNow', async (req, res) => {
 
         let itemPrice = Number(it.item_price);
         // Add GST (5%)
-        itemPrice = itemPrice + (itemPrice * 0.05);
+        itemPrice = itemPrice + (itemPrice * 0.03);
         
         const itemTotal = itemPrice * item.quantity;
         totalPrice += itemTotal;
@@ -297,6 +297,9 @@ app.get('/api/order', async (req, res) => {
 
       // Send notification
       await sendOrderNotification(orderId);
+      
+      // Send confirmation email
+      await sendOrderConfirmationEmailForOrder(orderId);
     }
 
     // First fetch the order details from our database
@@ -797,27 +800,28 @@ app.post("/signup", async (req, res) => {
 // Add or update the save-fcm-token endpoint
 app.post('/api/save-fcm-token', async (req, res) => {
   try {
-    const { token } = req.body;
+    const { token, canteenId } = req.body;
     
-    if (!token) {
-      console.error('No token provided');
+    if (!token || !canteenId) {
+      console.error('Missing token or canteenId');
       return res.status(400).json({ 
         success: false, 
-        message: 'Token is required' 
+        message: 'Token and canteenId are required' 
       });
     }
 
-    console.log('Attempting to save FCM token:', token);
+    console.log('Attempting to save FCM token:', token, 'for canteen:', canteenId);
 
-    // Save to Supabase
+    // Save to Supabase with canteenId
     const { data, error } = await supabase
       .from('fcm_tokens')
       .upsert({ 
         token: token,
+        canteenId: canteenId,
         created_at: new Date().toISOString()
       }, { 
         onConflict: 'token',
-        returning: true  // This will return the inserted/updated row
+        returning: true
       });
 
     if (error) {
@@ -840,66 +844,71 @@ app.post('/api/save-fcm-token', async (req, res) => {
   }
 });
 
+// Update the sendOrderNotification function
 async function sendOrderNotification(orderId) {
   try {
-    const { data: tokens } = await supabase
-      .from('fcm_tokens')
-      .select('token');
+    // First get the order details to find the canteenId
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select('canteenId')
+      .eq('order_id', orderId)
+      .single();
 
-    if (!tokens || tokens.length === 0) {
-      console.log('No FCM tokens found');
+    if (orderError) {
+      console.error('Error fetching order details:', orderError);
       return;
     }
 
-    console.log('Sending notification to tokens:', tokens);
+    // Get tokens only for the specific canteen
+    const { data: tokens } = await supabase
+      .from('fcm_tokens')
+      .select('token')
+      .eq('canteenId', order.canteenId);
 
-    const message = {
+    if (!tokens || tokens.length === 0) {
+      console.log(`No FCM tokens found for canteen ${order.canteenId}`);
+      return;
+    }
+
+    console.log(`Sending notification to canteen ${order.canteenId}`);
+
+    // Simplified message structure
+    const baseMessage = {
       notification: {
-        title: 'New Order!',
-        body: `New order received: ${orderId}`
+        title: 'Order Received',
+        body: 'New order waiting to be dispatched'
       },
       data: {
-        orderId: orderId,
-        click_action: '/admin_view_dispatch_orders',
-        sound: 'notification.mp3' // Add sound info to data
-      },
-      webpush: {
-        headers: {
-          Urgency: 'high'
-        },
-        notification: {
-          requireInteraction: true,
-          silent: true
-        },
-        fcm_options: {
-          link: '/admin_view_dispatch_orders'
-        }
+        click_action: '/admin_view_dispatch_orders'
       }
     };
 
-    console.log('Sending message:', message);
-
-    const sendPromises = tokens.map(({ token }) => 
-      admin.messaging().send({
-        ...message,
-        token: token
-      }).then(() => {
+    const sendPromises = tokens.map(async ({ token }) => {
+      try {
+        console.log('Sending to token:', token);
+        const message = {
+          ...baseMessage,
+          token: token
+        };
+        
+        console.log('Sending message:', JSON.stringify(message));
+        await admin.messaging().send(message);
         console.log('Successfully sent message to token:', token);
-      }).catch(error => {
+      } catch (error) {
         console.error('Error sending to token:', token, error);
         if (error.code === 'messaging/invalid-registration-token' ||
             error.code === 'messaging/registration-token-not-registered') {
-          return supabase
+          await supabase
             .from('fcm_tokens')
             .delete()
             .eq('token', token);
         }
-        throw error;
-      })
-    );
+      }
+    });
 
-    await Promise.all(sendPromises);
-    console.log('All notifications sent successfully');
+    await Promise.allSettled(sendPromises);
+    console.log(`Notifications sent to canteen ${order.canteenId}`);
+
   } catch (error) {
     console.error('Error sending notifications:', error);
   }
@@ -3200,99 +3209,388 @@ app.post('/send-notification', async (req, res) => {
 // Add this endpoint to handle saving FCM tokens
 app.post('/api/save-fcm-token', async (req, res) => {
   try {
-    const { token } = req.body;
-    console.log('Attempting to save FCM token:', token);
+    const { token, canteenId } = req.body;
+    console.log('Attempting to save FCM token:', token, 'for canteen:', canteenId);
     
-    if (!token) {
-      console.error('No token provided');
-      return res.status(400).json({ error: 'Token is required' });
+    if (!token || !canteenId) {
+      console.error('Missing token or canteenId');
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Token and canteenId are required' 
+      });
     }
 
-    // Save to Supabase
+    // Save to Supabase with canteenId
     const { data, error } = await supabase
       .from('fcm_tokens')
       .upsert({ 
-        token: token 
+        token: token,
+        canteenId: canteenId,
+        created_at: new Date().toISOString()
       }, { 
-        onConflict: 'token' 
+        onConflict: 'token',
+        returning: true
       });
 
     if (error) {
-      console.error('Supabase error saving token:', error);
+      console.error('Supabase error:', error);
       throw error;
     }
 
     console.log('Token saved successfully:', data);
-    res.json({ success: true, message: 'Token saved successfully' });
+    res.json({ 
+      success: true, 
+      message: 'Token saved successfully' 
+    });
+
   } catch (error) {
     console.error('Error saving FCM token:', error);
-    res.status(500).json({ error: 'Failed to save token' });
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Error saving token' 
+    });
   }
 });
 
 // Add this function to send notifications when new orders come in
 async function sendOrderNotification(orderId) {
   try {
-    const { data: tokens } = await supabase
-      .from('fcm_tokens')
-      .select('token');
+    // First get the order details to find the canteenId
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select('canteenId')
+      .eq('order_id', orderId)
+      .single();
 
-    if (!tokens || tokens.length === 0) {
-      console.log('No FCM tokens found');
+    if (orderError) {
+      console.error('Error fetching order details:', orderError);
       return;
     }
 
-    console.log('Sending notification to tokens:', tokens);
+    // Get tokens only for the specific canteen
+    const { data: tokens } = await supabase
+      .from('fcm_tokens')
+      .select('token')
+      .eq('canteenId', order.canteenId); // Filter by canteenId
 
-    const message = {
+    if (!tokens || tokens.length === 0) {
+      console.log(`No FCM tokens found for canteen ${order.canteenId}`);
+      return;
+    }
+
+    console.log(`Sending notification to canteen ${order.canteenId}`);
+
+    // Simplified message structure
+    const baseMessage = {
       notification: {
-        title: 'New Order!',
-        body: `New order received: ${orderId}`
+        title: 'Order Received',
+        body: 'New order waiting to be dispatched'
       },
       data: {
-        orderId: orderId,
-        click_action: '/admin_view_dispatch_orders',
-        sound: 'notification.mp3' // Add sound info to data
-      },
-      webpush: {
-        headers: {
-          Urgency: 'high'
-        },
-        notification: {
-          requireInteraction: true,
-          silent: true
-        },
-        fcm_options: {
-          link: '/admin_view_dispatch_orders'
-        }
+        click_action: '/admin_view_dispatch_orders'
       }
     };
 
-    console.log('Sending message:', message);
-
-    const sendPromises = tokens.map(({ token }) => 
-      admin.messaging().send({
-        ...message,
-        token: token
-      }).then(() => {
+    const sendPromises = tokens.map(async ({ token }) => {
+      try {
+        console.log('Sending to token:', token);
+        const message = {
+          ...baseMessage,
+          token: token
+        };
+        
+        console.log('Sending message:', JSON.stringify(message));
+        await admin.messaging().send(message);
         console.log('Successfully sent message to token:', token);
-      }).catch(error => {
+      } catch (error) {
         console.error('Error sending to token:', token, error);
         if (error.code === 'messaging/invalid-registration-token' ||
             error.code === 'messaging/registration-token-not-registered') {
-          return supabase
+          await supabase
             .from('fcm_tokens')
             .delete()
             .eq('token', token);
         }
-        throw error;
-      })
-    );
+      }
+    });
 
-    await Promise.all(sendPromises);
-    console.log('All notifications sent successfully');
+    await Promise.allSettled(sendPromises);
+    console.log(`Notifications sent to canteen ${order.canteenId}`);
+
   } catch (error) {
     console.error('Error sending notifications:', error);
+  }
+}
+
+// Add new webhook endpoint for Cashfree payment notifications
+app.post("/api/payment/webhook", async (req, res) => {
+  try {
+    const eventData = req.body;
+    console.log('Received webhook:', JSON.stringify(eventData, null, 2));
+
+    // First, check if this is a test webhook
+    if (eventData.type === 'WEBHOOK' && eventData.data && eventData.data.test_object) {
+      console.log('Successfully received test webhook');
+      return res.status(200).json({ 
+        message: 'Test webhook received successfully',
+        received_data: eventData
+      });
+    }
+
+    // For real payment webhooks, proceed with validation and processing
+    if (!eventData.data || !eventData.data.order || !eventData.data.payment) {
+      console.log('Invalid webhook structure received:', eventData);
+      return res.status(200).json({ 
+        message: 'Invalid webhook structure, but acknowledged',
+        received_data: eventData 
+      });
+    }
+
+    const orderId = eventData.data.order.order_id;
+    const paymentStatus = eventData.data.payment.payment_status;
+
+    console.log(`Processing payment webhook for order ${orderId} with status ${paymentStatus}`);
+
+    if (paymentStatus === 'SUCCESS') {
+      // Update order status
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ 
+          payment_status: 'PAID'
+        })
+        .eq('order_id', orderId);
+
+      if (updateError) {
+        console.error('Error updating order status:', updateError);
+        return res.status(200).json({ 
+          message: 'Error updating order status, but webhook acknowledged',
+          error: updateError
+        });
+      }
+
+      // Send notification to admin
+      await sendOrderNotification(orderId);
+
+      // Send confirmation email to customer
+      try {
+        await sendOrderConfirmationEmailForOrder(orderId);
+        console.log(`Confirmation email sent for order ${orderId}`);
+      } catch (emailError) {
+        console.error(`Error sending confirmation email for order ${orderId}:`, emailError);
+        // Don't return here, continue processing
+      }
+
+    } else if (paymentStatus === 'FAILED' || paymentStatus === 'USER_DROPPED') {
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ 
+          payment_status: 'FAILED'
+        })
+        .eq('order_id', orderId);
+
+      if (updateError) {
+        console.error('Error updating failed order status:', updateError);
+        return res.status(200).json({ 
+          message: 'Error updating failed order status, but webhook acknowledged',
+          error: updateError
+        });
+      }
+    }
+
+    // Always acknowledge the webhook with 200
+    return res.status(200).json({ 
+      message: 'Webhook processed successfully',
+      orderId: orderId,
+      status: paymentStatus,
+      emailSent: true
+    });
+
+  } catch (error) {
+    console.error('Error processing webhook:', error);
+    // Still return 200 to acknowledge receipt
+    return res.status(200).json({ 
+      message: 'Error processing webhook, but acknowledged',
+      error: error.message
+    });
+  }
+});
+
+// Handle GET requests to webhook URL (for testing/verification)
+app.get("/api/payment/webhook", (req, res) => {
+  res.status(200).json({ message: 'Webhook endpoint is active' });
+});
+
+// Handle POST requests from Cashfree
+app.post("/api/payment/webhook", async (req, res) => {
+  try {
+    const eventData = req.body;
+    console.log('Received webhook:', JSON.stringify(eventData, null, 2));
+
+    // First, check if this is a test webhook
+    if (eventData.type === 'WEBHOOK' && eventData.data && eventData.data.test_object) {
+      console.log('Successfully received test webhook');
+      return res.status(200).json({ 
+        message: 'Test webhook received successfully',
+        received_data: eventData
+      });
+    }
+
+    // For real payment webhooks, proceed with validation and processing
+    if (!eventData.data || !eventData.data.order || !eventData.data.payment) {
+      console.log('Invalid webhook structure received:', eventData);
+      return res.status(200).json({ 
+        message: 'Invalid webhook structure, but acknowledged',
+        received_data: eventData 
+      });
+    }
+
+    const orderId = eventData.data.order.order_id;
+    const paymentStatus = eventData.data.payment.payment_status;
+
+    console.log(`Processing payment webhook for order ${orderId} with status ${paymentStatus}`);
+
+    if (paymentStatus === 'SUCCESS') {
+      // Update order status
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ 
+          payment_status: 'PAID'
+        })
+        .eq('order_id', orderId);
+
+      if (updateError) {
+        console.error('Error updating order status:', updateError);
+        return res.status(200).json({ 
+          message: 'Error updating order status, but webhook acknowledged',
+          error: updateError
+        });
+      }
+
+      // Send notification to admin
+      await sendOrderNotification(orderId);
+
+      // Send confirmation email to customer
+      try {
+        await sendOrderConfirmationEmailForOrder(orderId);
+        console.log(`Confirmation email sent for order ${orderId}`);
+      } catch (emailError) {
+        console.error(`Error sending confirmation email for order ${orderId}:`, emailError);
+        // Don't return here, continue processing
+      }
+
+    } else if (paymentStatus === 'FAILED' || paymentStatus === 'USER_DROPPED') {
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ 
+          payment_status: 'FAILED'
+        })
+        .eq('order_id', orderId);
+
+      if (updateError) {
+        console.error('Error updating failed order status:', updateError);
+        return res.status(200).json({ 
+          message: 'Error updating failed order status, but webhook acknowledged',
+          error: updateError
+        });
+      }
+    }
+
+    // Always acknowledge the webhook with 200
+    return res.status(200).json({ 
+      message: 'Webhook processed successfully',
+      orderId: orderId,
+      status: paymentStatus,
+      emailSent: true
+    });
+
+  } catch (error) {
+    console.error('Error processing webhook:', error);
+    // Still return 200 to acknowledge receipt
+    return res.status(200).json({ 
+      message: 'Error processing webhook, but acknowledged',
+      error: error.message
+    });
+  }
+});
+
+// Add this new helper function to handle email sending for an order
+async function sendOrderConfirmationEmailForOrder(orderId) {
+  try {
+    // Fetch order details with explicit column selection
+    const { data: orderDetails, error: orderError } = await supabase
+      .from('orders')
+      .select(`
+        order_id,
+        user_id,
+        item_id,
+        quantity,
+        price,
+        payment_status,
+        email,
+        name,
+        email_sent,
+        canteenId
+      `)
+      .eq('order_id', orderId)
+      .single();
+
+    if (orderError) {
+      console.error("Error fetching order details:", orderError);
+      throw orderError;
+    }
+
+    // Check if email hasn't been sent and user has an email
+    if (!orderDetails.email_sent && orderDetails.email) {
+      // Fetch menu item details with explicit column selection
+      const { data: menuItem, error: menuError } = await supabase
+        .from('menu')
+        .select('item_name, item_price')
+        .eq('item_id', orderDetails.item_id)
+        .single();
+
+      if (menuError) {
+        console.error("Error fetching menu item:", menuError);
+        throw menuError;
+      }
+
+      const menuItems = [{
+        item_name: menuItem.item_name,
+        quantity: orderDetails.quantity
+      }];
+
+      // Prepare order details for email
+      const emailOrderDetails = {
+        userName: orderDetails.name || 'Customer',
+        phoneNumber: orderDetails.user_id || 'N/A',
+        totalPrice: parseFloat(orderDetails.price),
+        paymentStatus: orderDetails.payment_status,
+        tokenNumber: orderDetails.order_id,
+        menu: menuItems
+      };
+
+      console.log('Sending email with details:', emailOrderDetails);
+
+      // Send the email
+      const emailSent = await sendOrderConfirmationEmail(orderDetails.email, emailOrderDetails);
+
+      if (emailSent) {
+        // Update email_sent status in database
+        const { error: updateError } = await supabase
+          .from('orders')
+          .update({ email_sent: true })
+          .eq('order_id', orderId);
+
+        if (updateError) {
+          console.error("Error updating email sent status:", updateError);
+        } else {
+          console.log(`Email sent successfully for order ${orderId}`);
+        }
+      }
+    } else {
+      console.log(`Skipping email for order ${orderId}: email_sent=${orderDetails.email_sent}, email=${orderDetails.email}`);
+    }
+  } catch (error) {
+    console.error("Error in sendOrderConfirmationEmailForOrder:", error);
   }
 }
 

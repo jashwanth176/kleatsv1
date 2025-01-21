@@ -262,7 +262,7 @@
                                                                 <td></td>
                                                             </tr>
                                                             <tr>
-                                                                <td colspan="5"><strong>GST Charges (5%)</strong></td>
+                                                                <td colspan="5"><strong>GST Charges (3%)</strong></td>
                                                                 <td>₹ <span id="gst_charges">0.00</span></td>
                                                                 <td></td>
                                                             </tr>
@@ -312,8 +312,8 @@
                                                 <div class="form-group mb-3">
                                                     <label for="orderType" class="form-label">Order Type:</label>
                                                     <select class="form-control" id="orderType" name="orderType" required onchange="updateTotal()">
-                                                        <option value="pickup">Pick Up (+₹10)</option>
                                                         <option value="dinein">Dine In</option>
+                                                        <option value="pickup">Pick Up (+₹10)</option>
                                                     </select>
                                                 </div>
                                             </form>
@@ -351,7 +351,7 @@
                                                 <img src="/images/file.png" alt="" height="100" width="100">
                                             </a>
                                         </div>
-                                        <p>You’ll wonder how you ever lived without us.</p>
+                                        <p>You'll wonder how you ever lived without us.</p>
                                         <div class="social-icon">
                                             <ul>
                                                 <li><a
@@ -608,7 +608,7 @@
             }
 
             // Calculate GST (5% on subtotal) and ceil it
-            const gstCharges = Math.ceil(subtotal * 0.05);
+            const gstCharges = Math.ceil(subtotal * 0.03);
 
             // Total price (using ceil)
             const totalPrice = Math.ceil(subtotal + packageCharges + gstCharges);

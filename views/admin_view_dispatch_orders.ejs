@@ -527,7 +527,10 @@
             try {
                 console.log('Starting Firebase initialization...');
                 
-                // Check for service worker support
+                // Get canteenId from the page
+                const canteenId = '<%= username %>'; // Assuming username is the canteenId
+                console.log('Initializing for canteen:', canteenId);
+
                 if (!('serviceWorker' in navigator)) {
                     throw new Error('Service Worker not supported');
                 }
@@ -539,45 +542,44 @@
                     projectId: "kl-eats",
                     storageBucket: "kl-eats.firebasestorage.app",
                     messagingSenderId: "288126510969",
-                    appId: "1:288126510969:web:b149f480c894dd1e2ff1a8",
-                    measurementId: "G-6GSMC0MBKB"
+                    appId: "1:288126510969:web:6dfff551e3b01c5c2ff1a8",
+                    measurementId: "G-3JG81ZE51M"
                 };
 
                 if (!firebase.apps.length) {
                     firebase.initializeApp(firebaseConfig);
                 }
 
-                // Register service worker first
                 const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
                 console.log('Service Worker registered:', registration);
 
-                // Wait for the service worker to be ready
                 await navigator.serviceWorker.ready;
                 console.log('Service Worker is ready');
 
                 const messaging = firebase.messaging();
                 console.log('Firebase messaging initialized');
 
-                // Request notification permission
                 const permission = await Notification.requestPermission();
                 console.log('Notification permission:', permission);
 
                 if (permission === 'granted') {
                     try {
-                        // Get FCM token with the correct VAPID key
                         const token = await messaging.getToken({
-                            vapidKey: 'BGUnBgUl_1d4Tcp3L_1l4ntR8xG4vDsDbI-40M107jQ8dXodlDGiuZW2Q6VqBkbm1Av4Lh-aLc65btiLmQKEKXM', // Replace with your actual VAPID key from Firebase Console
+                            vapidKey: 'BGUnBgUl_1d4Tcp3L_1l4ntR8xG4vDsDbI-40M107jQ8dXodlDGiuZW2Q6VqBkbm1Av4Lh-aLc65btiLmQKEKXM',
                             serviceWorkerRegistration: registration
                         });
                         console.log('FCM Token received:', token);
 
-                        // Save token to backend
+                        // Save token with canteenId
                         const response = await fetch('/api/save-fcm-token', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                             },
-                            body: JSON.stringify({ token })
+                            body: JSON.stringify({ 
+                                token: token,
+                                canteenId: canteenId
+                            })
                         });
 
                         const responseData = await response.json();
