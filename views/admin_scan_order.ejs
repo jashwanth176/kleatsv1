@@ -65,6 +65,26 @@
             color: green;
             font-weight: bold;
         }
+        .order-table {
+            width: 100%;
+            margin-top: 15px;
+            border-collapse: collapse;
+        }
+        
+        .order-table th, .order-table td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        
+        .order-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        
+        .order-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
     </style>
 </head>
 
@@ -153,7 +173,7 @@
                                                 <img src="/images/file.png" alt="" style="width: 100px; height: 100px;">
                                             </a>
                                         </div>
-                                        <p>You’ll wonder how you ever lived without us.</p>
+                                        <p>You'll wonder how you ever lived without us.</p>
                                         <div class="social-icon">
                                             <ul>
                                                 <li><a href="#"><i class="uil uil-facebook-f"></i></a></li>
@@ -274,20 +294,35 @@
                 .then(data => {
                     if (data.success) {
                         // Update order status
-                        document.getElementById('order-status').textContent = `Status: ${data.order.payment_status}`;
+                        const status = data.orders[0].payment_status;
+                        document.getElementById('order-status').textContent = `Status: ${status}`;
                         
                         // Only show item details and add status class if status is PAID
-                        if (data.order.payment_status.toUpperCase() === 'PAID') {
+                        if (status === 'PAID') {
                             document.getElementById('order-status').classList.add('status-paid');
                             
-                            // Add item details
-                            const itemDetails = `
+                            // Create table for items
+                            const tableHtml = `
                                 <div id="item-details">
-                                    <p><strong>Item:</strong> ${data.order.item_name}</p>
-                                    <p><strong>Quantity:</strong> ${data.order.quantity}</p>
+                                    <table class="order-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Item Name</th>
+                                                <th>Quantity</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${data.orders.map(order => `
+                                                <tr>
+                                                    <td>${order.item_name}</td>
+                                                    <td>${order.quantity}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
                                 </div>
                             `;
-                            document.getElementById('order-id').insertAdjacentHTML('afterend', itemDetails);
+                            document.getElementById('order-id').insertAdjacentHTML('afterend', tableHtml);
                         }
                     } else {
                         document.getElementById('order-status').textContent = 'Status: Error fetching order details';

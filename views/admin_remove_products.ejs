@@ -128,10 +128,16 @@
                                     <img src="/images/title-shape.svg" alt="">
                                 </div>
                                 <div class="table-responsive">
+                                    <div class="bulk-actions mb-3">
+                                        <button type="button" id="toggleSelectedBtn" class="btn btn-warning" disabled>
+                                            Toggle Selected Items
+                                        </button>
+                                    </div>
                                     <form action="/admin_remove_products" method="POST">
                                         <table id="remove-products-table">
                                             <thead>
                                                 <tr>
+                                                    <th><input type="checkbox" id="selectAll"></th>
                                                     <th>S.No.</th>
                                                     <th>Item ID</th>
                                                     <th>Item Name</th>
@@ -150,6 +156,11 @@
                                                     <% } else { %>
                                                         <% items.forEach((item, index)=> { %>
                                                             <tr>
+                                                                <td>
+                                                                    <input type="checkbox" class="item-checkbox" 
+                                                                           data-item-id="<%= item.item_id %>"
+                                                                           data-is-paused="<%= item.is_paused %>">
+                                                                </td>
                                                                 <td>
                                                                     <%= index + 1 %>
                                                                 </td>
@@ -219,7 +230,7 @@
                                                 <img src="/images/file.png" alt="" width="100" height="100">
                                             </a>
                                         </div>
-                                        <p>You’ll wonder how you ever lived without us.</p>
+                                        <p>You'll wonder how you ever lived without us.</p>
                                         <div class="social-icon">
                                             <ul>
                                                 <li><a href="#"><i class="uil uil-facebook-f"></i></a></li>
@@ -339,6 +350,60 @@
             alert('An error occurred while updating the item status');
         }
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectAll = document.getElementById('selectAll');
+        const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+        const toggleSelectedBtn = document.getElementById('toggleSelectedBtn');
+
+        // Handle "Select All" checkbox
+        selectAll.addEventListener('change', function() {
+            itemCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateToggleButtonState();
+        });
+
+        // Handle individual checkboxes
+        itemCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateToggleButtonState);
+        });
+
+        function updateToggleButtonState() {
+            const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+            toggleSelectedBtn.disabled = checkedBoxes.length === 0;
+        }
+
+        // Handle bulk toggle button click
+        toggleSelectedBtn.addEventListener('click', async function() {
+            const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+            const items = Array.from(checkedBoxes).map(checkbox => ({
+                itemId: checkbox.dataset.itemId,
+                isPaused: checkbox.dataset.isPaused === 'true'
+            }));
+
+            try {
+                const response = await fetch('/api/toggle-items-status', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ items })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Failed to update items status: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while updating the items status');
+            }
+        });
+    });
     </script>
 
 

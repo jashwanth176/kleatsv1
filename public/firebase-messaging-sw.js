@@ -39,14 +39,17 @@ async function playNotificationSound() {
 messaging.onBackgroundMessage(async (payload) => {
   console.log('Received background message:', payload);
 
-  // Use the actual notification data from the payload
-  const notificationTitle = payload.notification.title || 'Order Received';
+  // Use static notification content
+  const notificationTitle = 'New Order Received';
   const notificationOptions = {
-    body: payload.notification.body || 'New order waiting to be dispatched',
+    body: 'Tap to view pending orders',
     icon: '/images/file.png',
     badge: '/images/file.png',
     requireInteraction: true
   };
+
+  // Play notification sound
+  await playNotificationSound();
 
   return self.registration.showNotification(notificationTitle, notificationOptions);
 });

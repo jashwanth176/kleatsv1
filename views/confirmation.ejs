@@ -105,14 +105,17 @@
                                     <h3>Your order has been placed successfully.</h3>
                                 </div>
                                 <p>Your order is being prepared, be ready with your payment.</p>
-                                <p>In the meantime, you may explore our menu</p>
-                                <button class="sec-btn" style="color: white; background: orange;"><a href="/homepage"
-                                        style="color: white;">Menu</a></button><br><br>
+                                <p>Order Details:</p>
+                                <ul>
+                                    <% menu.forEach(function(item) { %>
+                                        <li><%= item.item_name %> x <%= item.quantity %></li>
+                                    <% }); %>
+                                </ul>
+                                <p>Total Amount: ₹<%= order.totalPrice %></p>
+                                <p>Order ID: <%= orderId %></p>
                                 
                                 <!-- Add QR code here -->
                                 <div id="qrcode" style="margin: 20px auto;"></div>
-                                <p>Order ID: <%= orderId %></p>
-                                
                                 <img src="/images/4438624.png" alt="Food Preparation"
                                     style="width: 700px; height:400px; align-items:center ">
                             </div>

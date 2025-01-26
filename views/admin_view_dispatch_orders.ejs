@@ -379,7 +379,7 @@
                 }
 
                 // Register service worker
-                const registration = await navigator.serviceWorker.register('/sw.js');
+                const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
                 console.log('Service Worker registered');
 
                 // Get VAPID public key
@@ -388,7 +388,7 @@
 
                 // Get subscription
                 let subscription = await registration.pushManager.getSubscription();
-                
+
                 if (!subscription) {
                     const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
                     subscription = await registration.pushManager.subscribe({
@@ -415,18 +415,9 @@
 
         // Helper function to convert VAPID key
         function urlBase64ToUint8Array(base64String) {
-            const padding = '='.repeat((4 - base64String.length % 4) % 4);
-            const base64 = (base64String + padding)
-                .replace(/\-/g, '+')
-                .replace(/_/g, '/');
-
-            const rawData = window.atob(base64);
-            const outputArray = new Uint8Array(rawData.length);
-
-            for (let i = 0; i < rawData.length; ++i) {
-                outputArray[i] = rawData.charCodeAt(i);
-            }
-            return outputArray;
+            const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+            return Uint8Array.from(atob(base64), c => c.charCodeAt(0));
         }
 
         // Call on page load and add a manual trigger button
@@ -440,20 +431,6 @@
             notifyBtn.onclick = subscribeToNotifications;
             document.querySelector('.sec-title').appendChild(notifyBtn);
         });
-
-        // Add this function to handle real-time updates
-        function handleOrderUpdate(orders) {
-            updateOrdersTable(orders);
-            // Show notification if there are new orders
-            if (orders && orders.length > 0) {
-                if ('Notification' in window && Notification.permission === 'granted') {
-                    new Notification('New Order!', {
-                        body: 'You have new orders waiting to be dispatched',
-                        icon: '/images/file.png'
-                    });
-                }
-            }
-        }
 
         // Update the connectToOrderStream function
         function connectToOrderStream() {
@@ -472,14 +449,6 @@
                         // Update table with new orders
                         if (data.orders) {
                             updateOrdersTable(data.orders);
-                            
-                            // Show notification for new orders
-                            if (data.orders.length > 0 && Notification.permission === 'granted') {
-                                new Notification('New Order!', {
-                                    body: `You have ${data.orders.length} order(s) waiting to be dispatched`,
-                                    icon: '/images/file.png'
-                                });
-                            }
                         }
                     } catch (error) {
                         console.error('Error processing message:', error);
