@@ -3463,6 +3463,85 @@ app.post("/api/payment/webhook", async (req, res) => {
       } catch (emailError) {
         console.error(`Error sending confirmation email for order ${orderId}:`, emailError);
       }
+
+      // WhatsApp Notification - Get canteen owner's mobile
+      const { data: admin, error: adminError } = await supabase
+        .from('admin')
+        .select('admin_mobile')
+        .eq('canteenId', orders[0].canteenId)
+        .single();
+
+      if (!adminError && admin && admin.admin_mobile) {
+        try {
+          // Format mobile number (remove +91 if present)
+          const formattedMobile = admin.admin_mobile.replace(/^\+91/, '');
+          
+          // Get unique item IDs with quantities
+          const itemMap = orders.reduce((acc, order) => {
+            acc[order.item_id] = (acc[order.item_id] || 0) + order.quantity;
+            return acc;
+          }, {});
+
+          // Single query to get all item names
+          const { data: menuItems } = await supabase
+            .from('menu')
+            .select('item_id, item_name')
+            .in('item_id', Object.keys(itemMap));
+
+          // Create items list with quantities
+          const itemsList = Object.entries(itemMap)
+            .map(([id, qty]) => {
+              const item = menuItems?.find(m => m.item_id === id);
+              return `• ${qty}x ${item?.item_name || 'Unknown Item'}`;
+            })
+            .join('\n');
+
+          // Format order time from first order (shared timestamp)
+          const orderTime = new Date(orders[0].datetime).toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+          });
+
+          // WhatsApp API call
+          const response = await fetch(
+            `https://graph.facebook.com/v19.0/${process.env.WHATSAPP_PHONE_ID}/messages`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${process.env.WHATSAPP_TOKEN}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                messaging_product: "whatsapp",
+                to: `91${formattedMobile}`,
+                type: "template",
+                template: {
+                  name: "order_confirmation",
+                  language: { code: "en" },
+                  components: [{
+                    type: "body",
+                    parameters: [
+                      { type: "text", text: orders[0].order_id },
+                      { type: "text", text: itemsList },
+                      { type: "text", text: orderTime }
+                    ]
+                  }]
+                }
+              })
+            }
+          );
+
+          const whatsappResponse = await response.json();
+          console.log('WhatsApp API response:', whatsappResponse);
+
+        } catch (whatsappError) {
+          console.error('Error sending WhatsApp notification:', whatsappError);
+        }
+      }
     } else if (paymentStatus === 'FAILED' || paymentStatus === 'USER_DROPPED') {
       const { error: updateError } = await supabase
         .from('orders')
@@ -3609,6 +3688,85 @@ app.post("/api/payment/webhook", async (req, res) => {
         console.log(`Confirmation email sent for order ${orderId}`);
       } catch (emailError) {
         console.error(`Error sending confirmation email for order ${orderId}:`, emailError);
+      }
+
+      // WhatsApp Notification - Get canteen owner's mobile
+      const { data: admin, error: adminError } = await supabase
+        .from('admin')
+        .select('admin_mobile')
+        .eq('canteenId', orders[0].canteenId)
+        .single();
+
+      if (!adminError && admin && admin.admin_mobile) {
+        try {
+          // Format mobile number (remove +91 if present)
+          const formattedMobile = admin.admin_mobile.replace(/^\+91/, '');
+          
+          // Get unique item IDs with quantities
+          const itemMap = orders.reduce((acc, order) => {
+            acc[order.item_id] = (acc[order.item_id] || 0) + order.quantity;
+            return acc;
+          }, {});
+
+          // Single query to get all item names
+          const { data: menuItems } = await supabase
+            .from('menu')
+            .select('item_id, item_name')
+            .in('item_id', Object.keys(itemMap));
+
+          // Create items list with quantities
+          const itemsList = Object.entries(itemMap)
+            .map(([id, qty]) => {
+              const item = menuItems?.find(m => m.item_id === id);
+              return `• ${qty}x ${item?.item_name || 'Unknown Item'}`;
+            })
+            .join('\n');
+
+          // Format order time from first order (shared timestamp)
+          const orderTime = new Date(orders[0].datetime).toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+          });
+
+          // WhatsApp API call
+          const response = await fetch(
+            `https://graph.facebook.com/v19.0/${process.env.WHATSAPP_PHONE_ID}/messages`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${process.env.WHATSAPP_TOKEN}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                messaging_product: "whatsapp",
+                to: `91${formattedMobile}`,
+                type: "template",
+                template: {
+                  name: "order_confirmation",
+                  language: { code: "en" },
+                  components: [{
+                    type: "body",
+                    parameters: [
+                      { type: "text", text: orders[0].order_id },
+                      { type: "text", text: itemsList },
+                      { type: "text", text: orderTime }
+                    ]
+                  }]
+                }
+              })
+            }
+          );
+
+          const whatsappResponse = await response.json();
+          console.log('WhatsApp API response:', whatsappResponse);
+
+        } catch (whatsappError) {
+          console.error('Error sending WhatsApp notification:', whatsappError);
+        }
       }
     } else if (paymentStatus === 'FAILED' || paymentStatus === 'USER_DROPPED') {
       const { error: updateError } = await supabase
