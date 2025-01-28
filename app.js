@@ -3413,46 +3413,64 @@ app.post("/api/payment/webhook", async (req, res) => {
 
       // Check if any of the orders are for jashwanth's canteen
       if (orders && orders.length > 0 && orders[0].canteenId === 'jashwanth') {
-        // Fetch menu items separately
-        const items = await Promise.all(orders.map(async (order) => {
-          const { data: menuItem, error: menuError } = await supabase
-            .from('menu')
-            .select('item_name')
-            .eq('item_id', order.item_id)
-            .single();
+        try {
+          // Fetch menu items separately
+          const items = await Promise.all(orders.map(async (order) => {
+            const { data: menuItem, error: menuError } = await supabase
+              .from('menu')
+              .select('item_name')
+              .eq('item_id', order.item_id)
+              .single();
 
-          if (menuError) {
-            console.error('Error fetching menu item:', menuError);
+            if (menuError) {
+              console.error('Error fetching menu item:', menuError);
+              return {
+                itemName: 'Unknown Item',
+                quantity: order.quantity,
+                price: order.price
+              };
+            }
+
             return {
-              itemName: 'Unknown Item',
+              itemName: menuItem.item_name,
               quantity: order.quantity,
               price: order.price
             };
-          }
+          }));
 
-          return {
-            itemName: menuItem.item_name,
-            quantity: order.quantity,
-            price: order.price
+          // Calculate total price
+          const totalPrice = orders.reduce((sum, order) => sum + parseFloat(order.price), 0);
+
+          // Log the order details to debug
+          console.log('Order details:', {
+            pickup_time: orders[0].orderTime,
+            raw_order: orders[0]
+          });
+
+          // Format order data for printing with additional details
+          const printData = {
+            orderId: orderId,
+            tokenNumber: orderId.split('-')[1],
+            items: items,
+            totalPrice: totalPrice,
+            datetime: new Date().toLocaleString(),
+            orderType: orders[0].order_type || 'dine-in',
+            name: orders[0].name || 'Customer',
+            userId: orders[0].user_id || '', // Phone number
+            orderTime: orders[0].orderTime || '' // Try both field names
           };
-        }));
-
-        // Calculate total price
-        const totalPrice = orders.reduce((sum, order) => sum + parseFloat(order.price), 0);
-
-        // Format order data for printing
-        const printData = {
-          orderId: orderId,
-          tokenNumber: orderId.split('-')[1], // Extract token number
-          items: items,
-          totalPrice: totalPrice,
-          datetime: new Date().toLocaleString(),
-          orderType: orders[0].order_type || 'dine-in'
-        };
-        
-        // Add to print queue
-        printQueue.push(printData);
-        console.log('Added to print queue:', printData);
+          
+          // Log the print data to debug
+          console.log('Print data being queued:', printData);
+          
+          // Add to print queue
+          console.log('Current print queue length:', printQueue.length);
+          printQueue = [...printQueue, printData];
+          console.log('Updated print queue length:', printQueue.length);
+          console.log('Print queue contents:', JSON.stringify(printQueue, null, 2));
+        } catch (error) {
+          console.error('Error preparing print data:', error);
+        }
       }
 
       // Continue with existing functionality
@@ -3639,46 +3657,64 @@ app.post("/api/payment/webhook", async (req, res) => {
 
       // Check if any of the orders are for jashwanth's canteen
       if (orders && orders.length > 0 && orders[0].canteenId === 'jashwanth') {
-        // Fetch menu items separately
-        const items = await Promise.all(orders.map(async (order) => {
-          const { data: menuItem, error: menuError } = await supabase
-            .from('menu')
-            .select('item_name')
-            .eq('item_id', order.item_id)
-            .single();
+        try {
+          // Fetch menu items separately
+          const items = await Promise.all(orders.map(async (order) => {
+            const { data: menuItem, error: menuError } = await supabase
+              .from('menu')
+              .select('item_name')
+              .eq('item_id', order.item_id)
+              .single();
 
-          if (menuError) {
-            console.error('Error fetching menu item:', menuError);
+            if (menuError) {
+              console.error('Error fetching menu item:', menuError);
+              return {
+                itemName: 'Unknown Item',
+                quantity: order.quantity,
+                price: order.price
+              };
+            }
+
             return {
-              itemName: 'Unknown Item',
+              itemName: menuItem.item_name,
               quantity: order.quantity,
               price: order.price
             };
-          }
+          }));
 
-          return {
-            itemName: menuItem.item_name,
-            quantity: order.quantity,
-            price: order.price
+          // Calculate total price
+          const totalPrice = orders.reduce((sum, order) => sum + parseFloat(order.price), 0);
+
+          // Log the order details to debug
+          console.log('Order details:', {
+            pickup_time: orders[0].orderTime,
+            raw_order: orders[0]
+          });
+
+          // Format order data for printing with additional details
+          const printData = {
+            orderId: orderId,
+            tokenNumber: orderId.split('-')[1],
+            items: items,
+            totalPrice: totalPrice,
+            datetime: new Date().toLocaleString(),
+            orderType: orders[0].order_type || 'dine-in',
+            name: orders[0].name || 'Customer',
+            userId: orders[0].user_id || '', // Phone number
+            orderTime: orders[0].orderTime || '' // Try both field names
           };
-        }));
-
-        // Calculate total price
-        const totalPrice = orders.reduce((sum, order) => sum + parseFloat(order.price), 0);
-
-        // Format order data for printing
-        const printData = {
-          orderId: orderId,
-          tokenNumber: orderId.split('-')[1], // Extract token number
-          items: items,
-          totalPrice: totalPrice,
-          datetime: new Date().toLocaleString(),
-          orderType: orders[0].order_type || 'dine-in'
-        };
-        
-        // Add to print queue
-        printQueue.push(printData);
-        console.log('Added to print queue:', printData);
+          
+          // Log the print data to debug
+          console.log('Print data being queued:', printData);
+          
+          // Add to print queue
+          console.log('Current print queue length:', printQueue.length);
+          printQueue = [...printQueue, printData];
+          console.log('Updated print queue length:', printQueue.length);
+          console.log('Print queue contents:', JSON.stringify(printQueue, null, 2));
+        } catch (error) {
+          console.error('Error preparing print data:', error);
+        }
       }
 
       // Continue with existing functionality
@@ -3928,6 +3964,8 @@ let printQueue = [];
 // Add new route for ESP32 to fetch print jobs
 app.get("/api/print-queue", (req, res) => {
   try {
+    console.log('Current print queue length:', printQueue.length);
+    
     // Check if there are any orders to print
     if (printQueue.length === 0) {
       return res.json({ 
@@ -3936,11 +3974,14 @@ app.get("/api/print-queue", (req, res) => {
       });
     }
 
-    // Get the next order to print
+    // Get the next order to print (first item in queue)
     const nextOrder = printQueue[0];
     
-    // Remove the order from the queue
+    // Remove the first item from the queue
     printQueue = printQueue.slice(1);
+    
+    console.log('Remaining queue length:', printQueue.length);
+    console.log('Sending order for printing:', nextOrder.orderId);
 
     return res.json({
       success: true,
@@ -3951,7 +3992,10 @@ app.get("/api/print-queue", (req, res) => {
         datetime: nextOrder.datetime,
         items: nextOrder.items,
         totalPrice: nextOrder.totalPrice,
-        orderType: nextOrder.orderType
+        orderType: nextOrder.orderType,
+        name: nextOrder.name,
+        userId: nextOrder.userId, // Phone number
+        orderTime: nextOrder.orderTime // Pickup time
       }
     });
   } catch (error) {
