@@ -3972,4 +3972,44 @@ app.get("/api/print-queue/status", (req, res) => {
   });
 });
 
+// Add this new endpoint near your other API endpoints
+app.post("/api/checkPausedItems", async (req, res) => {
+    try {
+        const { items } = req.body;
+        
+        // Get all item IDs from the request
+        const itemIds = items.map(item => item.item_id);
+        
+        // Check for paused items
+        const { data: menuItems, error: menuError } = await supabase
+            .from('menu')
+            .select('item_id, item_name, is_paused')
+            .in('item_id', itemIds);
+
+        if (menuError) {
+            console.log("Error checking item statuses:", menuError);
+            return res.json({ code: -1, message: 'Error checking item availability' });
+        }
+
+        // Filter out paused items
+        const pausedItems = menuItems.filter(item => item.is_paused);
+        
+        if (pausedItems.length > 0) {
+            const pausedNames = pausedItems.map(item => item.item_name);
+            return res.json({
+                hasPausedItems: true,
+                message: `The following items are currently unavailable: ${pausedNames.join(', ')}. Please remove them to proceed.`
+            });
+        }
+
+        return res.json({ hasPausedItems: false });
+    } catch (error) {
+        console.error('Error in checkPausedItems:', error);
+        return res.json({ 
+            code: -1, 
+            message: 'An error occurred while checking item availability' 
+        });
+    }
+});
+
 module.exports = app;

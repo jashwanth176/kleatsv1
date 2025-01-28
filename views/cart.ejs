@@ -450,20 +450,39 @@
                 quantity: parseInt(item.quantity)
             }));
 
-            fetch('/api/buyNow', {
+            // First check if any items are paused
+            fetch('/api/checkPausedItems', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ 
-                    name: name, 
-                    phone: phone, 
-                    email: email, 
-                    items: items, 
-                    order_time: time,
-                    orderType: orderType
+                body: JSON.stringify({ items: items })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.hasPausedItems) {
+                    alert(data.message);
+                    buyNowButton.disabled = false;
+                    buyNowButton.textContent = "Buy Now";
+                    return;
+                }
+
+                // If no paused items, proceed with the order
+                fetch('/api/buyNow', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        name: name, 
+                        phone: phone, 
+                        email: email, 
+                        items: items, 
+                        order_time: time,
+                        orderType: orderType
+                    })
                 })
-            }).then(response => response.json())
+                .then(response => response.json())
                 .then(data => {
                     console.log(data);
                     if (data.code === 1) {
@@ -482,13 +501,20 @@
                         buyNowButton.disabled = false;
                         buyNowButton.textContent = "Buy Now";
                     }
-                }).catch(error => {
+                })
+                .catch(error => {
                     console.error('Fetch error:', error);
                     alert("An error occurred while processing your order.");
-                    // Re-enable the button if there's an error
                     buyNowButton.disabled = false;
                     buyNowButton.textContent = "Buy Now";
                 });
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                alert("An error occurred while checking item availability.");
+                buyNowButton.disabled = false;
+                buyNowButton.textContent = "Buy Now";
+            });
         }
 
         // Function to handle quantity updates
