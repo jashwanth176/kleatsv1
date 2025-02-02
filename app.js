@@ -150,7 +150,11 @@ app.post('/api/save-subscription', (req, res) => {
 //BuyNow GateWay
 app.post('/api/buyNow', async (req, res) => {
   try {
-    const { name, phone, email, items, order_time, orderType } = req.body;
+    const { name, phone, email, items, order_time, orderType, couponCode } = req.body;
+    
+    // Add coupon validation
+    const isCouponValid = couponCode === 'KLGLUG69';
+    
     console.log('New order received:', { name, phone, orderType });
 
     let totalPrice = 0.00;
@@ -173,13 +177,15 @@ app.post('/api/buyNow', async (req, res) => {
         }
 
         let itemPrice = Number(it.item_price);
-        // Add GST (5%)
-        itemPrice = itemPrice + (itemPrice * 0.03);
+        // Add GST (3%) only if no valid coupon
+        if (!isCouponValid) {
+          itemPrice = itemPrice + (itemPrice * 0.03);
+        }
         
         const itemTotal = itemPrice * item.quantity;
         totalPrice += itemTotal;
 
-        // Store in database
+        // Store in database with simplified coupon field
         const { error } = await supabase
           .from('orders')
           .insert({
@@ -194,7 +200,8 @@ app.post('/api/buyNow', async (req, res) => {
             canteenId: it.canteenId,
             orderTime: order_time,
             email: email,
-            order_type: orderType
+            order_type: orderType,
+            coupon_applied: isCouponValid  // Simplified coupon tracking
           });
 
         if (error) {
@@ -204,7 +211,7 @@ app.post('/api/buyNow', async (req, res) => {
       }
     }
 
-    // Add pickup charge if applicable (₹5 per item)
+    // Add pickup charge (₹10 per item)
     const pickupCharge = orderType === 'pickup' ? (10 * totalQuantity) : 0;
     totalPrice += pickupCharge;
 
@@ -3456,8 +3463,8 @@ app.post("/api/payment/webhook", async (req, res) => {
             datetime: new Date().toLocaleString(),
             orderType: orders[0].order_type || 'dine-in',
             name: orders[0].name || 'Customer',
-            userId: orders[0].user_id || '', // Phone number
-            orderTime: orders[0].orderTime || '' // Try both field names
+            userId: orders[0].user_id.toString() || '', // Convert to string
+            orderTime: orders[0].orderTime // Keep as original Date object
           };
           
           // Log the print data to debug
@@ -3700,8 +3707,8 @@ app.post("/api/payment/webhook", async (req, res) => {
             datetime: new Date().toLocaleString(),
             orderType: orders[0].order_type || 'dine-in',
             name: orders[0].name || 'Customer',
-            userId: orders[0].user_id || '', // Phone number
-            orderTime: orders[0].orderTime || '' // Try both field names
+            userId: orders[0].user_id.toString() || '', // Convert to string
+            orderTime: orders[0].orderTime // Keep as original Date object
           };
           
           // Log the print data to debug
@@ -4009,10 +4016,15 @@ app.get("/api/print-queue", (req, res) => {
 
 // Optional: Add route to check queue status
 app.get("/api/print-queue/status", (req, res) => {
+  const formattedQueue = printQueue.map(order => ({
+    ...order,
+    userId: order.userId.toString() // Ensure string conversion
+  }));
+  
   res.json({
     success: true,
     queueLength: printQueue.length,
-    pendingOrders: printQueue
+    pendingOrders: formattedQueue
   });
 });
 

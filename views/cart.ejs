@@ -303,6 +303,13 @@
                                                     </div>
                                                 </div>
                                                 <div class="mb-3 row">
+                                                    <label for="couponCode" class="col-sm-4 col-form-label">Coupon Code</label>
+                                                    <div class="col-sm-8 d-flex gap-2">
+                                                        <input type="text" class="form-control" id="couponCode" placeholder="Enter coupon code">
+                                                        <button type="button" class="btn btn-secondary" onclick="applyCoupon()" style="white-space: nowrap;">Apply</button>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-3 row">
                                                     <label for="timeText" class="col-sm-4 col-form-label">Enter Pick up
                                                         Time</label>
                                                     <div class="col-sm-8">
@@ -479,7 +486,8 @@
                         email: email, 
                         items: items, 
                         order_time: time,
-                        orderType: orderType
+                        orderType: orderType,
+                        couponCode: document.getElementById('couponCode').value.trim()
                     })
                 })
                 .then(response => response.json())
@@ -617,26 +625,21 @@
                 const itemSubtotal = parseFloat(subtotalSpan.textContent);
                 const itemQuantity = parseInt(quantitySpan.textContent);
 
-                if (!isNaN(itemSubtotal)) {
-                    subtotal += itemSubtotal;
-                }
-
-                if (!isNaN(itemQuantity)) {
-                    totalQuantity += itemQuantity;
-                }
+                if (!isNaN(itemSubtotal)) subtotal += itemSubtotal;
+                if (!isNaN(itemQuantity)) totalQuantity += itemQuantity;
             });
 
-            // Calculate package charges based on order type
+            // Calculate package charges (always applied)
             const orderType = document.getElementById('orderType').value;
             let packageCharges = 0;
             if (orderType === 'pickup') {
                 packageCharges = 10 * totalQuantity;
             }
 
-            // Calculate GST (5% on subtotal) and ceil it
-            const gstCharges = Math.ceil(subtotal * 0.03);
+            // Calculate GST (3% on subtotal, only if coupon not applied)
+            const gstCharges = isCouponApplied ? 0 : Math.ceil(subtotal * 0.03);
 
-            // Total price (using ceil)
+            // Total price calculation
             const totalPrice = Math.ceil(subtotal + packageCharges + gstCharges);
 
             // Update totals in the table
@@ -717,6 +720,34 @@
 
             // Hide loading overlay
             document.getElementById('loading-overlay').style.display = 'none';
+
+            // Add event listeners for Enter key navigation
+            const inputFields = [
+                'nameText',
+                'phoneText',
+                'emailText',
+                'couponCode',
+                'timeText'
+            ];
+
+            inputFields.forEach((fieldId, index) => {
+                const field = document.getElementById(fieldId);
+                field.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault(); // Prevent form submission
+                        
+                        // If it's the coupon field, apply the coupon
+                        if (fieldId === 'couponCode') {
+                            applyCoupon();
+                        }
+                        
+                        // Move to next field if it exists
+                        if (index < inputFields.length - 1) {
+                            document.getElementById(inputFields[index + 1]).focus();
+                        }
+                    }
+                });
+            });
         });
 
         // Update cart when order type changes
@@ -739,6 +770,59 @@
                 }
             });
         });
+
+        let isCouponApplied = false;
+
+        function applyCoupon() {
+            const couponCode = document.getElementById('couponCode').value.trim();
+            const couponField = document.getElementById('couponCode');
+            const applyButton = document.querySelector('[onclick="applyCoupon()"], [onclick="removeCoupon()"]');
+            
+            // Get current canteen from localStorage
+            const currentCanteen = localStorage.getItem('currentCanteen');
+            
+            // List of canteens where coupon is valid
+            // Add new canteens here for coupon support
+            const validCanteens = ['KL_Adda', 'jashwanth'];
+            
+            if (couponCode === 'KLGLUG69' && validCanteens.includes(currentCanteen)) {
+                isCouponApplied = true;
+                couponField.style.border = '2px solid #28a745';
+                applyButton.textContent = 'Remove';
+                applyButton.setAttribute('onclick', 'removeCoupon()');
+                updateTotal();
+                alert('Coupon applied successfully! GST removed.');
+            } else {
+                isCouponApplied = false;
+                couponField.style.border = '2px solid #dc3545';
+                // Show specific error message based on the reason
+                if (couponCode !== 'KLGLUG69') {
+                    alert('Invalid coupon code');
+                } else {
+                    alert('This coupon is not valid for the current canteen');
+                }
+            }
+        }
+
+        function removeCoupon() {
+            const couponField = document.getElementById('couponCode');
+            const applyButton = document.querySelector('[onclick="applyCoupon()"], [onclick="removeCoupon()"]');
+            
+            // Clear coupon state
+            isCouponApplied = false;
+            
+            // Reset UI
+            couponField.value = '';
+            couponField.style.border = '';
+            
+            // Reset button
+            applyButton.textContent = 'Apply';
+            applyButton.setAttribute('onclick', 'applyCoupon()');
+            
+            // Update totals
+            updateTotal();
+            alert('Coupon removed successfully.');
+        }
     </script>
     <!-- jquery  -->
     <script src="/javascripts/jquery-3.5.1.min.js"></script>
