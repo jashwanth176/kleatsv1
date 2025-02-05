@@ -221,7 +221,7 @@
                                     </li>
                                     <li class="filter" data-filter=".beverages">
                                         <img src="/images/menu-5.png" alt="">
-                                        Beverages
+                                        Beverage
                                     </li>
                                     <li class="filter" data-filter=".desserts">
                                         <img src="/images/menu-6.png" alt="">
@@ -237,7 +237,7 @@
                         style="background-image: url(/images/menu-bg.png);">
                         <% for(let i=0;i<items.length;i++) { %>
                             <% if (!items[i].is_paused) { %>
-                                <div class="col-lg-3 col-sm-6 dish-box-wp <%= items[i].item_category %>"
+                                <div class="col-lg-3 col-sm-6 dish-box-wp <%= items[i].item_category.toLowerCase() %>"
                                     data-cat="breakfast">
                                     <div class="dish-box text-center" style = "transform: scale(0.80); margin: -0.5rem;">
                                         <div class="dist-img" style="height: 250px; overflow: hidden;">
@@ -487,6 +487,17 @@
                     validateCartState();
                 }
             };
+        </script>
+
+        <script>
+            $(document).ready(function(){
+                var containerEl = document.querySelector('#menu-dish');
+                var mixer = mixitup(containerEl, {
+                    animation: {
+                        duration: 300
+                    }
+                });
+            });
         </script>
 </body>
 

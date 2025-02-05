@@ -62,7 +62,8 @@ function addToCart(itemId, itemName, itemPrice) {
             item_name: itemName,
             price: parseFloat(itemPrice),
             quantity: 1,
-            item_img: imageUrl
+            item_img: imageUrl,
+            canteen: currentCanteen
         });
         button.innerHTML = '<i class="uil uil-minus"></i>';
         button.classList.add('added');

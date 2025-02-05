@@ -153,7 +153,7 @@ app.post('/api/buyNow', async (req, res) => {
     const { name, phone, email, items, order_time, orderType, couponCode } = req.body;
     
     // Add coupon validation
-    const isCouponValid = couponCode === 'KLGLUG69';
+    const isCouponValid = couponCode === 'KLGLUG';
     
     console.log('New order received:', { name, phone, orderType });
 
@@ -3418,8 +3418,8 @@ app.post("/api/payment/webhook", async (req, res) => {
         });
       }
 
-      // Check if any of the orders are for jashwanth's canteen
-      if (orders && orders.length > 0 && orders[0].canteenId === 'jashwanth') {
+      // Check if any of the orders are for KL Adda canteen
+      if (orders && orders.length > 0 && (orders[0].canteenId === 'jashwanth' || orders[0].canteenId === 'KL_Adda' || orders[0].canteenId === 'KL Adda')) {
         try {
           // Fetch menu items separately
           const items = await Promise.all(orders.map(async (order) => {
@@ -3662,8 +3662,8 @@ app.post("/api/payment/webhook", async (req, res) => {
         });
       }
 
-      // Check if any of the orders are for jashwanth's canteen
-      if (orders && orders.length > 0 && orders[0].canteenId === 'jashwanth') {
+      // Check if any of the orders are for KL Adda canteen
+      if (orders && orders.length > 0 && (orders[0].canteenId === 'KL_Adda' || orders[0].canteenId === 'KL Adda' || orders[0].canteenId === 'jashwanth')) {
         try {
           // Fetch menu items separately
           const items = await Promise.all(orders.map(async (order) => {
@@ -3715,7 +3715,7 @@ app.post("/api/payment/webhook", async (req, res) => {
           console.log('Print data being queued:', printData);
           
           // Add to print queue
-          console.log('Current print queue length:', printQueue.length);
+          // console.log('Current print queue length:', printQueue.length);
           printQueue = [...printQueue, printData];
           console.log('Updated print queue length:', printQueue.length);
           console.log('Print queue contents:', JSON.stringify(printQueue, null, 2));
@@ -3971,7 +3971,7 @@ let printQueue = [];
 // Add new route for ESP32 to fetch print jobs
 app.get("/api/print-queue", (req, res) => {
   try {
-    console.log('Current print queue length:', printQueue.length);
+    //console.log('Current print queue length:', printQueue.length);
     
     // Check if there are any orders to print
     if (printQueue.length === 0) {
@@ -4066,6 +4066,56 @@ app.post("/api/checkPausedItems", async (req, res) => {
             message: 'An error occurred while checking item availability' 
         });
     }
+});
+
+// Add these constants near the top of your file
+const MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID;
+const SALT_KEY = process.env.PHONEPE_SALT_KEY;
+let phonepeOrders = []; // Renamed to avoid conflict
+
+// Add PhonePe callback endpoint
+app.post('/api/payment/phonepe-callback', (req, res) => {
+  try {
+    const xVerifyHeader = req.headers['x-verify'];
+    const [receivedHash, saltIndex] = xVerifyHeader.split('###');
+    const responseString = req.body.response;
+    
+    // Generate hash verification
+    const generatedHash = crypto
+      .createHash('sha256')
+      .update(responseString + SALT_KEY)
+      .digest('hex');
+
+    if (generatedHash === receivedHash) {
+      const decodedResponse = Buffer.from(responseString, 'base64').toString();
+      const paymentData = JSON.parse(decodedResponse).data;
+      
+      // Validate payment
+      if (paymentData.paymentState === 'COMPLETED') {
+        // Store the order
+        phonepeOrders.push({
+          transactionId: paymentData.transactionId,
+          amount: paymentData.amount / 100, // Convert paisa to INR
+          timestamp: new Date().toISOString(),
+          utr: paymentData.paymentModes[0].utr
+        });
+        console.log('New PhonePe payment received:', paymentData);
+      }
+      res.sendStatus(200);
+    } else {
+      console.warn('Invalid PhonePe hash received');
+      res.sendStatus(403);
+    }
+  } catch (error) {
+    console.error('PhonePe callback error:', error);
+    res.sendStatus(500);
+  }
+});
+
+// Endpoint for ESP32 to fetch PhonePe orders
+app.get('/api/payment/phonepe-orders', (req, res) => {
+  res.json(phonepeOrders);
+  phonepeOrders = []; // Clear after fetching
 });
 
 module.exports = app;

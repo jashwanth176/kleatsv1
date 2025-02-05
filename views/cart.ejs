@@ -781,11 +781,11 @@
             // Get current canteen from localStorage
             const currentCanteen = localStorage.getItem('currentCanteen');
             
+
             // List of canteens where coupon is valid
-            // Add new canteens here for coupon support
-            const validCanteens = ['KL_Adda', 'jashwanth'];
+            const validCanteens = ['KL Adda', 'jashwanth', 'Naturals'];
             
-            if (couponCode === 'KLGLUG69' && validCanteens.includes(currentCanteen)) {
+            if (couponCode === 'KLGLUG' && validCanteens.includes(currentCanteen)) {
                 isCouponApplied = true;
                 couponField.style.border = '2px solid #28a745';
                 applyButton.textContent = 'Remove';
@@ -796,10 +796,11 @@
                 isCouponApplied = false;
                 couponField.style.border = '2px solid #dc3545';
                 // Show specific error message based on the reason
-                if (couponCode !== 'KLGLUG69') {
+                if (couponCode !== 'KLGLUG') {
                     alert('Invalid coupon code');
                 } else {
-                    alert('This coupon is not valid for the current canteen');
+                    console.log('Coupon validation failed. Current canteen:', currentCanteen);
+                    alert('Coupon not activated in this canteen yet, please try again later. We are working on removing the charges for all canteens');
                 }
             }
         }
