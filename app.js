@@ -3971,9 +3971,6 @@ let printQueue = [];
 // Add new route for ESP32 to fetch print jobs
 app.get("/api/print-queue", (req, res) => {
   try {
-    //console.log('Current print queue length:', printQueue.length);
-    
-    // Check if there are any orders to print
     if (printQueue.length === 0) {
       return res.json({ 
         success: true, 
@@ -3981,8 +3978,16 @@ app.get("/api/print-queue", (req, res) => {
       });
     }
 
-    // Get the next order to print (first item in queue)
+    // Get the next order to print
     const nextOrder = printQueue[0];
+    
+    // Calculate total price including pickup charges if applicable
+    let totalPrice = nextOrder.totalPrice;
+    if (nextOrder.orderType === 'pickup') {
+      // Add ₹10 per item quantity for pickup orders
+      const pickupCharges = nextOrder.items.reduce((sum, item) => sum + (10 * item.quantity), 0);
+      totalPrice += pickupCharges;
+    }
     
     // Remove the first item from the queue
     printQueue = printQueue.slice(1);
@@ -3998,11 +4003,11 @@ app.get("/api/print-queue", (req, res) => {
         orderId: nextOrder.orderId,
         datetime: nextOrder.datetime,
         items: nextOrder.items,
-        totalPrice: nextOrder.totalPrice,
+        totalPrice: totalPrice, // Updated total including pickup charges if applicable
         orderType: nextOrder.orderType,
         name: nextOrder.name,
-        userId: nextOrder.userId, // Phone number
-        orderTime: nextOrder.orderTime // Pickup time
+        userId: nextOrder.userId,
+        orderTime: nextOrder.orderTime
       }
     });
   } catch (error) {
@@ -4036,10 +4041,10 @@ app.post("/api/checkPausedItems", async (req, res) => {
         // Get all item IDs from the request
         const itemIds = items.map(item => item.item_id);
         
-        // Check for paused items
+        // Check for both paused items and breakfast items
         const { data: menuItems, error: menuError } = await supabase
             .from('menu')
-            .select('item_id, item_name, is_paused')
+            .select('item_id, item_name, is_paused, item_category')
             .in('item_id', itemIds);
 
         if (menuError) {
@@ -4047,7 +4052,7 @@ app.post("/api/checkPausedItems", async (req, res) => {
             return res.json({ code: -1, message: 'Error checking item availability' });
         }
 
-        // Filter out paused items
+        // Check for paused items first
         const pausedItems = menuItems.filter(item => item.is_paused);
         
         if (pausedItems.length > 0) {
@@ -4056,6 +4061,26 @@ app.post("/api/checkPausedItems", async (req, res) => {
                 hasPausedItems: true,
                 message: `The following items are currently unavailable: ${pausedNames.join(', ')}. Please remove them to proceed.`
             });
+        }
+
+        // Check for breakfast items after 11:30 AM
+        const currentTime = new Date();
+        const currentHour = currentTime.getHours();
+        const currentMinutes = currentTime.getMinutes();
+        const isAfterBreakfastHours = (currentHour > 11 || (currentHour === 11 && currentMinutes > 30));
+
+        if (isAfterBreakfastHours) {
+            const breakfastItems = menuItems.filter(item => 
+                item.item_category && item.item_category.toLowerCase() === 'breakfast'
+            );
+
+            if (breakfastItems.length > 0) {
+                const breakfastNames = breakfastItems.map(item => item.item_name);
+                return res.json({
+                    hasPausedItems: true,
+                    message: `The following breakfast items are only available until 11:30 AM: ${breakfastNames.join(', ')}. Please remove them to proceed.`
+                });
+            }
         }
 
         return res.json({ hasPausedItems: false });
