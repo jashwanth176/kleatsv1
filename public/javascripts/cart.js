@@ -1,9 +1,28 @@
 let cart = [];
 let debounceTimers = {};
 let currentCanteen = null;
+let isKioskMode = window.location.pathname.includes('/kiosk/');
 
 // Function to add item to cart
 function addToCart(itemId, itemName, itemPrice) {
+    if (isKioskMode) {
+        // Kiosk-specific cart logic
+        const existing = cart.find(item => item.item_id === itemId);
+        if (existing) {
+            existing.quantity++;
+        } else {
+            cart.push({
+                item_id: itemId,
+                item_name: itemName,
+                price: parseFloat(itemPrice),
+                quantity: 1,
+                canteen: currentCanteen
+            });
+        }
+        updateCartDisplay();
+        return;
+    }
+
     // Get current canteen name from the page
     const titleElement = document.querySelector('.h2-title');
     if (!titleElement) {

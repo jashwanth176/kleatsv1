@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kiosk - <%= canteenName %></title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        body {
+            background: url('/images/menu-bg.png') repeat;
+            font-family: 'Poppins', Arial, sans-serif;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 30px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .logo {
+            height: 60px;
+            width: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        .title-section {
+            flex-grow: 1;
+        }
+
+        .title-section h1 {
+            font-size: 2.2rem;
+            color: #333;
+            margin: 0;
+            font-weight: 700;
+            background: linear-gradient(45deg, #f40808, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 17px;
+            padding: 12px;
+        }
+
+        .menu-item {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 22px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeIn 0.5s ease-out;
+            position: relative;
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        .menu-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #f40808, #ff6b6b);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .menu-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .menu-item:hover::before {
+            transform: scaleX(1);
+        }
+
+        .menu-item img {
+            width: 100%;
+            height: 165px;
+            object-fit: cover;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            transition: transform 0.3s ease;
+        }
+
+        .menu-item:hover img {
+            transform: scale(1.05);
+        }
+
+        .item-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 0 5px;
+            flex-wrap: wrap;
+        }
+
+        .item-name {
+            font-size: 1.21rem;
+            font-weight: 600;
+            color: #333;
+            line-height: 1.2;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .item-price {
+            font-size: 1.21rem;
+            font-weight: 600;
+            color: #f40808;
+            padding: 5px 10px;
+            border-radius: 20px;
+            background: rgba(244, 8, 8, 0.1);
+        }
+
+        .quantity-controls {
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-top: 15px;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .quantity-btn {
+            background: #f40808;
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(244, 8, 8, 0.3);
+        }
+
+        .quantity-btn:hover {
+            background: #d40707;
+            transform: scale(1.1);
+        }
+
+        .quantity {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .add-btn {
+            background: #f40808;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            width: 100%;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(244, 8, 8, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .add-btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300%;
+            height: 300%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%) rotate(45deg);
+            transition: transform 0.6s ease;
+        }
+
+        .add-btn:hover::after {
+            transform: translate(-50%, -50%) rotate(45deg) scale(1.5);
+        }
+
+        .add-btn:hover {
+            background: #d40707;
+            transform: translateY(-2px);
+        }
+
+        .cart-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 -2px 20px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .cart-details {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .cart-count {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cart-count i {
+            color: #f40808;
+        }
+
+        .total-price {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #f40808;
+            padding: 8px 15px;
+            background: rgba(244, 8, 8, 0.1);
+            border-radius: 20px;
+        }
+
+        .pay-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 15px 35px;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .pay-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #f40808;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: row;
+                align-items: center;
+                text-align: left;
+            }
+
+            .logo {
+                height: 50px;
+            }
+
+            .title-section h1 {
+                font-size: 1.8rem;
+            }
+
+            .subtitle {
+                font-size: 0.9rem;
+            }
+
+            .menu-grid {
+                grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+                gap: 11px;
+            }
+
+            .cart-bar {
+                padding: 15px;
+            }
+
+            .cart-details {
+                gap: 15px;
+            }
+
+            .pay-btn {
+                padding: 12px 25px;
+                font-size: 1.1rem;
+            }
+
+            .menu-item {
+                padding: 11px;
+            }
+
+            .menu-item img {
+                height: 132px;
+            }
+
+            .item-name {
+                font-size: 1rem;
+            }
+
+            .item-price {
+                font-size: 0.9rem;
+            }
+
+            .quantity-btn {
+                width: 39px;
+                height: 39px;
+            }
+        }
+
+        @media (min-width: 1920px) {
+            .menu-grid {
+                grid-template-columns: repeat(auto-fill, minmax(198px, 1fr));
+            }
+        }
+    </style>
+    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+</head>
+<body>
+    <div class="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <header class="header">
+        <div class="header-content">
+            <img src="/images/logo.png" alt="KL Eats" class="logo">
+            <div class="title-section">
+                <h1><%= canteenName %></h1>
+                <div class="subtitle">Order & Pay Here</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="menu-grid">
+            <% items.forEach(item => { %>
+                <% if (!item.is_paused) { %>
+                    <div class="menu-item">
+                        <img src="/images/dish/<%= item.item_img %>" alt="<%= item.item_name %>">
+                        <div class="item-details">
+                            <span class="item-name"><%= item.item_name %></span>
+                            <span class="item-price">₹<%= item.item_price %></span>
+                        </div>
+                            <button class="add-btn" onclick="addToCart('<%= item.item_id %>', '<%= item.item_name %>', '<%= item.item_price %>')">
+                                <i class="fas fa-plus"></i> ADD
+                            </button>
+                            <div class="quantity-controls" id="controls-<%= item.item_id %>">
+                                <button class="quantity-btn" onclick="updateQuantity('<%= item.item_id %>', -1)">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <span class="quantity">0</span>
+                            <button class="quantity-btn" onclick="updateQuantity('<%= item.item_id %>', 1)">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                <% } %>
+            <% }); %>
+        </div>
+    </div>
+
+    <div class="cart-bar">
+        <div class="cart-details">
+            <span class="cart-count">
+                <i class="fas fa-shopping-cart"></i>
+                Items: <span id="cart-count">0</span>
+            </span>
+            <span class="total-price">Total: ₹<span id="total-price">0</span></span>
+        </div>
+        <button onclick="checkout()" class="pay-btn">
+            <i class="fas fa-wallet"></i> PAY NOW
+        </button>
+    </div>
+
+    <script>
+        const cashfree = Cashfree({
+            mode: "production"
+        });
+
+        let cart = [];
+        
+        function showLoading() {
+            document.querySelector('.loading').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.querySelector('.loading').style.display = 'none';
+        }
+
+        function addToCart(itemId, itemName, price) {
+            const existing = cart.find(item => item.item_id === itemId);
+            const addBtn = document.querySelector(`button[onclick*="${itemId}"]`);
+            const controls = document.getElementById(`controls-${itemId}`);
+
+            if (existing) {
+                existing.quantity++;
+            } else {
+                cart.push({
+                    item_id: itemId,
+                    item_name: itemName,
+                    price: parseFloat(price),
+                    quantity: 1
+                });
+                addBtn.style.display = 'none';
+                controls.style.display = 'flex';
+            }
+            updateCartDisplay();
+            updateItemDisplay(itemId);
+        }
+
+        function updateQuantity(itemId, change) {
+            const item = cart.find(item => item.item_id === itemId);
+            if (item) {
+                item.quantity += change;
+                if (item.quantity <= 0) {
+                    cart = cart.filter(i => i.item_id !== itemId);
+                    const addBtn = document.querySelector(`button[onclick*="${itemId}"]`);
+                    const controls = document.getElementById(`controls-${itemId}`);
+                    addBtn.style.display = 'block';
+                    controls.style.display = 'none';
+                }
+                updateCartDisplay();
+                updateItemDisplay(itemId);
+            }
+        }
+
+        function updateItemDisplay(itemId) {
+            const item = cart.find(item => item.item_id === itemId);
+            const controls = document.getElementById(`controls-${itemId}`);
+            if (controls) {
+                const quantitySpan = controls.querySelector('.quantity');
+                quantitySpan.textContent = item ? item.quantity : 0;
+            }
+        }
+
+        function updateCartDisplay() {
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            document.getElementById('cart-count').textContent = totalItems;
+            document.getElementById('total-price').textContent = totalPrice.toFixed(2);
+        }
+
+        async function checkout() {
+            if (cart.length === 0) return alert('Please add items first');
+            
+            showLoading();
+            try {
+                const validationResponse = await fetch('/api/checkPausedItems', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        items: cart.map(item => ({
+                            item_id: item.item_id,
+                            quantity: item.quantity
+                        }))
+                    })
+                });
+
+                const contentType = validationResponse.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Server returned unexpected response');
+                }
+
+                const validationResult = await validationResponse.json();
+                if (validationResult.hasPausedItems) {
+                    throw new Error(validationResult.message || 'Some items are unavailable');
+                }
+
+                const paymentResponse = await fetch('/api/buyNow', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        items: cart.map(item => ({
+                            item_id: item.item_id,
+                            item_name: item.item_name,
+                            price: item.price,
+                            quantity: item.quantity
+                        })),
+                        name: "Kiosk User",
+                        phone: "0000000000",
+                        email: "kiosk@example.com",
+                        orderType: "dinein",
+                        isKiosk: true,
+                        couponCode: "KLGLUG"
+                    })
+                });
+
+                const result = await paymentResponse.json();
+                
+                if (result.code === 1) {
+                    console.log('Starting Cashfree checkout with:', result.data);
+                    
+                    hideLoading();
+                    
+                    try {
+                        let checkoutOptions = {
+                            paymentSessionId: result.data.payment_session_id,
+                            returnUrl: result.data.order_meta.return_url,
+                            redirectTarget: "_self"
+                        };
+                        
+                        cashfree.checkout(checkoutOptions);
+                    } catch (error) {
+                        console.error('Cashfree checkout error:', error);
+                        alert('Payment gateway error: ' + error.message);
+                    }
+                } else {
+                    hideLoading();
+                    alert('Payment failed: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Checkout error:', error);
+                alert(error.message || 'Checkout failed. Please try again.');
+                hideLoading();
+            }
+        }
+    </script>
+</body>
+</html> 

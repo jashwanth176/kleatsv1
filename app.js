@@ -150,7 +150,7 @@ app.post('/api/save-subscription', (req, res) => {
 //BuyNow GateWay
 app.post('/api/buyNow', async (req, res) => {
   try {
-    const { name, phone, email, items, order_time, orderType, couponCode } = req.body;
+    const { name, phone, email, items, order_time, orderType, couponCode, isKiosk } = req.body;
     
     // Add coupon validation
     const isCouponValid = couponCode === 'KLGLUG';
@@ -225,7 +225,10 @@ app.post('/api/buyNow', async (req, res) => {
         customer_name: name
       },
       order_meta: {
-        return_url: "https://kleats.in/api/order?order_id={order_id}&payment_status=PAID"
+        // Use different return URL for kiosk orders
+        return_url: isKiosk 
+            ? "https://kleats.in/api/kiosk/order?order_id={order_id}&payment_status=PAID"
+            : "https://kleats.in/api/order?order_id={order_id}&payment_status=PAID"
       }
     };
 
@@ -249,7 +252,15 @@ app.post('/api/buyNow', async (req, res) => {
       return res.json({ code: -1, message: data.message });
     }
 
-    return res.json({ code: 1, message: 'Success', data: data });
+    // Include the order token in the response
+    return res.json({ 
+      code: 1, 
+      message: 'Success', 
+      data: {
+        ...data,
+        order_token: data.order_token // Make sure this is included
+      } 
+    });
 
   } catch (err) {
     console.error('Error in buyNow:', err);
@@ -3470,11 +3481,15 @@ app.post("/api/payment/webhook", async (req, res) => {
           // Log the print data to debug
           console.log('Print data being queued:', printData);
           
-          // Add to print queue
-          console.log('Current print queue length:', printQueue.length);
-          printQueue = [...printQueue, printData];
-          console.log('Updated print queue length:', printQueue.length);
-          console.log('Print queue contents:', JSON.stringify(printQueue, null, 2));
+          // Check if it's a kiosk order (user_id is 0000000000)
+          if (orders[0].user_id === 0) {
+            kioskPrintQueue = [...kioskPrintQueue, printData];
+            console.log('Added to kiosk print queue. Length:', kioskPrintQueue.length);
+          } else {
+            printQueue = [...printQueue, printData];
+            console.log('Added to regular print queue. Length:', printQueue.length);
+          }
+
         } catch (error) {
           console.error('Error preparing print data:', error);
         }
@@ -3965,8 +3980,69 @@ app.get('/esp', (req, res) => {
   return res.json({message: 'Hello World'});
 });
 
-// Create a queue to store orders for printing
+// Create a queue to store orders for printing and kiosk orders
+
 let printQueue = [];
+let kioskPrintQueue = [];
+
+// Add new route for ESP32 to fetch kiosk print jobs
+app.get("/api/kiosk-print-queue", (req, res) => {
+  try {
+    if (kioskPrintQueue.length === 0) {
+      return res.json({ 
+        success: true, 
+        hasOrders: false 
+      });
+    }
+
+    // Get the next order to print
+    const nextOrder = kioskPrintQueue[0];
+    
+    // Calculate total price including pickup charges if applicable
+    let totalPrice = nextOrder.totalPrice;
+    if (nextOrder.orderType === 'pickup') {
+      const pickupCharges = nextOrder.items.reduce((sum, item) => sum + (10 * item.quantity), 0);
+      totalPrice += pickupCharges;
+    }
+    
+    // Remove the first item from the queue
+    kioskPrintQueue = kioskPrintQueue.slice(1);
+    
+    console.log('Remaining kiosk queue length:', kioskPrintQueue.length);
+    console.log('Sending kiosk order for printing:', nextOrder.orderId);
+
+    return res.json({
+      success: true,
+      hasOrders: true,
+      order: {
+        tokenNumber: nextOrder.tokenNumber,
+        orderId: nextOrder.orderId,
+        datetime: nextOrder.datetime,
+        items: nextOrder.items,
+        totalPrice: totalPrice,
+        orderType: nextOrder.orderType,
+        name: nextOrder.name,
+        userId: nextOrder.userId,
+        orderTime: nextOrder.orderTime
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching kiosk print queue:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch kiosk print queue'
+    });
+  }
+});
+
+// Optional: Add route to check kiosk queue status
+app.get("/api/kiosk-print-queue/status", (req, res) => {
+  res.json({
+    success: true,
+    queueLength: kioskPrintQueue.length,
+    pendingOrders: kioskPrintQueue
+  });
+});
 
 // Add new route for ESP32 to fetch print jobs
 app.get("/api/print-queue", (req, res) => {
@@ -4041,6 +4117,13 @@ app.post("/api/checkPausedItems", async (req, res) => {
         // Get all item IDs from the request
         const itemIds = items.map(item => item.item_id);
         
+        if (req.body.isKiosk) {
+          // Bypass user validation for kiosk orders
+          return res.json({ 
+              hasPausedItems: false 
+          });
+      }
+
         // Check for both paused items and breakfast items
         const { data: menuItems, error: menuError } = await supabase
             .from('menu')
@@ -4062,6 +4145,8 @@ app.post("/api/checkPausedItems", async (req, res) => {
                 message: `The following items are currently unavailable: ${pausedNames.join(', ')}. Please remove them to proceed.`
             });
         }
+
+
 
         // Check for breakfast items after 11:30 AM
         const currentTime = new Date();
@@ -4141,6 +4226,90 @@ app.post('/api/payment/phonepe-callback', (req, res) => {
 app.get('/api/payment/phonepe-orders', (req, res) => {
   res.json(phonepeOrders);
   phonepeOrders = []; // Clear after fetching
+});
+
+// Kiosk mode route
+app.get('/api/kiosk/canteen/:canteenId', async (req, res) => {
+    try {
+        const { canteenId } = req.params;
+        const { data: items, error } = await supabase
+            .from('menu')
+            .select('*')
+            .eq('canteenId', canteenId)
+            .order('item_id', { ascending: true });
+
+        if (error) throw error;
+
+        res.render('homepage-kiosk', {
+            canteenName: canteenId.replace(/_/g, ' '),
+            items: items || [],
+            isKiosk: true
+        });
+    } catch (error) {
+        console.error('Kiosk error:', error);
+        res.status(500).send('Error loading kiosk - please check the console');
+    }
+});
+
+// Add this route after other routes
+app.get('/confirmation-kiosk', (req, res) => {
+    const orderId = req.query.orderId;
+    const status = req.query.status || 'success'; // Default to success if not provided
+    res.render('confirmation-kiosk', {
+        orderId,
+        status
+    });
+});
+
+app.get('/api/kiosk/order', async (req, res) => {
+    try {
+        const orderId = req.query.order_id;
+        
+        // Verify payment status with Cashfree
+        const response = await fetch(`https://api.cashfree.com/pg/orders/${orderId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-client-id': process.env.CASHFREE_APP_ID,
+                'x-client-secret': process.env.CASHFREE_SECRET,
+                'x-api-version': process.env.CASHFREE_API_VERSION
+            }
+        });
+
+        const paymentData = await response.json();
+        console.log('Cashfree payment data:', paymentData);
+
+        let status;
+        // Check the actual order status from Cashfree
+        if (paymentData.order_status === 'PAID') {
+            status = 'success';
+        } else if (paymentData.order_status === 'ACTIVE') {
+            // If order is still active, it means payment wasn't completed
+            status = 'cancelled';
+        } else {
+            // Any other status (EXPIRED, CANCELLED, etc.)
+            status = 'cancelled';
+        }
+
+        console.log('Final payment status:', status);
+        res.render('confirmation-kiosk', { status: status });
+
+    } catch (error) {
+        console.error('Error verifying payment:', error);
+        // If there's any error, treat it as a cancelled payment
+        res.render('confirmation-kiosk', { status: 'cancelled' });
+    }
+});
+
+// Keep the cancel route as is
+app.get('/api/kiosk/order/cancel', (req, res) => {
+    console.log('Direct cancellation');
+    res.render('confirmation-kiosk', { status: 'cancelled' });
+});
+
+// Add route for APK downloads
+app.get('/apk', (req, res) => {
+    res.redirect('https://drive.google.com/drive/folders/1-ZCqXtVvJu5TG-gS-pCOjI3POMlZNUqs?usp=sharing');
 });
 
 module.exports = app;
