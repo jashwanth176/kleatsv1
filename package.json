@@ -7,6 +7,7 @@
     "start": "node app.js"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.21.0",
     "@supabase/supabase-js": "^2.45.4",
     "asynckit": "^0.4.0",
     "axios": "^1.7.7",
@@ -30,6 +31,7 @@
     "helmet": "^8.0.0",
     "http-errors": "~1.6.3",
     "https": "^1.0.0",
+    "imapflow": "^1.0.181",
     "morgan": "~1.9.1",
     "mysql": "^2.18.1",
     "mysql2": "^3.11.3",
