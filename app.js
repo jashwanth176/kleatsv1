@@ -287,112 +287,106 @@ function getTime() {
 
 
 app.get('/api/order', async (req, res) => {
-  try {
-    const orderId = req.query.order_id;
-    const paymentStatus = req.query.payment_status;
+    try {
+        const orderId = req.query.order_id;
+        const paymentStatus = req.query.payment_status;
 
-    // Verify payment status with Cashfree
-    const response = await fetch(`https://api.cashfree.com/pg/orders/${orderId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-client-id': process.env.CASHFREE_APP_ID,
-        'x-client-secret': process.env.CASHFREE_SECRET,
-        'x-api-version': process.env.CASHFREE_API_VERSION
-      }
-    });
+        // Verify payment status with Cashfree
+        const response = await fetch(`https://api.cashfree.com/pg/orders/${orderId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-client-id': process.env.CASHFREE_APP_ID,
+                'x-client-secret': process.env.CASHFREE_SECRET,
+                'x-api-version': process.env.CASHFREE_API_VERSION
+            }
+        });
 
-    const paymentData = await response.json();
-    
-    // Only proceed if Cashfree confirms payment is successful
-    if (paymentData.order_status === 'PAID') {
-      // Update order status in database
-      const { error: updateError } = await supabase
-        .from('orders')
-        .update({ payment_status: 'PAID' })
-        .eq('order_id', orderId);
+        const paymentData = await response.json();
+        
+        // Only proceed if Cashfree confirms payment is successful
+        if (paymentData.order_status === 'PAID') {
+          // Update order status in database
+          const { error: updateError } = await supabase
+            .from('orders')
+            .update({ payment_status: 'PAID' })
+            .eq('order_id', orderId);
 
-      if (updateError) {
-        console.error("Error updating payment status:", updateError);
+          if (updateError) {
+            console.error("Error updating payment status:", updateError);
+            return res.render('error', {
+              message: 'Error processing payment verification',
+              error: { status: 500, stack: updateError.message }
+            });
+          }
+
+          // Send notification
+          await sendOrderNotification(orderId);
+          
+          // Send confirmation email
+          await sendOrderConfirmationEmailForOrder(orderId);
+        }
+
+        // Fetch ALL order items with this order ID
+        const { data: orderDetails, error: orderError } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('order_id', orderId)
+            .eq('payment_status', 'PAID');
+
+        if (orderError) {
+            console.error("Error fetching orders:", orderError);
+            return res.render('error', {
+                message: 'Error processing order',
+                error: { status: 500, stack: orderError.message }
+            });
+        }
+
+        // Get the first order for user details
+        const firstOrder = orderDetails[0];
+
+        // Fetch menu items for ALL order items
+        let menuItems = [];
+        for (const order of orderDetails) {
+            const { data: menuData, error: menuError } = await supabase
+                .from('menu')
+                .select('item_name')
+                .eq('item_id', order.item_id);
+
+            if (!menuError && menuData && menuData.length > 0) {
+                menuItems.push({
+                    item_name: menuData[0].item_name,
+                    quantity: order.quantity,
+                    order_type: order.order_type  // Add this line to include order_type
+                });
+            }
+        }
+
+        // Calculate total price from all orders
+        const totalPrice = orderDetails.reduce((sum, order) => sum + parseFloat(order.price), 0);
+
+        // Render the confirmation page with all items
+        return res.render('confirmation2', {
+            username: firstOrder.name || 'Customer',
+            orderId: orderId,
+            order: {
+                userName: firstOrder.name || 'Customer',
+                phoneNumber: firstOrder.user_id || 'N/A',
+                totalPrice: totalPrice,
+                paymentStatus: firstOrder.payment_status,
+                tokenNumber: firstOrder.order_id,
+                order_type: firstOrder.order_type  // Add this line to include order_type
+            },
+            menu: menuItems
+        });
+
+    } catch (err) {
+        console.error("Error verifying payment:", err);
         return res.render('error', {
-          message: 'Error processing payment verification',
-          error: { status: 500, stack: updateError.message }
+            message: 'Error verifying payment',
+            error: { status: 500, stack: err.message }
         });
-      }
-
-      // Send notification
-      await sendOrderNotification(orderId);
-      
-      // Send confirmation email
-      await sendOrderConfirmationEmailForOrder(orderId);
     }
-
-    // Fetch ALL order items with this order ID
-    const { data: orderDetails, error: orderError } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('order_id', orderId)
-      .eq('payment_status', 'PAID');
-
-    if (orderError) {
-      console.error("Error fetching orders:", orderError);
-      return res.render('error', {
-        message: 'Error processing order',
-        error: { status: 500, stack: orderError.message }
-      });
-    }
-
-    if (!orderDetails || orderDetails.length === 0) {
-      return res.render('error', {
-        message: 'Order not found or not paid',
-        error: { status: 404, stack: 'No matching paid order found' }
-      });
-    }
-
-    // Get the first order for user details
-    const firstOrder = orderDetails[0];
-
-    // Fetch menu items for ALL order items
-    let menuItems = [];
-    for (const order of orderDetails) {
-      const { data: menu, error: menuError } = await supabase
-        .from('menu')
-        .select('item_name')
-        .eq('item_id', order.item_id)
-        .single();
-
-      if (!menuError && menu) {
-        menuItems.push({
-          item_name: menu.item_name,
-          quantity: order.quantity
-        });
-      }
-    }
-
-    // Calculate total price from all orders
-    const totalPrice = orderDetails.reduce((sum, order) => sum + parseFloat(order.price), 0);
-
-    // Render the confirmation page with all items
-    return res.render('confirmation2', {
-      username: firstOrder.name || 'Customer',
-      orderId: orderId,
-      order: {
-        userName: firstOrder.name || 'Customer',
-        phoneNumber: firstOrder.user_id || 'N/A',
-        totalPrice: totalPrice,
-        paymentStatus: firstOrder.payment_status,
-        tokenNumber: firstOrder.order_id
-      },
-      menu: menuItems
-    });
-
-  } catch (err) {
-    console.error("Error verifying payment:", err);
-    return res.render('error', {
-      message: 'Error verifying payment',
-      error: { status: 500, stack: err.message }
-    });
-  }
 });
 
 
@@ -2316,8 +2310,13 @@ app.post("/process_scanned_order", async (req, res) => {
 
 async function sendOrderConfirmationEmail(email, orderDetails) {
   try {
-    const { userName, phoneNumber, totalPrice, paymentStatus, tokenNumber, menu } = orderDetails;
+    const { userName, phoneNumber, totalPrice, paymentStatus, tokenNumber, menu, order_type } = orderDetails;
     console.log('Sending email to:', email, 'with details:', orderDetails);
+
+    // Calculate packing charges if it's a pickup order
+    const totalQuantity = menu.reduce((sum, item) => sum + item.quantity, 0);
+    const packingCharges = order_type === 'pickup' ? totalQuantity * 10 : 0;
+    const finalPrice = parseFloat(totalPrice) + packingCharges;
 
     // Initialize Zoho transporter
     const zohoTransporter = nodemailer.createTransport({
@@ -2337,6 +2336,16 @@ async function sendOrderConfirmationEmail(email, orderDetails) {
     let menuHtml = menu.map(item => `<li>${item.item_name} x ${item.quantity}</li>`).join('');
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(tokenNumber)}`;
 
+    // Add packing charges to the email if it's a pickup order
+    let priceBreakdown = `<p><strong>Total Amount:</strong> ₹${totalPrice}</p>`;
+    if (order_type === 'pickup') {
+      priceBreakdown = `
+        <p><strong>Items Total:</strong> ₹${totalPrice}</p>
+        <p><strong>Packing Charges:</strong> ₹${packingCharges}</p>
+        <p><strong>Final Amount:</strong> ₹${finalPrice}</p>
+      `;
+    }
+
     const mailOptions = {
       from: {
         name: 'KL Eats',
@@ -2351,9 +2360,10 @@ async function sendOrderConfirmationEmail(email, orderDetails) {
           <p>Thank you for your order! Here are your order details:</p>
           <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px;">
             <p><strong>Token Number:</strong> ${tokenNumber.split('-')[1]}</p>
-            <p><strong>Total Amount:</strong> ₹${totalPrice}</p>
+            ${priceBreakdown}
             <p><strong>Payment Status:</strong> ${paymentStatus}</p>
             <p><strong>Phone Number:</strong> ${phoneNumber}</p>
+            <p><strong>Order Type:</strong> ${order_type || 'dine-in'}</p>
           </div>
           <h2>Order Summary:</h2>
           <ul style="list-style-type: none; padding-left: 0;">
@@ -4112,17 +4122,16 @@ app.get("/api/print-queue/status", (req, res) => {
 // Add this new endpoint near your other API endpoints
 app.post("/api/checkPausedItems", async (req, res) => {
     try {
-        const { items } = req.body;
+        const { items, orderTime } = req.body;  // Add orderTime to destructuring
         
         // Get all item IDs from the request
         const itemIds = items.map(item => item.item_id);
         
         if (req.body.isKiosk) {
-          // Bypass user validation for kiosk orders
-          return res.json({ 
-              hasPausedItems: false 
-          });
-      }
+            return res.json({ 
+                hasPausedItems: false 
+            });
+        }
 
         // Check for both paused items and breakfast items
         const { data: menuItems, error: menuError } = await supabase
@@ -4146,13 +4155,22 @@ app.post("/api/checkPausedItems", async (req, res) => {
             });
         }
 
-
-
-        // Check for breakfast items after 11:30 AM
-        const currentTime = new Date();
-        const currentHour = currentTime.getHours();
-        const currentMinutes = currentTime.getMinutes();
-        const isAfterBreakfastHours = (currentHour > 11 || (currentHour === 11 && currentMinutes > 30));
+        // Parse the pickup time
+        const [hours, minutes] = orderTime.split(':');
+        const isPM = orderTime.toLowerCase().includes('pm');
+        let pickupHour = parseInt(hours);
+        
+        // Convert to 24-hour format if PM
+        if (isPM && pickupHour !== 12) {
+            pickupHour += 12;
+        }
+        // Convert 12 AM to 0
+        if (!isPM && pickupHour === 12) {
+            pickupHour = 0;
+        }
+        
+        const pickupMinutes = parseInt(minutes);
+        const isAfterBreakfastHours = (pickupHour > 11 || (pickupHour === 11 && pickupMinutes > 30));
 
         if (isAfterBreakfastHours) {
             const breakfastItems = menuItems.filter(item => 
@@ -4163,7 +4181,7 @@ app.post("/api/checkPausedItems", async (req, res) => {
                 const breakfastNames = breakfastItems.map(item => item.item_name);
                 return res.json({
                     hasPausedItems: true,
-                    message: `The following breakfast items are only available until 11:30 AM: ${breakfastNames.join(', ')}. Please remove them to proceed.`
+                    message: `The following breakfast items are only available for pickup until 11:30 AM: ${breakfastNames.join(', ')}. Please remove them or select an earlier pickup time to proceed.`
                 });
             }
         }
@@ -4310,6 +4328,24 @@ app.get('/api/kiosk/order/cancel', (req, res) => {
 // Add route for APK downloads
 app.get('/apk', (req, res) => {
     res.redirect('https://drive.google.com/drive/folders/1-ZCqXtVvJu5TG-gS-pCOjI3POMlZNUqs?usp=sharing');
+});
+
+app.post('/api/process-refund', async (req, res) => {
+    try {
+        const { order_id } = req.body;
+        // Add your refund logic here
+        const { error } = await supabase
+            .from('orders')
+            .update({ payment_status: 'REFUND' })
+            .eq('order_id', order_id);
+
+        if(error) throw error;
+        
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Refund error:', err);
+        res.json({ success: false, error: err.message });
+    }
 });
 
 module.exports = app;

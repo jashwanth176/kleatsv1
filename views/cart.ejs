@@ -463,7 +463,10 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ items: items })
+                body: JSON.stringify({ 
+                    items: items,
+                    orderTime: time  // Add the pickup time to the request
+                })
             })
             .then(response => response.json())
             .then(data => {
@@ -783,7 +786,7 @@
             
 
             // List of canteens where coupon is valid
-            const validCanteens = ['KL Adda', 'jashwanth', 'Naturals'];
+            const validCanteens = ['KL Adda', 'jashwanth', 'Naturals', 'US Pizza', 'US_Pizza'];
             
             if (couponCode === 'KLGLUG' && validCanteens.includes(currentCanteen)) {
                 isCouponApplied = true;

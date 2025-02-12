@@ -111,7 +111,10 @@
                                             <tr>
                                                 <th>Name</th>
                                                 <th>Phone No</th>
-                                                <th>Price Paid</th>
+                                                <% if (order.order_type === 'pickup') { %>
+                                                    <th>Packing Charges</th>
+                                                <% } %>
+                                                <th>Total Amount</th>
                                                 <th>Payment Status</th>
                                             </tr>
                                         </thead>
@@ -119,7 +122,16 @@
                                             <tr>
                                                 <td><%= order.userName %></td>
                                                 <td><%= order.phoneNumber %></td>
-                                                <td>₹ <%= order.totalPrice.toFixed(2) %></td>
+                                                <% if (order.order_type === 'pickup') { %>
+                                                    <% const totalQuantity = menu.reduce((sum, item) => sum + item.quantity, 0) %>
+                                                    <% const packingCharges = totalQuantity * 10 %>
+                                                    <% const basePrice = Number(order.totalPrice) %>
+                                                    <% const finalPrice = basePrice + packingCharges %>
+                                                    <td>₹ <%= packingCharges.toFixed(2) %></td>
+                                                    <td>₹ <%= finalPrice.toFixed(2) %></td>
+                                                <% } else { %>
+                                                    <td>₹ <%= order.totalPrice.toFixed(2) %></td>
+                                                <% } %>
                                                 <td><%= order.paymentStatus %></td>
                                             </tr>
                                         </tbody>

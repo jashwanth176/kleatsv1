@@ -74,6 +74,21 @@
         .fixed-dispatch-button:hover {
             background-color: #e67300;
         }
+
+        .refund-button {
+            background-color: #ff4444;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+
+        .refund-button:hover {
+            background-color: #cc0000;
+        }
     </style>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js"></script>
@@ -148,13 +163,14 @@
                                                 <th style="width: 8%;">Price</th>
                                                 <th style="width: 15%;">Date/Time</th>
                                                 <th style="width: 5%;">Dispatch</th>
+                                                <th style="width: 8%;">Refund</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <% let size=orders.length; %>
                                             <% if(size==0) { %>
                                                 <tr>
-                                                    <td colspan="10">
+                                                    <td colspan="11">
                                                         <h1>No Orders Are Pending</h1>
                                                     </td>
                                                 </tr>
@@ -177,6 +193,12 @@
                                                                    id="dispatch_<%= orders[i].order_id %>" 
                                                                    value="true" 
                                                                    onchange="checkingDispatch()">
+                                                        </td>
+                                                        <td>
+                                                            <button class="refund-button" 
+                                                                    onclick="processRefund('<%= orders[i].order_id %>')">
+                                                                Refund
+                                                            </button>
                                                         </td>
                                                     </tr>
                                                 <% } %>
@@ -311,7 +333,7 @@
             if (orders.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="10" class="text-center">No orders found.</td>
+                        <td colspan="11" class="text-center">No orders found.</td>
                     </tr>
                 `;
                 return;
@@ -336,6 +358,12 @@
                                    id="dispatch_${order.order_id}" 
                                    value="true" 
                                    onchange="checkingDispatch()">
+                        </td>
+                        <td>
+                            <button class="refund-button" 
+                                    onclick="processRefund('${order.order_id}')">
+                                Refund
+                            </button>
                         </td>
                     </tr>
                 `;
@@ -603,6 +631,25 @@
         }
 
         document.querySelector('.sec-title').appendChild(testSoundBtn);
+
+        function processRefund(orderId) {
+            if(confirm('Are you sure you want to refund this order?')) {
+                fetch('/api/process-refund', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order_id: orderId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.success) {
+                        alert('Refund processed successfully!');
+                        location.reload();
+                    } else {
+                        alert('Refund failed: ' + data.error);
+                    }
+                });
+            }
+        }
     </script>
     <!-- jquery  -->
     <script src="/javascripts/jquery-3.5.1.min.js"></script>
