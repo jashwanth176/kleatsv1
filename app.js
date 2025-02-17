@@ -21,21 +21,23 @@ const bcrypt = require('bcrypt');
 const SALT_ROUNDS = 10;
 const webpush = require('web-push');
 const admin = require('firebase-admin');
-const serviceAccount = require('./config/firebase-admin-sdk.json');
-const helmet = require('helmet'); // Add this near other requires
+const helmet = require('helmet');
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+if(process.env.NODE_ENV == 'production') {
+  const serviceAccount = require('./config/firebase-admin-sdk.json');
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
 
-// Read SSL certificate files
-const privateKey = fs.readFileSync('/etc/letsencrypt/live/kleats.in/privkey.pem', 'utf8');
-const certificate = fs.readFileSync('/etc/letsencrypt/live/kleats.in/fullchain.pem', 'utf8');
+  // Read SSL certificate files
+  const privateKey = fs.readFileSync('/etc/letsencrypt/live/kleats.in/privkey.pem', 'utf8');
+  const certificate = fs.readFileSync('/etc/letsencrypt/live/kleats.in/fullchain.pem', 'utf8');
 
-const credentials = {
-  key: privateKey,
-  cert: certificate
-};
+  const credentials = {
+    key: privateKey,
+    cert: certificate
+  };
+}
 
 // Add these environment variables near the top with your other requires
 const TURNSTILE_SITE_KEY = process.env.TURNSTILE_SITE_KEY;
