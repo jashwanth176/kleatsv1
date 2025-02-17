@@ -2066,22 +2066,6 @@ async function incrementAndGetViewCount() {
 // Modify the route handler for the index page
 app.get("/", renderIndexPage);
 
-// Create an HTTP server that redirects to HTTPS
-const httpApp = express();
-httpApp.use((req, res) => {
-  res.redirect(`https://${req.headers.host}${req.url}`);
-});
-
-// Start the HTTP server
-http.createServer(httpApp).listen(80, () => {
-  console.log('HTTP Server running on port 80');
-});
-
-// Start the HTTPS server
-https.createServer(credentials, app).listen(443, () => {
-  console.log('HTTPS Server running on port 443');
-});
-
 // Add this new route
 app.get('/member', (req, res) => {
   res.redirect('https://forms.office.com/r/iCRskqXN1W');
@@ -4349,3 +4333,38 @@ app.post('/api/process-refund', async (req, res) => {
 });
 
 module.exports = app;
+
+// Add this at the end of the file, after module.exports = app;
+if (process.env.NODE_ENV === 'production') {
+    // Read SSL certificate files
+    const privateKey = fs.readFileSync('/etc/letsencrypt/live/kleats.in/privkey.pem', 'utf8');
+    const certificate = fs.readFileSync('/etc/letsencrypt/live/kleats.in/fullchain.pem', 'utf8');
+    
+    const credentials = {
+        key: privateKey,
+        cert: certificate
+    };
+
+    // HTTPS Server
+    const httpsServer = https.createServer(credentials, app);
+    httpsServer.listen(443, () => {
+        console.log('HTTPS Server running on port 443');
+    });
+
+    // HTTP to HTTPS Redirection
+    const httpApp = express();
+    httpApp.use((req, res) => {
+        res.redirect(`https://${req.headers.host}${req.url}`);
+    });
+
+    http.createServer(httpApp).listen(80, () => {
+        console.log('HTTP Server running on port 80');
+    });
+} else {
+    // Development server
+    const port = process.env.PORT || 3000;
+    const httpServer = http.createServer(app);
+    httpServer.listen(port, () => {
+        console.log(`HTTP Server running on port ${port}`);
+    });
+}
