@@ -139,7 +139,7 @@
     </div>
 
     <!-- start of header  -->
-    <header class="site-header">
+    <header class="site-header" style="margin-bottom: 0px;">
         <div class="container">
             <div class="row">
                 <div class="col-lg-10">
@@ -232,7 +232,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="menu-list-row">
+                <div class="menu-list-row" style="margin-top: 20px;">
                     <div class="row g-xxl-5 bydefault_show" id="menu-dish"
                         style="background-image: url(/images/menu-bg.png);">
                         <% for(let i=0;i<items.length;i++) { %>
@@ -487,6 +487,17 @@
                     validateCartState();
                 }
             };
+        </script>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const menuToggle = document.querySelector('.menu-toggle');
+                const headerMenu = document.querySelector('.header-menu');
+
+                menuToggle.addEventListener('click', function () {
+                    headerMenu.classList.toggle('active'); // Toggle the active class to show/hide the menu
+                });
+            });
         </script>
 </body>
 

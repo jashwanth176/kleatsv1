@@ -448,18 +448,6 @@
             return Uint8Array.from(atob(base64), c => c.charCodeAt(0));
         }
 
-        // Call on page load and add a manual trigger button
-        document.addEventListener('DOMContentLoaded', () => {
-            subscribeToNotifications();
-            
-            // Add a button to manually enable notifications
-            const notifyBtn = document.createElement('button');
-            notifyBtn.textContent = 'Enable Notifications';
-            notifyBtn.className = 'btn btn-primary m-2';
-            notifyBtn.onclick = subscribeToNotifications;
-            document.querySelector('.sec-title').appendChild(notifyBtn);
-        });
-
         // Update the connectToOrderStream function
         function connectToOrderStream() {
             let eventSource;
@@ -608,7 +596,7 @@
             });
         });
 
-        // Add a visible button for testing
+        // Keep this block which creates the working notification button
         const notifyBtn = document.createElement('button');
         notifyBtn.textContent = 'Enable Notifications';
         notifyBtn.className = 'sec-btn';
@@ -629,8 +617,6 @@
                 window.location.href = '/admin_view_dispatch_orders';
             });
         }
-
-        document.querySelector('.sec-title').appendChild(testSoundBtn);
 
         function processRefund(orderId) {
             if(confirm('Are you sure you want to refund this order?')) {

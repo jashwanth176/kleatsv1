@@ -190,17 +190,19 @@
                                                                                    margin-right: 5px;">
                                                                         <%= item.is_paused ? 'Resume' : 'Pause' %>
                                                                     </button>
+                                                                    <!-- Remove button temporarily hidden
                                                                     <button type="submit" 
                                                                             name="item_id"
                                                                             value="<%= item.item_id %>"
-                                                                            onclick="return confirm('Are you sure you want to remove this item?');"
-                                                                            style="background: red; 
+                                                                            onclick="return confirm('Are you sure you want to hide this item from the menu? You can unhide it later.');"
+                                                                            style="background: #dc3545; 
                                                                                    color: white; 
                                                                                    border: none; 
                                                                                    padding: 5px 10px; 
                                                                                    border-radius: 5px;">
-                                                                        Remove
+                                                                        Hide from Menu
                                                                     </button>
+                                                                    -->
                                                                 </td>
                                                             </tr>
                                                             <% }); %>

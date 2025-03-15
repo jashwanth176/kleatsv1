@@ -600,10 +600,9 @@
                 document.getElementById('total_quantity').textContent = totalQuantity;
             }
 
-            // Remove the row from the table
+            // Remove the row and update serial numbers
             row.remove();
-
-            // Update totals
+            updateSerialNumbers();
             updateTotal();
 
             // If cart is empty, show the empty message
@@ -611,6 +610,18 @@
             if (!localStorage.getItem(`cart_${currentCanteen}`) || JSON.parse(localStorage.getItem(`cart_${currentCanteen}`)).length === 0) {
                 tbody.innerHTML = '<tr><td colspan="7">Your cart is empty</td></tr>';
             }
+        }
+
+        // Function to update serial numbers
+        function updateSerialNumbers() {
+            const tbody = document.querySelector('#mycart tbody');
+            const rows = tbody.querySelectorAll('tr');
+            rows.forEach((row, index) => {
+                const serialNumberCell = row.querySelector('.serial-number');
+                if (serialNumberCell) {
+                    serialNumberCell.textContent = index + 1;
+                }
+            });
         }
 
         // Function to update all totals
@@ -667,7 +678,7 @@
                 cart.forEach((item, index) => {
                     const row = `
                         <tr>
-                            <td>${index + 1}</td>
+                            <td class="serial-number">${index + 1}</td>
                             <td><img src="${item.item_img}" alt="${item.item_name}" style="width: 50px; height: 50px;"></td>
                             <td>${item.item_name}</td>
                             <td>₹ <span class="item-price">${item.price.toFixed(2)}</span></td>
@@ -777,19 +788,19 @@
         let isCouponApplied = false;
 
         function applyCoupon() {
-            const couponCode = document.getElementById('couponCode').value.trim();
+            const couponCode = document.getElementById('couponCode').value.trim().toUpperCase();
             const couponField = document.getElementById('couponCode');
             const applyButton = document.querySelector('[onclick="applyCoupon()"], [onclick="removeCoupon()"]');
             
             // Get current canteen from localStorage
             const currentCanteen = localStorage.getItem('currentCanteen');
             
-
             // List of canteens where coupon is valid
             const validCanteens = ['KL Adda', 'jashwanth', 'Naturals', 'US Pizza', 'US_Pizza'];
             
             if (couponCode === 'KLGLUG' && validCanteens.includes(currentCanteen)) {
                 isCouponApplied = true;
+                couponField.value = couponCode; // Update input field to show uppercase
                 couponField.style.border = '2px solid #28a745';
                 applyButton.textContent = 'Remove';
                 applyButton.setAttribute('onclick', 'removeCoupon()');

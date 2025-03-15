@@ -543,41 +543,19 @@ app.post("/admin_remove_products", async (req, res) => {
       return res.render("admin_signin");
     }
 
-    // Fetch the item to get image name (to delete image file)
-    const { data: item, error: itemError } = await supabase
+    // Update the item's is_paused status to true instead of deleting
+    const { error: updateError } = await supabase
       .from('menu')
-      .select('item_img')
+      .update({ is_paused: true })
       .eq('item_id', itemIdToRemove)
-      .single();
+      .eq('canteenId', admin.admin_name);
 
-    if (itemError) {
-      console.error('Error fetching item for removal:', itemError);
-      return res.status(500).send("Error fetching item details");
+    if (updateError) {
+      console.error('Error updating item:', updateError);
+      return res.status(500).send("Error removing the item");
     }
 
-    // Delete the item from the database
-    const { error: deleteError } = await supabase
-      .from('menu')
-      .delete()
-      .eq('item_id', itemIdToRemove);
-
-    if (deleteError) {
-      console.error('Error deleting item:', deleteError);
-      return res.status(500).send("Error deleting the item");
-    }
-
-    // Delete the image file from the server
-    const imagePath = path.join(__dirname, 'public', 'images', 'dish', item.item_img);
-    fs.unlink(imagePath, (err) => {
-      if (err) {
-        console.error('Error deleting image file:', err);
-        // Not sending error to user as the item is already deleted from DB
-      } else {
-        console.log(`Image file ${item.item_img} deleted successfully`);
-      }
-    });
-
-    console.log(`Item with ID ${itemIdToRemove} removed successfully by admin ${userName}`);
+    console.log(`Item with ID ${itemIdToRemove} removed (paused) successfully by admin ${userName}`);
     res.redirect("/admin_remove_products");
 
   } catch (error) {

@@ -207,3 +207,64 @@ jQuery(window).on("load", function () {
     }
   }
 });
+
+// Parallax Tilt Effect
+class ParallaxTilt {
+    constructor(element) {
+        this.element = element;
+        this.settings = {
+            perspective: parseInt(element.getAttribute('data-tilt-perspective')) || 500,
+            maxTilt: parseInt(element.getAttribute('data-tilt-max')) || 2,
+            speed: parseInt(element.getAttribute('data-tilt-speed')) || 400
+        };
+        
+        this.elementRect = this.element.getBoundingClientRect();
+        this.init();
+    }
+
+    init() {
+        this.element.style.transition = `transform ${this.settings.speed}ms cubic-bezier(.03,.98,.52,.99)`;
+        this.element.style.transform = "perspective(" + this.settings.perspective + "px) rotateX(0) rotateY(0)";
+        
+        this.addEventListeners();
+    }
+
+    addEventListeners() {
+        this.element.addEventListener('mousemove', (e) => this.onMouseMove(e));
+        this.element.addEventListener('mouseleave', () => this.onMouseLeave());
+    }
+
+    onMouseMove(e) {
+        const rect = this.element.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const xc = rect.width / 2;
+        const yc = rect.height / 2;
+        
+        const dx = (x - xc) / xc;
+        const dy = (y - yc) / yc;
+        
+        this.element.style.transform = `
+            perspective(${this.settings.perspective}px)
+            rotateX(${dy * this.settings.maxTilt}deg)
+            rotateY(${dx * this.settings.maxTilt}deg)
+            scale3d(1.02, 1.02, 1.02)
+        `;
+    }
+
+    onMouseLeave() {
+        this.element.style.transform = `
+            perspective(${this.settings.perspective}px)
+            rotateX(0deg)
+            rotateY(0deg)
+            scale3d(1, 1, 1)
+        `;
+    }
+}
+
+// Initialize parallax effect for panels
+document.addEventListener('DOMContentLoaded', () => {
+    const tiltElements = document.querySelectorAll('.js-tilt');
+    tiltElements.forEach(element => new ParallaxTilt(element));
+});
