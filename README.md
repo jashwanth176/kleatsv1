@@ -13,7 +13,7 @@ This project was developed with the invaluable support of *KL GLUG (GNU/Linux Us
 - [JavaScript](https://www.w3schools.com/js/)
 - [Bootstrap](https://www.w3schools.com/bootstrap5/index.php)
 - [ExpressJS](https://expressjs.com/)
-- [MySQL](https://www.w3schools.com/mysql/default.asp)
+- [Supabase](https://supabase.com/)
 
 ---
 
@@ -62,7 +62,7 @@ npm install -g semver
 
 ---
 
-## 🛠 Environment Configuration
+## 🛠 Environment Configuration [Ask Varun for env variables if needed]
 
 Create a `.env` file and add the following:
 ```ini
@@ -76,6 +76,9 @@ VAPID_PRIVATE_KEY=your-private-key
 
 # Temporarily disable email configuration for testing
 ENABLE_EMAIL=false
+
+# Set environment mode
+NODE_ENV=development
 ```
 
 ---
@@ -97,32 +100,11 @@ webpush.setVapidDetails(
 );
 ```
 
----
-
-## 🛠️ Environment Configuration
-
-Create a `.env` file and add the following:
-```ini
-PORT=3000
-SUPABASE_URL=https://your-supabase-url.supabase.co
-SUPABASE_KEY=your-supabase-key
-
-# Web Push configuration
-VAPID_PUBLIC_KEY=your-public-key
-VAPID_PRIVATE_KEY=your-private-key
-
-# Temporarily disable email configuration for testing
-ENABLE_EMAIL=false
-
-# Set environment mode
-NODE_ENV=development
-```
-
----
-
 ## 🏆 Contributing
 
 We welcome contributions from the community! Feel free to submit pull requests, report bugs, and suggest new features.
+
+Join our community group : https://t.me/+X0n_azyktiVmMzI0
 
 ---
 
