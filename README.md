@@ -62,7 +62,8 @@ npm install -g semver
 
 ---
 
-## 🛠 Environment Configuration [Ask @varun28sharma for env variables if needed]
+## 🛠 Environment Configuration  
+> ℹ️ Need environment variables? Contact **@varun28sharma**.
 
 Create a `.env` file and add the following:
 ```ini
