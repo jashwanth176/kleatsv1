@@ -4294,6 +4294,10 @@ app.get('/apk', (req, res) => {
     res.redirect('https://drive.google.com/drive/folders/1-ZCqXtVvJu5TG-gS-pCOjI3POMlZNUqs?usp=sharing');
 });
 
+app.get('/privacy-policy', (req, res) => {
+  res.render('privacy_policy');
+});
+
 app.post('/api/process-refund', async (req, res) => {
     try {
         const { order_id } = req.body;
