@@ -15,7 +15,6 @@ KL Eats is a innovative platform designed to streamline campus dining for studen
 ## Install and Run :
 - Clone the repository or download the zip folder.
 - Extract the zip folder.
-- Import the data from the ``` FoodOrderingWebsite.sql ``` file to your ``` MySQL``` Database.
 - Install NodeJS in your system.
 - Go to the folder where you have extracted or cloned the project.
 - Open command prompt or terminal having the same location where your project is.
