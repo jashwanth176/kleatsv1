@@ -99,23 +99,23 @@ webpush.setVapidDetails(
 
 ---
 
-## 🔀 HTTPS Redirection (`app.js`)
+## 🛠️ Environment Configuration
 
-```js
-const httpApp = express();
-httpApp.use((req, res) => {
-    res.redirect(`https://${req.headers.host}${req.url}`);
-});
+Create a `.env` file and add the following:
+```ini
+PORT=3000
+SUPABASE_URL=https://your-supabase-url.supabase.co
+SUPABASE_KEY=your-supabase-key
 
-http.createServer(httpApp).listen(80, () => {
-    console.log('HTTP Server running on port 80');
-});
+# Web Push configuration
+VAPID_PUBLIC_KEY=your-public-key
+VAPID_PRIVATE_KEY=your-private-key
 
-const port = process.env.PORT || 3000;
-const httpServer = http.createServer(app);
-httpServer.listen(port, () => {
-    console.log(`HTTP Server running on port ${port}`);
-});
+# Temporarily disable email configuration for testing
+ENABLE_EMAIL=false
+
+# Set environment mode
+NODE_ENV=development
 ```
 
 ---
