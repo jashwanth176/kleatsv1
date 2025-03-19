@@ -23,3 +23,88 @@ KL Eats is a innovative platform designed to streamline campus dining for studen
 - Now to run the project on your server type ``` npm start ``` .
 
 
+
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+Remove Existing Dependencies
+
+rm -rf node_modules
+rm package-lock.json
+
+
+Install Dependencies
+
+npm install
+
+npm install dotenv express body-parser cookie-parser ejs express-fileupload uuid mysql2 nodemailer crypto @supabase/supabase-js path express-session https fs http qrcode axios bcrypt web-push firebase-admin helmet
+
+
+Install Global Dependencies
+
+npm install -g semver
+
+-------------------------------------------------------
+
+
+Environment Configuration
+
+
+PORT=3000
+SUPABASE_URL=https://gvsmghoqhfbvywirxqgy.supabase.co
+SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2c21naG9xaGZidnl3aXJ4cWd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU3MDYxMzAsImV4cCI6MjA1MTI4MjEzMH0.8cq-vZa17qm1jivswhZD056CumFkuA8C9PrrgOhzx3I
+
+# Web Push configuration
+VAPID_PUBLIC_KEY=BOdEBePVOnnFIkfeW1rHytnZrkEuu9gqgDggWXoTLsuZXdpePs7pd11bofVjHSEsYecX6jaZ5Unm5THOvxnKHPQ
+VAPID_PRIVATE_KEY=sRsA4gz1TBDgl-OucZb4u4rOyf14-BROIaK1D9Vy8bQ
+
+# Temporarily disable email configuration for testing
+ENABLE_EMAIL=false
+
+
+
+
+
+
+
+-------------------------------------------------------
+app.js
+
+
+Configure Web Push
+
+const webpush = require('web-push');
+
+const vapidKeys = {
+    publicKey: process.env.VAPID_PUBLIC_KEY,
+    privateKey: process.env.VAPID_PRIVATE_KEY,
+};
+
+webpush.setVapidDetails(
+    'mailto:your-email@example.com', // Replace with your email
+    vapidKeys.publicKey,
+    vapidKeys.privateKey
+);
+
+
+
+
+HTTPS Redirection
+
+const httpApp = express();
+httpApp.use((req, res) => {
+    res.redirect(`https://${req.headers.host}${req.url}`);
+});
+
+http.createServer(httpApp).listen(80, () => {
+    console.log('HTTP Server running on port 80');
+});
+
+const port = process.env.PORT || 3000;
+const httpServer = http.createServer(app);
+httpServer.listen(port, () => {
+    console.log(`HTTP Server running on port ${port}`);
+});
