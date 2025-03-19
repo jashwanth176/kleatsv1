@@ -21,11 +21,11 @@ This project was developed with the invaluable support of *KL GLUG (GNU/Linux Us
 
 1. **Clone the repository:**  
    ```sh
-   git clone https://github.com/your-username/kl-eats.git
+   git clone https://github.com/jashwanth/kleatsv1
    ```
 2. **Navigate to the project folder:**  
    ```sh
-   cd kl-eats
+   cd kleatsv1
    ```
 3. **Install dependencies:**  
    ```sh
