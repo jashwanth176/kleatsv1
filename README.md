@@ -62,7 +62,7 @@ npm install -g semver
 
 ---
 
-## 🛠 Environment Configuration [Ask Varun for env variables if needed]
+## 🛠 Environment Configuration [Ask @varun28sharma for env variables if needed]
 
 Create a `.env` file and add the following:
 ```ini
