@@ -1,80 +1,88 @@
-# Food Ordering Website
-KL Eats is a innovative platform designed to streamline campus dining for students and faculty. Our mission is to provide a convenient way to pre-order and book meals from various canteens across our campus. This project was developed with the invaluable support of KL GLUG (GNU/Linux User Group), showcasing the power of open-source collaboration in creating practical solutions for our campus community.
+# 🍽 KL Eats - Food Ordering Website
 
+KL Eats is an innovative platform designed to streamline campus dining for students and faculty. Our mission is to provide a convenient way to pre-order and book meals from various canteens across our campus.
 
-## Build With :
-<ul>
-    <li><a href="https://www.w3schools.com/html/" target="_blank">HTML</a></li>
-    <li><a href="https://www.w3schools.com/css/" target="_blank">CSS</a></li>
-    <li><a href="https://www.w3schools.com/js/" target="_blank">JavaScript</a></li>
-    <li><a href="https://www.w3schools.com/bootstrap5/index.php" target="_blank">Bootstrap</a></li>
-    <li><a href="https://expressjs.com/" target="_blank">ExpressJS</a></li>
-    <li><a href="https://www.w3schools.com/mysql/default.asp" target="_blank">MySQL</a></li>
-</ul>
+This project was developed with the invaluable support of *KL GLUG (GNU/Linux User Group)*, showcasing the power of open-source collaboration in creating practical solutions for our campus community.
 
-## Install and Run :
-- Clone the repository or download the zip folder.
-- Extract the zip folder.
-- Install NodeJS in your system.
-- Go to the folder where you have extracted or cloned the project.
-- Open command prompt or terminal having the same location where your project is.
-- Type ``` npm install ``` in your command prompt or terminal.
-- Now to run the project on your server type ``` npm start ``` .
+---
 
+## 🚀 Built With
 
+- [HTML](https://www.w3schools.com/html/)
+- [CSS](https://www.w3schools.com/css/)
+- [JavaScript](https://www.w3schools.com/js/)
+- [Bootstrap](https://www.w3schools.com/bootstrap5/index.php)
+- [ExpressJS](https://expressjs.com/)
+- [MySQL](https://www.w3schools.com/mysql/default.asp)
 
+---
 
+## 📦 Installation & Setup
 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1. **Clone the repository:**  
+   ```sh
+   git clone https://github.com/your-username/kl-eats.git
+   ```
+2. **Navigate to the project folder:**  
+   ```sh
+   cd kl-eats
+   ```
+3. **Install dependencies:**  
+   ```sh
+   npm install
+   ```
+4. **Start the server:**  
+   ```sh
+   npm start
+   ```
 
+---
 
+## 🔄 Reset & Reinstall Dependencies
 
-Remove Existing Dependencies
+### Remove existing dependencies:
+```sh
+rm -rf node_modules package-lock.json
+```
 
-rm -rf node_modules
-rm package-lock.json
-
-
-Install Dependencies
-
+### Reinstall dependencies:
+```sh
 npm install
+```
 
+### Install required packages:
+```sh
 npm install dotenv express body-parser cookie-parser ejs express-fileupload uuid mysql2 nodemailer crypto @supabase/supabase-js path express-session https fs http qrcode axios bcrypt web-push firebase-admin helmet
+```
 
-
-Install Global Dependencies
-
+### Install global dependencies:
+```sh
 npm install -g semver
+```
 
--------------------------------------------------------
+---
 
+## 🛠 Environment Configuration
 
-Environment Configuration
-
-
+Create a `.env` file and add the following:
+```ini
 PORT=3000
-SUPABASE_URL=https://gvsmghoqhfbvywirxqgy.supabase.co
-SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2c21naG9xaGZidnl3aXJ4cWd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU3MDYxMzAsImV4cCI6MjA1MTI4MjEzMH0.8cq-vZa17qm1jivswhZD056CumFkuA8C9PrrgOhzx3I
+SUPABASE_URL=https://your-supabase-url.supabase.co
+SUPABASE_KEY=your-supabase-key
 
 # Web Push configuration
-VAPID_PUBLIC_KEY=BOdEBePVOnnFIkfeW1rHytnZrkEuu9gqgDggWXoTLsuZXdpePs7pd11bofVjHSEsYecX6jaZ5Unm5THOvxnKHPQ
-VAPID_PRIVATE_KEY=sRsA4gz1TBDgl-OucZb4u4rOyf14-BROIaK1D9Vy8bQ
+VAPID_PUBLIC_KEY=your-public-key
+VAPID_PRIVATE_KEY=your-private-key
 
 # Temporarily disable email configuration for testing
 ENABLE_EMAIL=false
+```
 
+---
 
+## 🌐 Web Push Configuration (`app.js`)
 
-
-
-
-
--------------------------------------------------------
-app.js
-
-
-Configure Web Push
-
+```js
 const webpush = require('web-push');
 
 const vapidKeys = {
@@ -87,12 +95,13 @@ webpush.setVapidDetails(
     vapidKeys.publicKey,
     vapidKeys.privateKey
 );
+```
 
+---
 
+## 🔀 HTTPS Redirection (`app.js`)
 
-
-HTTPS Redirection
-
+```js
 const httpApp = express();
 httpApp.use((req, res) => {
     res.redirect(`https://${req.headers.host}${req.url}`);
@@ -107,3 +116,21 @@ const httpServer = http.createServer(app);
 httpServer.listen(port, () => {
     console.log(`HTTP Server running on port ${port}`);
 });
+```
+
+---
+
+## 🏆 Contributing
+
+We welcome contributions from the community! Feel free to submit pull requests, report bugs, and suggest new features.
+
+---
+
+## 📜 License
+
+This project is licensed under the **MIT License**.
+
+---
+
+⭐ *Star this repository* if you found it useful! 🚀
+
