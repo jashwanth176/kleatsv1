@@ -40,12 +40,8 @@ This project was developed with the invaluable support of *KL GLUG (GNU/Linux Us
 
 ## 🔄 Reset & Reinstall Dependencies
 
-### Remove existing dependencies:
-```sh
-rm -rf node_modules package-lock.json
-```
 
-### Reinstall dependencies:
+### Install dependencies:
 ```sh
 npm install
 ```
