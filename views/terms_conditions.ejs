@@ -4,26 +4,57 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Terms and Conditions - KL Eats</title>
-    <link rel="stylesheet" href="/stylesheets/style.css">
     <link rel="icon" href="/images/file.png" type="image/x-icon">
+    <!-- for icons  -->
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
+    <!-- bootstrap  -->
+    <link rel="stylesheet" href="/stylesheets/bootstrap.min.css">
+    <!-- for swiper slider  -->
+    <link rel="stylesheet" href="/stylesheets/swiper-bundle.min.css">
+
+    <!-- fancy box  -->
+    <link rel="stylesheet" href="/stylesheets/jquery.fancybox.min.css">
+    <!-- custom css  -->
+    <link rel="stylesheet" href="/stylesheets/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap" rel="stylesheet">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y3TDH790Z7"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-Y3TDH790Z7');
+    </script>
+
     <style>
-        .terms-conditions {
-            padding: 20px;
-            max-width: 900px;
-            margin: auto;
-            background-color: #ffffff;
-            border-radius: 15px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-            transition: box-shadow 0.3s;
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+            margin: 0;
+            padding: 0;
         }
 
-        .terms-conditions:hover {
+        .policy-container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            width: 80%;
+            max-width: 900px;
+            padding: 30px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            transition: box-shadow 0.3s;
+            margin: 120px auto 50px;
+        }
+
+        .policy-container:hover {
             box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
         }
 
-        .terms-conditions h1 {
+        h1 {
             font-family: 'Poppins', sans-serif;
             color: #f40808;
             text-align: center;
@@ -34,39 +65,29 @@
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
         }
 
-        .terms-conditions h2 {
+        h2 {
             font-family: 'Poppins', sans-serif;
             color: #f40808;
             margin: 15px 0;
             font-size: 1.8em;
         }
 
-        .terms-conditions p, .terms-conditions li {
+        p {
             line-height: 1.6;
             margin-bottom: 15px;
-            color: #000;
+            color: #000; 
             font-size: 1.1em;
         }
 
-        .terms-conditions ul {
-            list-style-type: disc;
-            margin-left: 20px;
-        }
-
-        .section-title {
-            font-weight: bold;
-            margin-top: 30px;
-        }
-
         .box {
-            border: 2px solid #f40808;
+            border: 2px solid #f40808; 
             padding: 20px;
             border-radius: 10px;
             margin-bottom: 20px;
             background: linear-gradient(145deg, #ffffff, #e6e6e6);
             box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
-            text-align: justify;
+            text-align: justify; 
         }
 
         .box:hover {
@@ -74,122 +95,142 @@
             box-shadow: 6px 6px 16px rgba(0, 0, 0, 0.2);
         }
 
-        .terms-conditions a {
-            color: #f40808;
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-
-        .terms-conditions a:hover {
-            color: #d00202;
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #999999;
+            font-size: 0.9em;
         }
     </style>
-        <!-- Google tag (gtag.js) -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y3TDH790Z7"></script>
-        <script>
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-    
-          gtag('config', 'G-Y3TDH790Z7');
-        </script>
 </head>
 
-<body>
-    <header class="site-header">
-        <!-- Header content removed -->
-    </header>
+<body class="body-fixed">
 
-    <main class="terms-conditions">
+    <!-- start of header  -->
+    <header class="site-header">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-2">
+                    <div class="header-logo">
+                        <a href="/"><img src="/images/logo.png" width="200" height="80" alt="KL Eats Logo"></a>
+                    </div>
+                </div>
+                <div class="col-lg-10">
+                    <div class="main-navigation">
+                        <button class="menu-toggle"><span></span><span></span></button>
+                        <nav class="header-menu">
+                            <ul class="menu food-nav-menu">
+                                <% if (locals.userName) { %>
+                                    <li><a href="/user-history">My Orders</a></li>
+                                <% } %>
+                                <li style="color: #f40808; font-weight: bold;">
+                                    <a href="https://kleats.in/member">Become a member</a>
+                                </li>
+                                <li><a href="/">Home</a></li>
+                                <li><a href="/#about">About</a></li>
+                                <li><a href="/#canteens">Canteens</a></li>
+                                <li><a href="/#testimonials">Our Team</a></li>
+                            </ul>
+                        </nav>
+                        <div class="header-right">
+                            <a href="/signup" class="header-btn" id="authButton">
+                                <i class="uil uil-user-plus" style="color: #f40808;" title="Sign Up"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- header ends  -->
+
+    <div class="policy-container">
         <h1>Terms and Conditions</h1>
 
         <div class="box">
-            <h2 class="section-title">Introduction</h2>
-            <p>These terms of service ("Terms") describe the conditions on which Kleats grants Users access to the Platform for using the Services via the Kleats website ("Platform"). By accessing the Platform and using the Services, you acknowledge that you have read, understood, and agree to be legally bound by these Terms, as well as the Kleats Privacy Policy. You may not use the Services if you do not accept the Terms or are unable to be bound by the Terms.</p>
+            <h2 class="section-title">No Refund Policy</h2>
+            <p>Any money collected as part of subscriptions or any other activities shall not be refunded. Contact us at KL Eats (C424) or call at 7205655157 for any issues regarding refunds.</p>
+            <p>You can also email us at <a href="mailto:admin@kleats.in">admin@kleats.in</a> for any issues regarding refunds.</p>
         </div>
 
-        <div class="box">
-            <h2 class="section-title">Services</h2>
-            <p>Kleats is a food pre-ordering platform operated at KL University ("Kleats", "we", "us", or "our") that enables Users to pre-order food from Partner Restaurants within the KL University campus. By using the Platform, Users can browse menus, place orders, and prepay for their food, ensuring a smoother dining experience at Partner Restaurants.</p>
-        </div>
+        <footer>
+            <p>&copy; 2025 Kleats. All Rights Reserved.</p>
+        </footer>
+    </div>
 
-        <div class="box">
-            <h2 class="section-title">User Eligibility</h2>
-            <p>To use the Kleats Platform, you must:</p>
-            <ul>
-                <li>Be at least 18 years of age.</li>
-                <li>Have an email address with the @kluniversity.in domain.</li>
-            </ul>
-        </div>
-
-        <div class="box">
-            <h2 class="section-title">Account Creation and Security</h2>
-            <p>You are required to create an account to use the Platform. During the registration process, you must provide accurate and up-to-date information. You are responsible for maintaining the confidentiality of your account credentials, and all activity under your account is your responsibility.</p>
-        </div>
-
-        <div class="box">
-            <h2 class="section-title">Payment and Fees</h2>
-            <p>Kleats uses PhonePe as its payment gateway for processing transactions. By placing an order, you agree to pay the total amount indicated on the Platform, including any applicable service fees. All payments are final, and there are currently no refund policies in place.</p>
-        </div>
-
-        <div class="box">
-            <h2 class="section-title">Order Fulfillment and Delivery</h2>
-            <p>Kleats connects Users with Partner Restaurants to pre-order food. Partner Restaurants are solely responsible for preparing and delivering the orders. Kleats is not liable for any issues related to order quality, incorrect orders, or delivery delays.</p>
-        </div>
-
-        <div class="box">
-            <h2 class="section-title">Rules of Use of the Website, Platform, and/or Services</h2>
-            <p>While using the Platform(s) or Services, you agree to abide by the following restrictions and laws. We reserve the right to take appropriate action in the event of any breach of these rules:</p>
-            <h3 class="section-title">Prohibited Activities:</h3>
-            <ul>
-                <li>You agree not to attempt to reverse-engineer, disseminate, copy, exploit, or represent yourself as an agent or reseller of the Platform or Services.</li>
-                <li>You agree not to misrepresent or impersonate others or upload, modify, or share any harmful content or false information, including content that infringes intellectual property rights, threatens national security, or causes harm to any individual or entity.</li>
-                <li>You agree not to upload or transmit obscene, vulgar, defamatory, unlawful, or harmful content.</li>
-                <li>You agree not to use the Platform for illegal activities, including but not limited to fraud or money laundering.</li>
-                <li>You agree not to engage in actions that could harm the Platform, such as cyber-attacks, data breaches, or causing disruption to other users.</li>
-                <li>You acknowledge that Kleats is the sole owner of intellectual property and proprietary information accessible via the Platform.</li>
-            </ul>
-        </div>
-
-        <div class="box">
-            <h2 class="section-title">Legal Compliance:</h2>
-            <p>You agree to comply with all applicable laws. You represent that you possess the legal right to enter into this agreement and use the Platform in accordance with these Terms.</p>
-        </div>
-
-        <div class="box">
-            <h2 class="section-title">Modifications to Terms</h2>
-            <p>We may update these Terms from time to time. You will be notified of any changes, and your continued use of the Platform constitutes acceptance of the updated Terms.</p>
-        </div>
-
-        <div class="box">
-            <h2 class="section-title">Termination</h2>
-            <p>We reserve the right to terminate or suspend your access to the Platform if you violate these Terms or engage in fraudulent activities.</p>
-        </div>
-
-        <div class="box">
-            <h2 class="section-title">Contact Us</h2>
-            <p>For any questions or concerns regarding these Terms or our Services, please contact us at <a href="mailto:admin@kleats.in">admin@kleats.in</a>.</p>
-        </div>
-    </main>
-
-    <footer class="site-footer">
-        <p>&copy; 2025 Kleats. All Rights Reserved.</p>
-    </footer>
-
-    <!-- Include your existing scripts -->
+    <!-- jquery  -->
     <script src="/javascripts/jquery-3.5.1.min.js"></script>
+    <!-- bootstrap -->
     <script src="/javascripts/bootstrap.min.js"></script>
     <script src="/javascripts/popper.min.js"></script>
+
+    <!-- fontawesome  -->
     <script src="/javascripts/font-awesome.min.js"></script>
+
+    <!-- swiper slider  -->
     <script src="/javascripts/swiper-bundle.min.js"></script>
+
+    <!-- mixitup -- filter  -->
     <script src="/javascripts/jquery.mixitup.min.js"></script>
+
+    <!-- fancy box  -->
     <script src="/javascripts/query.fancybox.min.js"></script>
+
+    <!-- parallax  -->
     <script src="/javascripts/parallax.min.js"></script>
+
+    <!-- gsap  -->
     <script src="/javascripts/gsap.min.js"></script>
+
+    <!-- scroll trigger  -->
     <script src="/javascripts/ScrollTrigger.min.js"></script>
+    <!-- scroll to plugin  -->
     <script src="/javascripts/ScrollToPlugin.min.js"></script>
+    <!-- smooth scroll  -->
     <script src="/javascripts/smooth-scroll.js"></script>
+    <!-- custom js  -->
     <script src="/javascripts/main.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const authButton = document.getElementById('authButton');
+            const userName = localStorage.getItem('userName');
+
+            if (userName) {
+                // If user is logged in, change button to logout
+                authButton.href = "#";
+                authButton.querySelector('i').className = "uil uil-signout";
+                authButton.querySelector('i').title = "Sign Out";
+                
+                authButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    // First clear local storage
+                    localStorage.removeItem('userName');
+                    localStorage.removeItem('userEmail');
+                    localStorage.removeItem('userPhone');
+                    
+                    // Then call logout endpoint
+                    window.location.href = '/logout';
+                });
+            } else {
+                // If user is not logged in, keep signup functionality
+                authButton.href = "/signup";
+                authButton.querySelector('i').className = "uil uil-user-plus";
+                authButton.querySelector('i').title = "Sign Up";
+            }
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.querySelector('.menu-toggle');
+            const headerMenu = document.querySelector('.header-menu');
+
+            menuToggle.addEventListener('click', function() {
+                headerMenu.classList.toggle('active');
+            });
+        });
+    </script>
 </body>
 
 </html>
