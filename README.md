@@ -33,7 +33,7 @@ This project was developed with the invaluable support of *KL GLUG (GNU/Linux Us
    ```
 4. **Start the server:**  
    ```sh
-   npm run dev
+   npm start
    ```
 
 ---
