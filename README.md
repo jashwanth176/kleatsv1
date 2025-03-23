@@ -107,7 +107,7 @@ Join our community group : https://t.me/+X0n_azyktiVmMzI0
 
 ## 📜 License
 
-This project is licensed under the **GNU General Public License (GPL)**.
+This project is licensed under the **GNU General Public License (GPL)**
 
 ---
 
