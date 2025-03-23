@@ -61,7 +61,7 @@ To suggest a feature, open an issue with the **enhancement** label and describe:
    ```
 2. Start the development server:
    ```sh
-   npm run dev
+   npm start
    ```
 
 ### Pull Request Guidelines
@@ -86,15 +86,6 @@ fix: resolve issue with order checkout
 - `docs:` for documentation changes
 - `style:` for formatting improvements
 - `test:` for adding new tests
-
-## Testing
-Before submitting a Pull Request:
-- Ensure all tests pass.
-- Write tests for new functionality.
-- Run tests using:
-   ```sh
-   npm test
-   ```
 
 ## Code of Conduct
 All contributors must follow our [Code of Conduct](CODE_OF_CONDUCT.md) to maintain a respectful community.
