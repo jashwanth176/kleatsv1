@@ -33,19 +33,15 @@ This project was developed with the invaluable support of *KL GLUG (GNU/Linux Us
    ```
 4. **Start the server:**  
    ```sh
-   npm run dev
+   npm start
    ```
 
 ---
 
 ## 🔄 Reset & Reinstall Dependencies
 
-### Remove existing dependencies:
-```sh
-rm -rf node_modules package-lock.json
-```
 
-### Reinstall dependencies:
+### Install dependencies:
 ```sh
 npm install
 ```
@@ -111,7 +107,7 @@ Join our community group : https://t.me/+X0n_azyktiVmMzI0
 
 ## 📜 License
 
-This project is licensed under the **GNU General Public License v3.0**.
+This project is licensed under the **GNU General Public License (GPL)**
 
 ---
 
