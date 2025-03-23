@@ -1893,6 +1893,32 @@
             });
         });
     </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if there's a scroll target in sessionStorage
+            const scrollTarget = sessionStorage.getItem('scrollTarget');
+            
+            if (scrollTarget) {
+                // Clear the storage immediately to prevent scrolling on future page loads
+                sessionStorage.removeItem('scrollTarget');
+                
+                // Find the target element
+                const targetElement = document.getElementById(scrollTarget);
+                
+                if (targetElement) {
+                    // Wait a short moment to ensure page is fully loaded
+                    setTimeout(() => {
+                        // Scroll to the element
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }, 500);
+                }
+            }
+        });
+    </script>
 </body>
 
 </html>
