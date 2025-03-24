@@ -10,7 +10,6 @@ Thank you for considering contributing to KL Eats! We appreciate your interest i
 - [Development Setup](#development-setup)
 - [Style Guide](#style-guide)
 - [Commit Guidelines](#commit-guidelines)
-- [Testing](#testing)
 - [Code of Conduct](#code-of-conduct)
 - [License](#license)
 - [Contact](#contact)
