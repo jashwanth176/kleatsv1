@@ -304,9 +304,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const monthlyData = <%- monthlyData %>;
+        const monthlyData = JSON.parse('<%- JSON.stringify(monthlyData) %>');
         const ctx = document.getElementById('spendingChart').getContext('2d');
-        const average = <%= monthlyAverage %>;
+        const average = JSON.parse('<%- JSON.stringify(monthlyAverage) %>');
 
         new Chart(ctx, {
             type: 'line',
