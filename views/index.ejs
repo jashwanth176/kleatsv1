@@ -174,8 +174,9 @@
         @media (max-width: 767px) {
             html, body {
                 max-width: 100%;
-                overflow-x: hidden;
-                scroll-behavior: smooth;
+                overflow-x: hidden !important;
+                width: 100% !important;
+                position: relative;
             }
 
             .header-right {
@@ -845,112 +846,121 @@
                             </div>
                         </div>
 
-                        <div class="row team-slider">
-                            <div class="swiper-wrapper">
-                                <div class="col-lg-4 swiper-slide">
-                                    <div class="team-box text-center" style="transition: transform 0.3s, box-shadow 0.3s; border: 2px solid #f40808; border-radius: 10px; padding: 15px;">
-                                        <a href="/api/canteen/Naturals" style="text-decoration: none;">
-                                            <div style="background-image: url(/images/chef/naturals.jpeg);" class="team-img back-img"></div>
-                                            <h3 class="h3-title" style="font-size: 1.5rem; margin: 10px 0;">Natural's 2 Go</h3>
-                                            <p style="font-size: 0.9rem; color: #666;">C Block.</p>
-                                        </a>
-                                        <a href="/api/canteen/Naturals" class="sec-btn" style="color: #f40808; background-color: #fff; border: 2px solid #f40808; padding: 10px 20px; border-radius: 5px; transition: background-color 0.3s;">Order Now</a>
-                                    </div>
-                                </div>
-                                <div class="col-lg-4 swiper-slide">
-                                    <div class="team-box text-center" style="transition: transform 0.3s, box-shadow 0.3s; border: 2px solid #f40808; border-radius: 10px; padding: 15px;">
-                                        <a href="/api/canteen/US_Pizza" style="text-decoration: none;">
-                                            <div style="background-image: url(/images/chef/us.jpg);" class="team-img back-img"></div>
-                                            <h3 class="h3-title" style="font-size: 1.5rem; margin: 10px 0;">The Chocolate Room</h3>
-                                            <p style="font-size: 0.9rem; color: #666;">F Block.</p>
-                                        </a>
-                                        <a href="/api/canteen/US_Pizza" class="sec-btn" style="color: #f40808; background-color: #fff; border: 2px solid #f40808; padding: 10px 20px; border-radius: 5px; transition: background-color 0.3s;">Order Now</a>
-                                    </div>
-                                </div>
-                                <div class="col-lg-4 swiper-slide">
-                                    <div class="team-box text-center" style="transition: transform 0.3s, box-shadow 0.3s; border: 2px solid #f40808; border-radius: 10px; padding: 15px;">
-                                        <a href="/api/canteen/KL_Adda" style="text-decoration: none;">
-                                            <div style="background-image: url(/images/chef/adda.jpg);" class="team-img back-img"></div>
-                                            <h3 class="h3-title" style="font-size: 1.5rem; margin: 10px 0;">KL Adda</h3>
-                                            <p style="font-size: 0.9rem; color: #666;">C Block.</p>
-                                        </a>
-                                        <a href="/api/canteen/KL_Adda" class="sec-btn" style="color: #f40808; background-color: #fff; border: 2px solid #f40808; padding: 10px 20px; border-radius: 5px; transition: background-color 0.3s;">Order Now</a>
-                                    </div>
+                        <!-- Desktop View -->
+                        <div class="row d-none d-lg-flex">
+                            <div class="col-lg-4">
+                                <div class="team-box text-center" style="transition: transform 0.3s, box-shadow 0.3s; border: 2px solid #f40808; border-radius: 10px; padding: 15px;">
+                                    <a href="/api/canteen/KL_Adda" style="text-decoration: none;">
+                                        <div style="background-image: url(/images/chef/adda.jpg);" class="team-img back-img"></div>
+                                        <h3 class="h3-title" style="font-size: 1.5rem; margin: 10px 0;">KL Adda</h3>
+                                        <p style="font-size: 0.9rem; color: #666;">C Block.</p>
+                                    </a>
+                                    <a href="/api/canteen/KL_Adda" class="sec-btn" style="color: #f40808; background-color: #fff; border: 2px solid #f40808; padding: 10px 20px; border-radius: 5px; transition: background-color 0.3s;">Order Now</a>
                                 </div>
                             </div>
-                            <div class="swiper-button-wp">
-                                <div class="swiper-button-prev swiper-button">
-                                    <i class="uil uil-angle-left"></i>
-                                </div>
-                                <div class="swiper-button-next swiper-button">
-                                    <i class="uil uil-angle-right"></i>
+                            <div class="col-lg-4">
+                                <div class="team-box text-center" style="transition: transform 0.3s, box-shadow 0.3s; border: 2px solid #f40808; border-radius: 10px; padding: 15px;">
+                                    <a href="/api/canteen/Naturals" style="text-decoration: none;">
+                                        <div style="background-image: url(/images/chef/naturals.jpeg);" class="team-img back-img"></div>
+                                        <h3 class="h3-title" style="font-size: 1.5rem; margin: 10px 0;">Natural's 2 Go</h3>
+                                        <p style="font-size: 0.9rem; color: #666;">C Block.</p>
+                                    </a>
+                                    <a href="/api/canteen/Naturals" class="sec-btn" style="color: #f40808; background-color: #fff; border: 2px solid #f40808; padding: 10px 20px; border-radius: 5px; transition: background-color 0.3s;">Order Now</a>
                                 </div>
                             </div>
-                            <div class="swiper-pagination"></div>
+                            <div class="col-lg-4">
+                                <div class="team-box text-center" style="transition: transform 0.3s, box-shadow 0.3s; border: 2px solid #f40808; border-radius: 10px; padding: 15px;">
+                                    <a href="/api/canteen/US_Pizza" style="text-decoration: none;">
+                                        <div style="background-image: url(/images/chef/us.jpg);" class="team-img back-img"></div>
+                                        <h3 class="h3-title" style="font-size: 1.5rem; margin: 10px 0;">The Chocolate Room</h3>
+                                        <p style="font-size: 0.9rem; color: #666;">F Block.</p>
+                                    </a>
+                                    <a href="/api/canteen/US_Pizza" class="sec-btn" style="color: #f40808; background-color: #fff; border: 2px solid #f40808; padding: 10px 20px; border-radius: 5px; transition: background-color 0.3s;">Order Now</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mobile View -->
+                        <div class="d-lg-none">
+                            <div class="position-relative">
+                                <div class="mobile-canteen-slider" style="overflow: hidden;">
+                                    <div class="d-flex" id="mobileCanteenCards">
+                                        <div class="col-12 flex-shrink-0">
+                                            <div class="team-box text-center" style="transition: transform 0.3s, box-shadow 0.3s; border: 2px solid #f40808; border-radius: 10px; padding: 15px;">
+                                                <a href="/api/canteen/KL_Adda" style="text-decoration: none;">
+                                                    <div style="background-image: url(/images/chef/adda.jpg);" class="team-img back-img"></div>
+                                                    <h3 class="h3-title" style="font-size: 1.5rem; margin: 10px 0;">KL Adda</h3>
+                                                    <p style="font-size: 0.9rem; color: #666;">C Block.</p>
+                                                </a>
+                                                <a href="/api/canteen/KL_Adda" class="sec-btn" style="color: #f40808; background-color: #fff; border: 2px solid #f40808; padding: 10px 20px; border-radius: 5px; transition: background-color 0.3s;">Order Now</a>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 flex-shrink-0">
+                                            <div class="team-box text-center" style="transition: transform 0.3s, box-shadow 0.3s; border: 2px solid #f40808; border-radius: 10px; padding: 15px;">
+                                                <a href="/api/canteen/Naturals" style="text-decoration: none;">
+                                                    <div style="background-image: url(/images/chef/naturals.jpeg);" class="team-img back-img"></div>
+                                                    <h3 class="h3-title" style="font-size: 1.5rem; margin: 10px 0;">Natural's 2 Go</h3>
+                                                    <p style="font-size: 0.9rem; color: #666;">C Block.</p>
+                                                </a>
+                                                <a href="/api/canteen/Naturals" class="sec-btn" style="color: #f40808; background-color: #fff; border: 2px solid #f40808; padding: 10px 20px; border-radius: 5px; transition: background-color 0.3s;">Order Now</a>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 flex-shrink-0">
+                                            <div class="team-box text-center" style="transition: transform 0.3s, box-shadow 0.3s; border: 2px solid #f40808; border-radius: 10px; padding: 15px;">
+                                                <a href="/api/canteen/US_Pizza" style="text-decoration: none;">
+                                                    <div style="background-image: url(/images/chef/us.jpg);" class="team-img back-img"></div>
+                                                    <h3 class="h3-title" style="font-size: 1.5rem; margin: 10px 0;">The Chocolate Room</h3>
+                                                    <p style="font-size: 0.9rem; color: #666;">F Block.</p>
+                                                </a>
+                                                <a href="/api/canteen/US_Pizza" class="sec-btn" style="color: #f40808; background-color: #fff; border: 2px solid #f40808; padding: 10px 20px; border-radius: 5px; transition: background-color 0.3s;">Order Now</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-center mt-3">
+                                    <button class="btn btn-light mx-2" id="prevBtn" style="border-radius: 50%; width: 50px; height: 50px; padding: 0; background-color: #f40808; color: white; box-shadow: 0 4px 8px rgba(0,0,0,0.2); transition: all 0.3s ease;" onclick="slideCards('left')">
+                                        <i class="uil uil-angle-left" style="font-size: 32px; color: white; line-height: 1;"></i>
+                                    </button>
+                                    <button class="btn btn-light mx-2" id="nextBtn" style="border-radius: 50%; width: 50px; height: 50px; padding: 0; background-color: #f40808; color: white; box-shadow: 0 4px 8px rgba(0,0,0,0.2); transition: all 0.3s ease;" onclick="slideCards('right')">
+                                        <i class="uil uil-angle-right" style="font-size: 32px; color: white; line-height: 1;"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
+            <script>
+                let currentCard = 0;
+                const totalCards = 3;
+                const prevBtn = document.getElementById('prevBtn');
+                const nextBtn = document.getElementById('nextBtn');
 
-            <!-- appending the canteens -->
+                function updateButtonVisibility() {
+                    prevBtn.style.display = currentCard === 0 ? 'none' : 'block';
+                    nextBtn.style.display = currentCard === totalCards - 1 ? 'none' : 'block';
+                }
 
+                function slideCards(direction) {
+                    const cardsContainer = document.getElementById('mobileCanteenCards');
+                    const cardWidth = cardsContainer.offsetWidth;
+                    
+                    if (direction === 'right' && currentCard < totalCards - 1) {
+                        currentCard++;
+                    } else if (direction === 'left' && currentCard > 0) {
+                        currentCard--;
+                    }
+                    
+                    cardsContainer.style.transform = `translateX(-${currentCard * cardWidth}px)`;
+                    updateButtonVisibility();
+                }
 
-            <!-- Commenting out Coming Soon section
-            <section class="our-team section" id="canteens"
-                style="background-image: url(/images/menu-bg.png); display: block;">
-                <div class="sec-wp">
-                    <div class="container">
-                        <div class="row">
-                            <div class="col-lg-12">
-                                <div class="sec-title text-center mb-5">
-                                    <p class="sec-sub-title mb-3">Coming Soon</p>
-                                    <h2 class="h2-title">Access their menus from KL Eats</h2>
-                                    <div class="sec-title-shape mb-4">
-                                        <img src="/images/title-shape.svg" alt="">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                // Initialize button visibility
+                updateButtonVisibility();
+            </script>
 
-                        <div class="row team-slider">
-                            <div class="swiper-wrapper">
-                                <div class="col-lg-4 swiper-slide">
-                                    <div class="team-box text-center">
-                                        <div style="background-image: url(/images/chef/Placeholder.png);"
-                                            class="team-img back-img"></div>
-                                        <h3 class="h3-title">Canteen : Tulip Hostel</h3>
-                                        <a href="/api/canteen2/Tulip_Hostel_Canteen" class="sec-btn"
-                                            style="color: #f40808;">View Menu</a>
-                                    </div>
-                                </div>
-                                <div class="col-lg-4 swiper-slide">
-                                    <div class="team-box text-center">
-                                        <div style="background-image: url(/images/chef/Placeholder.png);"
-                                            class="team-img back-img"></div>
-                                        <h3 class="h3-title">Testing</h3>
-                                        <a href="/api/canteen2/jashwanth" class="sec-btn" style="color: #f40808;">View
-                                            Menu</a>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="swiper-button-wp">
-                                <div class="swiper-button-prev swiper-button">
-                                    <i class="uil uil-angle-left"></i>
-                                </div>
-                                <div class="swiper-button-next swiper-button">
-                                    <i class="uil uil-angle-right"></i>
-                                </div>
-                            </div>
-                            <div class="swiper-pagination"></div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-            -->
-
-            <!-- Our Team Section Ends-->
-            <!--Testimonials section Starts-->
+            <!-- Testimonials section Starts-->
 
             <section class="testimonials section bg-light" id="testimonials"
                 style="background-image: url(/images/menu-bg.png);">
@@ -1322,6 +1332,7 @@
             const teamContainer = document.querySelector('.team-members-container');
             const teamMembers = Array.from(teamContainer.children);
             const viewMoreBtn = document.getElementById('viewMoreBtn');
+            const spacer = document.getElementById('spacer');
             let isExpanded = false;
 
             // Remove Dr. Sripath Roy Koganti from the array
@@ -1357,6 +1368,23 @@
                         member.style.display = isExpanded ? '' : 'none';
                     }
                 });
+
+                // Calculate total height of hidden members
+                const hiddenMembers = teamMembers.slice(6);
+                const totalHeight = hiddenMembers.reduce((height, member) => {
+                    return height + member.offsetHeight;
+                }, 0);
+
+                // Add transition to spacer
+                spacer.style.transition = 'height 0.3s ease-in-out';
+
+                // Update spacer height based on expansion state
+                if (isExpanded) {
+                    // Add extra padding for both mobile and desktop
+                    spacer.style.height = `${totalHeight + 50}px`;
+                } else {
+                    spacer.style.height = '0';
+                }
             }
 
             // Initial visibility setup
@@ -1370,10 +1398,17 @@
                 if (isExpanded) {
                     // Scroll to the 7th team member (index 6)
                     const seventhMember = teamMembers[6];
-                    seventhMember.scrollIntoView({ behavior: 'auto', block: 'start' });
+                    seventhMember.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 } else {
                     // Scroll to the "View More" button
-                    viewMoreBtn.scrollIntoView({ behavior: 'auto', block: 'start' });
+                    viewMoreBtn.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+
+            // Update spacer height on window resize
+            window.addEventListener('resize', function() {
+                if (isExpanded) {
+                    updateVisibility();
                 }
             });
         });
@@ -1890,6 +1925,74 @@
             });
         });
     </script>
+
+    <style>
+        @media (max-width: 767px) {
+            /* Remove spacing between View More button and footer */
+            .testimonials.section {
+                padding-bottom: 0 !important;
+            }
+
+            .testimonials .sec-wp {
+                padding-bottom: 0 !important;
+            }
+
+            .testimonials .container {
+                padding-bottom: 0 !important;
+            }
+
+            /* Adjust the View More button margin */
+            .testimonials .row.mt-4 {
+                margin-top: 1rem !important;
+                margin-bottom: 0 !important;
+            }
+
+            /* Remove spacer height on mobile */
+            #spacer {
+                height: 0 !important;
+            }
+
+            /* Adjust footer spacing */
+            .site-footer {
+                margin-top: 0 !important;
+            }
+
+            .top-footer.section {
+                padding-top: 30px !important;
+            }
+        }
+
+        /* Additional styles for desktop */
+        @media (min-width: 768px) {
+            .testimonials.section {
+                padding-bottom: 0 !important;
+            }
+
+            .testimonials .sec-wp {
+                padding-bottom: 0 !important;
+            }
+
+            .testimonials .container {
+                padding-bottom: 0 !important;
+            }
+
+            .testimonials .row.mt-4 {
+                margin-bottom: 0 !important;
+            }
+
+            #spacer {
+                height: 0 !important;
+            }
+
+            .site-footer {
+                margin-top: 0 !important;
+            }
+
+            .top-footer.section {
+                padding-top: 30px !important;
+            }
+        }
+    </style>
 </body>
 
 </html>
